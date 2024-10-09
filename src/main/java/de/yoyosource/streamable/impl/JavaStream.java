@@ -210,8 +210,9 @@ public interface JavaStream<T> extends Streamable<T> {
             private List<T> elements = new ArrayList<>();
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 elements.add(input);
+                return false;
             }
 
             @Override
@@ -226,8 +227,9 @@ public interface JavaStream<T> extends Streamable<T> {
             private T current = identity;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 current = accumulator.apply(current, input);
+                return false;
             }
 
             @Override
@@ -242,12 +244,13 @@ public interface JavaStream<T> extends Streamable<T> {
             private T current = null;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 if (current == null) {
                     current = input;
                 } else {
                     accumulator.apply(current, input);
                 }
+                return false;
             }
 
             @Override
@@ -262,8 +265,9 @@ public interface JavaStream<T> extends Streamable<T> {
             private U current = identity;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 current = accumulator.apply(current, input);
+                return false;
             }
 
             @Override
@@ -278,8 +282,9 @@ public interface JavaStream<T> extends Streamable<T> {
             private R current = supplier.get();
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 accumulator.accept(current, input);
+                return false;
             }
 
             @Override
@@ -294,8 +299,9 @@ public interface JavaStream<T> extends Streamable<T> {
             private A current = collector.supplier().get();
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 collector.accumulator().accept(current, input);
+                return false;
             }
 
             @Override
@@ -310,8 +316,9 @@ public interface JavaStream<T> extends Streamable<T> {
             private List<T> elements = new ArrayList<>();
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 elements.add(input);
+                return false;
             }
 
             @Override
@@ -326,15 +333,16 @@ public interface JavaStream<T> extends Streamable<T> {
             private T current = null;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 if (current == null) {
                     current = input;
-                    return;
+                    return false;
                 }
 
                 if (comparator.compare(current, input) > 0) {
                     current = input;
                 }
+                return false;
             }
 
             @Override
@@ -349,15 +357,16 @@ public interface JavaStream<T> extends Streamable<T> {
             private T current = null;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 if (current == null) {
                     current = input;
-                    return;
+                    return false;
                 }
 
                 if (comparator.compare(current, input) < 0) {
                     current = input;
                 }
+                return false;
             }
 
             @Override
@@ -372,8 +381,9 @@ public interface JavaStream<T> extends Streamable<T> {
             private long count = 0;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 count++;
+                return false;
             }
 
             @Override
@@ -384,27 +394,16 @@ public interface JavaStream<T> extends Streamable<T> {
     }
 
     default boolean anyMatch(Predicate<? super T> predicate) {
-        return this.gather(new StreamableGatherer<T, T>() {
-            @Override
-            public boolean apply(T input, Consumer<T> next) {
-                if (predicate.test(input)) {
-                    next.accept(input);
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-
-            @Override
-            public void finish(Consumer<T> next) {
-
-            }
-        }).collect(new StreamableCollector<>() {
+        return collect(new StreamableCollector<>() {
             private boolean anyMatch = false;
 
             @Override
-            public void apply(T input) {
-                anyMatch = true;
+            public boolean apply(T input) {
+                if (predicate.test(input)) {
+                    anyMatch = true;
+                    return true;
+                }
+                return false;
             }
 
             @Override
@@ -423,22 +422,13 @@ public interface JavaStream<T> extends Streamable<T> {
     }
 
     default Optional<T> findFirst() {
-        return this.gather(new StreamableGatherer<T, T>() {
-            @Override
-            public boolean apply(T input, Consumer<T> next) {
-                next.accept(input);
-                return true;
-            }
-
-            @Override
-            public void finish(Consumer<T> next) {
-            }
-        }).collect(new StreamableCollector<>() {
+        return collect(new StreamableCollector<>() {
             private T current = null;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 current = input;
+                return true;
             }
 
             @Override
@@ -450,5 +440,25 @@ public interface JavaStream<T> extends Streamable<T> {
 
     default Optional<T> findAny() {
         return findFirst();
+    }
+
+    default JavaStream<T> onClose(Runnable action) {
+        return gather(new StreamableGatherer<>() {
+            @Override
+            public boolean apply(T input, Consumer<T> next) {
+                next.accept(input);
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<T> next) {
+
+            }
+
+            @Override
+            public void onClose() {
+                action.run();
+            }
+        });
     }
 }

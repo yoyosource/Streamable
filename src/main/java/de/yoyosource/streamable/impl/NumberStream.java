@@ -18,10 +18,10 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
             private T value;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 if (value == null) {
                     value = input;
-                    return;
+                    return false;
                 }
 
                 if (value instanceof Byte) {
@@ -41,6 +41,7 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
                 } else if (value instanceof BigInteger) {
                     value = (T) (((BigInteger) value).add((BigInteger) input));
                 }
+                return false;
             }
 
             @Override
@@ -55,10 +56,10 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
             private T value;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 if (value == null) {
                     value = input;
-                    return;
+                    return false;
                 }
 
                 if (value instanceof Byte) {
@@ -78,6 +79,7 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
                 } else if (value instanceof BigInteger) {
                     value = ((BigInteger) value).compareTo((BigInteger) input) > 0 ? input : value;
                 }
+                return false;
             }
 
             @Override
@@ -92,10 +94,10 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
             private T value;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 if (value == null) {
                     value = input;
-                    return;
+                    return false;
                 }
 
                 if (value instanceof Byte) {
@@ -115,6 +117,7 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
                 } else if (value instanceof BigInteger) {
                     value = ((BigInteger) value).compareTo((BigInteger) input) < 0 ? input : value;
                 }
+                return false;
             }
 
             @Override
@@ -130,11 +133,11 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
             private T value;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 count++;
                 if (value == null) {
                     value = input;
-                    return;
+                    return false;
                 }
 
                 if (value instanceof Byte) {
@@ -154,6 +157,7 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
                 } else if (value instanceof BigInteger) {
                     value = ((BigInteger) value).compareTo((BigInteger) input) < 0 ? input : value;
                 }
+                return false;
             }
 
             @Override
@@ -192,14 +196,14 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
             private T max;
 
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 count++;
 
                 if (sum == null) {
                     sum = input;
                     min = input;
                     max = input;
-                    return;
+                    return false;
                 }
 
                 if (sum instanceof Byte) {
@@ -235,6 +239,7 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
                     min = ((BigInteger) min).compareTo((BigInteger) input) > 0 ? input : min;
                     max = ((BigInteger) max).compareTo((BigInteger) input) < 0 ? input : max;
                 }
+                return false;
             }
 
             @Override

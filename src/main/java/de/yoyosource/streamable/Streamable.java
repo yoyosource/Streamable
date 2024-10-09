@@ -18,8 +18,9 @@ public interface Streamable<T> extends Iterable<T> {
     default void forEach(Consumer<? super T> action) {
         collect(new StreamableCollector<>() {
             @Override
-            public void apply(T input) {
+            public boolean apply(T input) {
                 action.accept(input);
+                return false;
             }
 
             @Override

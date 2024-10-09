@@ -20,6 +20,7 @@ public class Test {
         testCount();
         testMapMulti();
         testTry();
+        testFindFirst();
 
         if (true) return;
 
@@ -104,7 +105,7 @@ public class Test {
     private static void testMapMulti() {
         long count = Streamable.from(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
                 .as(JavaStream.type())
-                .mapMulti((integer, consumer) -> {
+                .<Integer> mapMulti((integer, consumer) -> {
                     consumer.accept(integer);
                     consumer.accept(integer);
                     consumer.accept(integer);
@@ -121,5 +122,16 @@ public class Test {
                 .tryIt(integer -> integer / (integer - 1))
                 .keepSuccesssfulAndUnwrap()
                 .forEach(System.out::println);
+    }
+
+    public static void testFindFirst() {
+        Random random = new Random();
+        Streamable.from(Stream.generate(() -> random.nextInt(1000)))
+                .as(AdvancedStream.type())
+                .elementCount(count -> System.out.println(": " + count))
+                .as(JavaStream.type())
+                .filter(integer -> integer >= 990)
+                .findFirst()
+                .ifPresent(System.out::println);
     }
 }

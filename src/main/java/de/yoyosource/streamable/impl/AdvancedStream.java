@@ -184,6 +184,28 @@ public interface AdvancedStream<T> extends Streamable<T> {
         });
     }
 
+    default AdvancedStream<T> elementCount(Consumer<Long> consumer) {
+        return gather(new StreamableGatherer<>() {
+            private long count = 0;
+
+            @Override
+            public boolean apply(T input, Consumer<T> next) {
+                count++;
+                next.accept(input);
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<T> next) {
+            }
+
+            @Override
+            public void onClose() {
+                consumer.accept(count);
+            }
+        });
+    }
+
     default AdvancedStream<Map<T, Long>> count() {
         return countBy(Function.identity());
     }

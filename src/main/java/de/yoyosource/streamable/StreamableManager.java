@@ -6,7 +6,6 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
@@ -56,13 +55,21 @@ public class StreamableManager {
                 if (pair == null) break;
                 apply(iterators, pair.first.next(), pair.second, !pair.first.hasNext(), collector);
             }
-            return collector.finish();
+
+            Object result = collector.finish();
+            gatherers.forEach(pair -> pair.first.onClose());
+            collector.onClose();
+            return result;
         }
 
         private boolean apply(List<Pair<Iterator, Integer>> iterators, Object o, int index, boolean runFinished, StreamableCollector collector) {
             if (index >= gatherers.size()) {
-                collector.apply(o);
-                return false;
+                if (collector.apply(o)) {
+                    iterators.clear();
+                    return true;
+                } else {
+                    return false;
+                }
             }
             int removeUntil = iterators.size();
             AtomicBoolean ignoreRest = new AtomicBoolean(false);
@@ -115,9 +122,10 @@ public class StreamableManager {
 
                 private StreamableCollector collector = new StreamableCollector() {
                     @Override
-                    public void apply(Object input) {
+                    public boolean apply(Object input) {
                         hasNext = true;
                         value = input;
+                        return false;
                     }
 
                     @Override
@@ -145,6 +153,10 @@ public class StreamableManager {
                         }
                         if (hasNext) break;
                         if (iterators.isEmpty()) break;
+                    }
+                    if (!hasNext) {
+                        gatherers.forEach(pair -> pair.first.onClose());
+                        collector.onClose();
                     }
                 }
 
