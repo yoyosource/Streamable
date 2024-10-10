@@ -148,9 +148,7 @@ public class StreamableManager {
                             }
                         }
                         if (pair == null) break;
-                        if (apply(iterators, pair.first.next(), pair.second, !pair.first.hasNext(), collector)) {
-                            iterators.clear();
-                        }
+                        apply(iterators, pair.first.next(), pair.second, !pair.first.hasNext(), collector);
                         if (hasNext) break;
                         if (iterators.isEmpty()) break;
                     }
