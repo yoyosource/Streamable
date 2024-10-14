@@ -1,6 +1,8 @@
 package de.yoyosource;
 
 import de.yoyosource.streamable.Streamable;
+import de.yoyosource.streamable.StreamableCollector;
+import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.impl.AdvancedStream;
 import de.yoyosource.streamable.impl.JavaStream;
 import de.yoyosource.streamable.impl.NumberStream;
@@ -9,6 +11,7 @@ import de.yoyosource.streamable.impl.TryingStream;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class Test {
@@ -17,10 +20,15 @@ public class Test {
         testSimpleForEach();
         testGroupBy();
         testIteratorAfterFlatMap();
+        testCountAfterFlatMap();
         testCount();
         testMapMulti();
         testTry();
         testFindFirst();
+        testSlidingWindow();
+        testFixedWindow();
+        testDoubleMutate();
+        testPrimeGenerator();
 
         if (true) return;
 
@@ -78,7 +86,6 @@ public class Test {
         Streamable.from(Stream.of(1))
                 .as(JavaStream.type())
                 .flatMap(d -> Streamable.from(Stream.generate(Math::random)))
-                .as(JavaStream.type())
                 .limit(10)
                 .flatMap(d -> Streamable.from(Stream.of(d, d, d, d, d)))
                 .iterator()
@@ -86,6 +93,16 @@ public class Test {
                     count.incrementAndGet();
                 });
         System.out.println(count.get());
+    }
+
+    private static void testCountAfterFlatMap() {
+        long count = Streamable.from(Stream.of(1))
+                .as(JavaStream.type())
+                .flatMap(d -> Streamable.from(Stream.generate(Math::random)))
+                .limit(10)
+                .flatMap(d -> Streamable.from(Stream.of(d, d, d, d, d)))
+                .count();
+        System.out.println(count);
     }
 
     private static void testCount() {
@@ -97,7 +114,6 @@ public class Test {
                 .count()
                 .as(JavaStream.type())
                 .flatMap(Map::entrySet)
-                .as(JavaStream.type())
                 .limit(10)
                 .forEach(System.out::println);
     }
@@ -133,5 +149,97 @@ public class Test {
                 .filter(integer -> integer >= 990)
                 .findFirst()
                 .ifPresent(System.out::println);
+    }
+
+    public static void testSlidingWindow() {
+        System.out.println();
+        Random random = new Random();
+        Streamable.from(Stream.generate(() -> random.nextInt(1000)))
+                .as(JavaStream.type())
+                .limit(20)
+                .as(AdvancedStream.type())
+                .windowSliding(10)
+                .forEach(integers -> System.out.println(integers.size() + " " + integers));
+    }
+
+    public static void testFixedWindow() {
+        System.out.println();
+        Random random = new Random();
+        Streamable.from(Stream.generate(() -> random.nextInt(1000)))
+                .as(JavaStream.type())
+                .limit(30)
+                .as(AdvancedStream.type())
+                .windowFixed(10)
+                .forEach(integers -> System.out.println(integers.size() + " " + integers));
+    }
+
+    public static void testPrimeGenerator() {
+        if (false) {
+            long time = System.currentTimeMillis();
+            long num = 1;
+            long[] ints = new long[1_000_000];
+            ints[0] = 2;
+            int index = 1;
+            outer:
+            while (System.currentTimeMillis() - time < 30_000) {
+                num += 2;
+                for (int i = 0; i < index; i++) {
+                    if (num % ints[i] == 0) continue outer;
+                }
+                ints[index++] = num;
+            }
+            System.out.println(index);
+        }
+
+        if (false) {
+            Streamable.from(Stream.concat(Stream.of(2), Stream.iterate(3, integer -> integer + 2)))
+                    .<Integer, Streamable<Integer>>gather(new StreamableGatherer<>() {
+                        private int[] ints = new int[1_000_000];
+                        private int index = 0;
+
+                        @Override
+                        public boolean apply(Integer input, Consumer<Integer> next) {
+                            for (int i = 0; i < index; i++) {
+                                if (input % ints[i] == 0) return false;
+                            }
+                            next.accept(input);
+                            ints[index++] = input;
+                            return false;
+                        }
+
+                        @Override
+                        public void finish(Consumer<Integer> next) {
+
+                        }
+                    })
+                    .collect(new StreamableCollector<>() {
+                        private long count = 0;
+                        private long time = System.currentTimeMillis();
+
+                        @Override
+                        public boolean apply(Integer input) {
+                            count++;
+                            // 10_000 -> 86022
+                            // 10_000 -> 77141
+                            // 10_000 -> 94862
+                            // 10_000 -> 182324
+                            // 30_000 -> 316893
+                            return System.currentTimeMillis() - time > 10_000;
+                        }
+
+                        @Override
+                        public Object finish() {
+                            System.out.println("Count: " + count);
+                            return null;
+                        }
+                    });
+        }
+    }
+
+    public static void testDoubleMutate() {
+        JavaStream<Integer> streamable = Streamable.from(Stream.of(1, 2, 3))
+                .as(JavaStream.type());
+        streamable.map(integer -> integer * 2);
+        streamable.filter(integer -> integer % 2 == 0);
     }
 }

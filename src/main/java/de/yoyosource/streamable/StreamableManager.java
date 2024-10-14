@@ -117,14 +117,12 @@ public class StreamableManager {
             return new Iterator<>() {
                 private List<Pair<Iterator, Integer>> iterators = new ArrayList<>();
 
-                private boolean hasNext = false;
-                private Object value;
+                private List<Object> values = new ArrayList<>();
 
                 private StreamableCollector collector = new StreamableCollector() {
                     @Override
                     public boolean apply(Object input) {
-                        hasNext = true;
-                        value = input;
+                        values.add(input);
                         return false;
                     }
 
@@ -135,7 +133,6 @@ public class StreamableManager {
                 };
 
                 private void generateNext() {
-                    hasNext = false;
                     while (true) {
                         Pair<Iterator, Integer> pair = null;
                         for (int i = iterators.size() - 1; i >= 0; i--) {
@@ -149,10 +146,10 @@ public class StreamableManager {
                         }
                         if (pair == null) break;
                         apply(iterators, pair.first.next(), pair.second, !pair.first.hasNext(), collector);
-                        if (hasNext) break;
+                        if (!values.isEmpty()) break;
                         if (iterators.isEmpty()) break;
                     }
-                    if (!hasNext) {
+                    if (values.isEmpty()) {
                         gatherers.forEach(pair -> pair.first.onClose());
                         collector.onClose();
                     }
@@ -165,12 +162,12 @@ public class StreamableManager {
 
                 @Override
                 public boolean hasNext() {
-                    return hasNext;
+                    return !values.isEmpty();
                 }
 
                 @Override
                 public Object next() {
-                    Object temp = value;
+                    Object temp = values.remove(0);
                     generateNext();
                     return temp;
                 }
@@ -183,9 +180,13 @@ public class StreamableManager {
     }
 
     private static <T, S extends Streamable<T>> S from(StreamData streamData, Class<S> clazz) {
+        int layer = streamData.gatherers.size();
         Object object = Proxy.newProxyInstance(StreamableManager.class.getClassLoader(), new Class[]{clazz}, (proxy, method, args) -> {
             if (method.getName().equals("toString") && method.getParameterCount() == 0) {
                 return clazz.getTypeName() + "@" + System.identityHashCode(proxy);
+            }
+            if (layer != streamData.gatherers.size()) {
+                throw new IllegalArgumentException("This Streamable is already mutated. You cannot add another operation on this instance.");
             }
             if (method.isDefault()) {
                 return InvocationHandler.invokeDefault(proxy, method, args);
@@ -201,11 +202,11 @@ public class StreamableManager {
             }
             if (is(method, "gather", StreamableGatherer.class)) {
                 streamData.gatherers.add(new Pair<>((StreamableGatherer) args[0], false));
-                return proxy;
+                return from(streamData, clazz);
             }
             if (is(method, "flatGather", StreamableGatherer.class)) {
                 streamData.gatherers.add(new Pair<>((StreamableGatherer) args[0], true));
-                return proxy;
+                return from(streamData, clazz);
             }
             if (is(method, "collect", StreamableCollector.class)) {
                 return streamData.run((StreamableCollector) args[0]);
