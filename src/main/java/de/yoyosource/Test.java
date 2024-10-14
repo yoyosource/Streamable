@@ -8,6 +8,7 @@ import de.yoyosource.streamable.impl.JavaStream;
 import de.yoyosource.streamable.impl.NumberStream;
 import de.yoyosource.streamable.impl.TryingStream;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,8 +28,9 @@ public class Test {
         testFindFirst();
         testSlidingWindow();
         testFixedWindow();
-        testDoubleMutate();
-        testPrimeGenerator();
+        testExplodingFlatMap();
+        // testPrimeGenerator();
+        // testDoubleMutate();
 
         if (true) return;
 
@@ -42,11 +44,11 @@ public class Test {
                 .as(NumberStream.type())
                 .sum()
                 .ifPresent(System.out::println);
-                // .as(GroupingStream.type())
-                // .distinctBy(integer -> integer % 2)
-                // .groupBy(integer -> integer % 2)
-                // .as(ForEachStream.type())
-                // .forEach(integerListMap -> System.out.println(integerListMap));
+        // .as(GroupingStream.type())
+        // .distinctBy(integer -> integer % 2)
+        // .groupBy(integer -> integer % 2)
+        // .as(ForEachStream.type())
+        // .forEach(integerListMap -> System.out.println(integerListMap));
 
         System.out.println();
         for (int i : Streamable.from(Stream.of(0, 1, 2))) {
@@ -191,7 +193,7 @@ public class Test {
             System.out.println(index);
         }
 
-        if (false) {
+        if (true) {
             Streamable.from(Stream.concat(Stream.of(2), Stream.iterate(3, integer -> integer + 2)))
                     .<Integer, Streamable<Integer>>gather(new StreamableGatherer<>() {
                         private int[] ints = new int[1_000_000];
@@ -234,6 +236,17 @@ public class Test {
                         }
                     });
         }
+    }
+
+    public static void testExplodingFlatMap() {
+        Streamable.from(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+                .as(AdvancedStream.type())
+                .flatMapMulti((integer, iterableConsumer) -> {
+                    for (int i = 0; i < integer; i++) {
+                        iterableConsumer.accept(List.of(i));
+                    }
+                })
+                .forEach(System.out::println);
     }
 
     public static void testDoubleMutate() {

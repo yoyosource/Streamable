@@ -77,7 +77,7 @@ public class StreamableManager {
             boolean finished = pair.first.apply(o, next -> {
                 if (ignoreRest.get()) return;
                 if (pair.second) {
-                    iterators.add(new Pair<>(((Iterable) next).iterator(), index + 1));
+                    iterators.add(removeUntil, new Pair<>(((Iterable) next).iterator(), index + 1));
                 } else {
                     if (apply(iterators, next, index + 1, runFinished, collector)) {
                         ignoreRest.set(true);
@@ -95,11 +95,12 @@ public class StreamableManager {
                     AtomicBoolean isFinished = new AtomicBoolean(false);
                     ignoreRest.set(false);
                     final int finalI = i;
+                    int iteratorIndex = iterators.size();
                     gatherers.get(finalI).first.finish(next -> {
                         isFinished.set(true);
                         if (ignoreRest.get()) return;
                         if (pair.second) {
-                            iterators.add(new Pair<>(((Iterable) o).iterator(), finalI + 1));
+                            iterators.add(iteratorIndex, new Pair<>(((Iterable) o).iterator(), finalI + 1));
                         } else {
                             if (apply(iterators, next, finalI + 1, true, collector)) {
                                 ignoreRest.set(true);
