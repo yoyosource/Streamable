@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 public class StreamableManager {
 
@@ -30,16 +29,16 @@ public class StreamableManager {
     }
 
     private static class StreamData {
-        private final Stream stream;
+        private final Iterator iterator;
         private List<Pair<StreamableGatherer, Boolean>> gatherers = new ArrayList<>();
 
-        private StreamData(Stream stream) {
-            this.stream = stream;
+        private StreamData(Iterator iterator) {
+            this.iterator = iterator;
         }
 
         private Object run(StreamableCollector collector) {
             List<Pair<Iterator, Integer>> iterators = new ArrayList<>();
-            iterators.add(new Pair<>(stream.iterator(), 0));
+            iterators.add(new Pair<>(iterator, 0));
 
             while (!iterators.isEmpty()) {
                 Pair<Iterator, Integer> pair = null;
@@ -114,7 +113,7 @@ public class StreamableManager {
         }
 
         private Iterator<Object> iterator() {
-            if (gatherers.isEmpty()) return stream.iterator();
+            if (gatherers.isEmpty()) return iterator;
             return new Iterator<>() {
                 private List<Pair<Iterator, Integer>> iterators = new ArrayList<>();
 
@@ -157,7 +156,7 @@ public class StreamableManager {
                 }
 
                 {
-                    iterators.add(new Pair<>(stream.iterator(), 0));
+                    iterators.add(new Pair<>(iterator, 0));
                     generateNext();
                 }
 
@@ -176,7 +175,7 @@ public class StreamableManager {
         }
     }
 
-    protected static <T> Streamable<T> from(Stream<T> stream) {
+    protected static <T> Streamable<T> from(Iterator<T> stream) {
         return from(new StreamData(stream), Streamable.class);
     }
 
