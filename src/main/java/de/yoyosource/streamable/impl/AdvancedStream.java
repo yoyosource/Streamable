@@ -26,7 +26,6 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -43,7 +42,6 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<R> next) {
-
             }
         });
     }
@@ -60,7 +58,6 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<Iterable<R>> next) {
-
             }
         });
     }
@@ -81,7 +78,6 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<R> next) {
-
             }
         });
     }
@@ -100,7 +96,6 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -118,7 +113,6 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -139,7 +133,6 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -158,7 +151,6 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -309,8 +301,17 @@ public interface AdvancedStream<T> extends Streamable<T> {
                         return others[index++];
                     }
                 })
-                .as(JavaStream.type())
-                .flatMap(Function.identity())
+                .flatGather(new StreamableGatherer<Streamable<T>, Iterable<T>>() {
+                    @Override
+                    public boolean apply(Streamable<T> input, Consumer<Iterable<T>> next) {
+                        next.accept(input);
+                        return false;
+                    }
+
+                    @Override
+                    public void finish(Consumer<Iterable<T>> next) {
+                    }
+                })
                 .as(AdvancedStream.type());
     }
 
@@ -324,7 +325,6 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<Iterable<T>> next) {
-
             }
         });
     }

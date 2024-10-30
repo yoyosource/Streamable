@@ -38,7 +38,6 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<R> next) {
-
             }
         });
     }
@@ -53,7 +52,6 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<Iterable<R>> next) {
-
             }
         });
     }
@@ -68,7 +66,6 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<R> next) {
-
             }
         });
     }
@@ -85,13 +82,8 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
-    }
-
-    default JavaStream<T> sorted() { // TODO: Maybe put this into its own Stream?
-        return sorted(null);
     }
 
     default JavaStream<T> sorted(Comparator<? super T> comparator) {
@@ -123,7 +115,6 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -141,7 +132,6 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -159,7 +149,6 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -178,7 +167,6 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -196,7 +184,6 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
         });
     }
@@ -452,7 +439,6 @@ public interface JavaStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<T> next) {
-
             }
 
             @Override

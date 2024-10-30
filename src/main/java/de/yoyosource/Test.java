@@ -3,10 +3,7 @@ package de.yoyosource;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
-import de.yoyosource.streamable.impl.AdvancedStream;
-import de.yoyosource.streamable.impl.JavaStream;
-import de.yoyosource.streamable.impl.NumberStream;
-import de.yoyosource.streamable.impl.TryingStream;
+import de.yoyosource.streamable.impl.*;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +29,7 @@ public class Test {
         // testPrimeGenerator();
         // testDoubleMutate();
         testStreamConcat();
+        testComparableStream();
 
         if (true) return;
 
@@ -214,7 +212,6 @@ public class Test {
 
                         @Override
                         public void finish(Consumer<Integer> next) {
-
                         }
                     })
                     .collect(new StreamableCollector<>() {
@@ -266,5 +263,12 @@ public class Test {
                 .as(JavaStream.type())
                 .count();
         System.out.println(count);
+    }
+
+    public static void testComparableStream() {
+        Streamable.of("Hello", "World")
+                .as(ComparableStream.type())
+                .min()
+                .ifPresent(System.out::println);
     }
 }

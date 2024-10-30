@@ -76,7 +76,6 @@ public interface TryingStream<T> extends Streamable<T> {
 
                 @Override
                 public void finish(Consumer<Try<T, E>> next) {
-
                 }
             });
         }
