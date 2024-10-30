@@ -29,15 +29,29 @@ public interface Streamable<T> extends Iterable<T> {
     }
 
     static <T> Streamable<T> iterate(final T seed, final UnaryOperator<T> f) {
-        throw new UnsupportedOperationException();
+        return iterate(seed, t -> true, f);
     }
 
     static <T> Streamable<T> iterate(T seed, Predicate<? super T> hasNext, UnaryOperator<T> next) {
-        throw new UnsupportedOperationException();
+        return StreamableManager.from(new Iterator<>() {
+            private T current = seed;
+
+            @Override
+            public boolean hasNext() {
+                return hasNext.test(current);
+            }
+
+            @Override
+            public T next() {
+                T previous = current;
+                current = next.apply(current);
+                return previous;
+            }
+        });
     }
 
     static <T> Streamable<T> generate(Supplier<? extends T> s) {
-        throw new UnsupportedOperationException();
+        return iterate(s.get(), t -> true, t -> s.get());
     }
 
     static <T> Streamable<T> from(Stream<T> stream) {
