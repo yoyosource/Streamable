@@ -31,10 +31,11 @@ public class Test {
         testExplodingFlatMap();
         // testPrimeGenerator();
         // testDoubleMutate();
+        testStreamConcat();
 
         if (true) return;
 
-        Streamable.from(Stream.of(1, 2, 3))
+        Streamable.of(1, 2, 3)
                 .as(JavaStream.type())
                 .flatMap(integer -> Streamable.from(Stream.of(integer, integer + 1)))
                 .as(JavaStream.type())
@@ -51,19 +52,19 @@ public class Test {
         // .forEach(integerListMap -> System.out.println(integerListMap));
 
         System.out.println();
-        for (int i : Streamable.from(Stream.of(0, 1, 2))) {
+        for (int i : Streamable.of(0, 1, 2)) {
             System.out.println(i);
         }
 
         System.out.println();
-        long count = Streamable.from(Stream.of(1))
+        long count = Streamable.of(1)
                 .as(JavaStream.type())
                 .flatMap(d -> Streamable.from(Stream.generate(Math::random)))
                 .limit(10)
                 .count();
         System.out.println(count);
 
-        Streamable.from(Stream.of(1))
+        Streamable.of(1)
                 .as(JavaStream.type())
                 .flatMap(d -> Streamable.from(Stream.generate(Math::random)))
                 .limit(10)
@@ -72,12 +73,12 @@ public class Test {
     }
 
     private static void testSimpleForEach() {
-        Streamable.from(Stream.of(1, 2, 3))
+        Streamable.of(1, 2, 3)
                 .forEach(System.out::println);
     }
 
     private static void testGroupBy() {
-        Streamable.from(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+        Streamable.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 .as(AdvancedStream.type())
                 .groupBy(integer -> integer % 3)
                 .forEach(System.out::println);
@@ -85,7 +86,7 @@ public class Test {
 
     private static void testIteratorAfterFlatMap() {
         AtomicInteger count = new AtomicInteger();
-        Streamable.from(Stream.of(1))
+        Streamable.of(1)
                 .as(JavaStream.type())
                 .flatMap(d -> Streamable.from(Stream.generate(Math::random)))
                 .limit(10)
@@ -98,7 +99,7 @@ public class Test {
     }
 
     private static void testCountAfterFlatMap() {
-        long count = Streamable.from(Stream.of(1))
+        long count = Streamable.of(1)
                 .as(JavaStream.type())
                 .flatMap(d -> Streamable.from(Stream.generate(Math::random)))
                 .limit(10)
@@ -109,7 +110,7 @@ public class Test {
 
     private static void testCount() {
         Random random = new Random();
-        Streamable.from(Stream.generate(() -> random.nextInt(100)))
+        Streamable.generate(() -> random.nextInt(100))
                 .as(JavaStream.type())
                 .limit(10000)
                 .as(AdvancedStream.type())
@@ -121,9 +122,9 @@ public class Test {
     }
 
     private static void testMapMulti() {
-        long count = Streamable.from(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+        long count = Streamable.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 .as(JavaStream.type())
-                .<Integer> mapMulti((integer, consumer) -> {
+                .<Integer>mapMulti((integer, consumer) -> {
                     consumer.accept(integer);
                     consumer.accept(integer);
                     consumer.accept(integer);
@@ -134,7 +135,7 @@ public class Test {
     }
 
     private static void testTry() {
-        Streamable.from(Stream.of("0", "a", "2", "1"))
+        Streamable.of("0", "a", "2", "1")
                 .as(TryingStream.type())
                 .tryIt(Integer::parseInt)
                 .tryIt(integer -> integer / (integer - 1))
@@ -144,7 +145,7 @@ public class Test {
 
     public static void testFindFirst() {
         Random random = new Random();
-        Streamable.from(Stream.generate(() -> random.nextInt(1000)))
+        Streamable.generate(() -> random.nextInt(1000))
                 .as(AdvancedStream.type())
                 .elementCount(count -> System.out.println(": " + count))
                 .as(JavaStream.type())
@@ -156,7 +157,7 @@ public class Test {
     public static void testSlidingWindow() {
         System.out.println();
         Random random = new Random();
-        Streamable.from(Stream.generate(() -> random.nextInt(1000)))
+        Streamable.generate(() -> random.nextInt(1000))
                 .as(JavaStream.type())
                 .limit(20)
                 .as(AdvancedStream.type())
@@ -167,7 +168,7 @@ public class Test {
     public static void testFixedWindow() {
         System.out.println();
         Random random = new Random();
-        Streamable.from(Stream.generate(() -> random.nextInt(1000)))
+        Streamable.generate(() -> random.nextInt(1000))
                 .as(JavaStream.type())
                 .limit(30)
                 .as(AdvancedStream.type())
@@ -194,7 +195,9 @@ public class Test {
         }
 
         if (true) {
-            Streamable.from(Stream.concat(Stream.of(2), Stream.iterate(3, integer -> integer + 2)))
+            Streamable.of(2)
+                    .as(AdvancedStream.type())
+                    .concat(Streamable.iterate(3, integer -> integer + 2))
                     .<Integer, Streamable<Integer>>gather(new StreamableGatherer<>() {
                         private int[] ints = new int[1_000_000];
                         private int index = 0;
@@ -239,7 +242,7 @@ public class Test {
     }
 
     public static void testExplodingFlatMap() {
-        Streamable.from(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+        Streamable.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 .as(AdvancedStream.type())
                 .flatMapMulti((integer, iterableConsumer) -> {
                     for (int i = 0; i < integer; i++) {
@@ -250,9 +253,18 @@ public class Test {
     }
 
     public static void testDoubleMutate() {
-        JavaStream<Integer> streamable = Streamable.from(Stream.of(1, 2, 3))
+        JavaStream<Integer> streamable = Streamable.of(1, 2, 3)
                 .as(JavaStream.type());
         streamable.map(integer -> integer * 2);
         streamable.filter(integer -> integer % 2 == 0);
+    }
+
+    public static void testStreamConcat() {
+        long count = Streamable.of(1, 2, 3, 4, 5)
+                .as(AdvancedStream.type())
+                .concat(Streamable.of(6, 7, 8, 9, 10))
+                .as(JavaStream.type())
+                .count();
+        System.out.println(count);
     }
 }

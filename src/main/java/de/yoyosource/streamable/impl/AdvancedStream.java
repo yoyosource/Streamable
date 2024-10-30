@@ -292,20 +292,26 @@ public interface AdvancedStream<T> extends Streamable<T> {
     }
 
     default AdvancedStream<T> concat(Streamable<T>... others) {
-        return flatGather(new StreamableGatherer<>() {
-            @Override
-            public boolean apply(T input, Consumer<Iterable<T>> next) {
-                next.accept(List.of(input));
-                return false;
-            }
+        return Streamable.from(new Iterator<Streamable<T>>() {
+                    private int index = -1;
 
-            @Override
-            public void finish(Consumer<Iterable<T>> next) {
-                for (Streamable<T> other : others) {
-                    next.accept(other);
-                }
-            }
-        });
+                    @Override
+                    public boolean hasNext() {
+                        return index < others.length;
+                    }
+
+                    @Override
+                    public Streamable<T> next() {
+                        if (index == -1) {
+                            index++;
+                            return AdvancedStream.this;
+                        }
+                        return others[index++];
+                    }
+                })
+                .as(JavaStream.type())
+                .flatMap(Function.identity())
+                .as(AdvancedStream.type());
     }
 
     default AdvancedStream<T> flatMapMulti(BiConsumer<? super T, ? super Consumer<Iterable<T>>> mapper) {
