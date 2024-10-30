@@ -1,6 +1,7 @@
 package de.yoyosource.streamable.impl;
 
 import de.yoyosource.streamable.Streamable;
+import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 
 import java.util.*;
@@ -325,6 +326,23 @@ public interface AdvancedStream<T> extends Streamable<T> {
 
             @Override
             public void finish(Consumer<Iterable<T>> next) {
+            }
+        });
+    }
+
+    default Set<T> toSet() {
+        return collect(new StreamableCollector<>() {
+            private Set<T> elements = new HashSet<>();
+
+            @Override
+            public boolean apply(T input) {
+                elements.add(input);
+                return false;
+            }
+
+            @Override
+            public Set<T> finish() {
+                return elements;
             }
         });
     }

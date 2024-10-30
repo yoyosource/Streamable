@@ -10,6 +10,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 public interface Streamable<T> extends Iterable<T> {
+
     static <T> Streamable<T> empty() {
         return StreamableManager.from(Collections.emptyIterator());
     }
