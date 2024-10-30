@@ -301,7 +301,8 @@ public interface AdvancedStream<T> extends Streamable<T> {
                         return others[index++];
                     }
                 })
-                .flatGather(new StreamableGatherer<Streamable<T>, Iterable<T>>() {
+                .as(AdvancedStream.type())
+                .flatGather(new StreamableGatherer<>() {
                     @Override
                     public boolean apply(Streamable<T> input, Consumer<Iterable<T>> next) {
                         next.accept(input);
@@ -311,8 +312,7 @@ public interface AdvancedStream<T> extends Streamable<T> {
                     @Override
                     public void finish(Consumer<Iterable<T>> next) {
                     }
-                })
-                .as(AdvancedStream.type());
+                });
     }
 
     default AdvancedStream<T> flatMapMulti(BiConsumer<? super T, ? super Consumer<Iterable<T>>> mapper) {
