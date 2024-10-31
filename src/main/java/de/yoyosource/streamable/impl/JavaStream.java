@@ -429,6 +429,23 @@ public interface JavaStream<T> extends Streamable<T> {
         return findFirst();
     }
 
+    default Optional<T> findLast() {
+        return collect(new StreamableCollector<>() {
+            private T current = null;
+
+            @Override
+            public boolean apply(T input) {
+                current = input;
+                return false;
+            }
+
+            @Override
+            public Optional<T> finish() {
+                return Optional.ofNullable(current);
+            }
+        });
+    }
+
     default JavaStream<T> onClose(Runnable action) {
         return gather(new StreamableGatherer<>() {
             @Override
