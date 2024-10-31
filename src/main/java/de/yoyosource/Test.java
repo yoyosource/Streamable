@@ -271,4 +271,14 @@ public class Test {
                 .min()
                 .ifPresent(System.out::println);
     }
+
+    public static void testScanStream() {
+        Streamable.iterate(BigInteger.ONE, bigInteger -> bigInteger.add(BigInteger.ONE))
+                .as(AdvancedStream.type())
+                .scan(BigInteger::add)
+                .as(JavaStream.type())
+                .limit(1000)
+                .findLast()
+                .ifPresent(System.out::println);
+    }
 }
