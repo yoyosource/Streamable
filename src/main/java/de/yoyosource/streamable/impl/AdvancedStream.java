@@ -346,4 +346,28 @@ public interface AdvancedStream<T> extends Streamable<T> {
             }
         });
     }
+
+    default AdvancedStream<T> scan(BiFunction<T, T, T> accumulator) {
+        return gather(new StreamableGatherer<>() {
+            private boolean first = true;
+            private T current;
+
+            @Override
+            public boolean apply(T input, Consumer<T> next) {
+                if (first) {
+                    current = input;
+                    next.accept(input);
+                    first = false;
+                } else {
+                    current = accumulator.apply(current, input);
+                    next.accept(current);
+                }
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<T> next) {
+            }
+        });
+    }
 }
