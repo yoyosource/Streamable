@@ -5,6 +5,7 @@ import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.impl.*;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -137,7 +138,7 @@ public class Test {
                 .as(TryingStream.type())
                 .tryIt(Integer::parseInt)
                 .tryIt(integer -> integer / (integer - 1))
-                .keepSuccesssfulAndUnwrap()
+                .keepAndUnwrap(TryedStream.successful())
                 .forEach(System.out::println);
     }
 
