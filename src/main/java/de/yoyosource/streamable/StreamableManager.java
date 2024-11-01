@@ -62,6 +62,7 @@ public class StreamableManager {
         }
 
         private boolean apply(List<Pair<Iterator, Integer>> iterators, Object o, int index, boolean runFinished, StreamableCollector collector) {
+            // Run Collector if last apply in chain
             if (index >= gatherers.size()) {
                 if (collector.apply(o)) {
                     iterators.clear();
@@ -70,11 +71,15 @@ public class StreamableManager {
                     return false;
                 }
             }
+
             int removeUntil = iterators.size();
+            // 'ignoreRest' meaning that any further elements should be ignored set by subsequent apply calls.
             AtomicBoolean ignoreRest = new AtomicBoolean(false);
             Pair<StreamableGatherer, Boolean> pair = gatherers.get(index);
+            // 'finished’ meaning that no more values should be accepted after this element from previous iterators
             boolean finished = pair.first.apply(o, next -> {
                 if (ignoreRest.get()) return;
+                // 'pair.second' denoting if this is a flatGather instead of a gather
                 if (pair.second) {
                     iterators.add(removeUntil, new Pair<>(((Iterable) next).iterator(), index + 1));
                 } else {
@@ -83,21 +88,26 @@ public class StreamableManager {
                     }
                 }
             });
-            if (finished || runFinished) {
-                if (finished) {
-                    for (int i = removeUntil - 1; i >= 0; i--) {
-                        iterators.remove(i);
-                    }
-                }
 
+            // If the current gatherer says, that no previous iterators should be evaluated they will be removed
+            if (finished) {
+                for (int i = removeUntil - 1; i >= 0; i--) {
+                    iterators.remove(i);
+                }
+            }
+
+            if (finished || runFinished) {
+                AtomicBoolean isFinished = new AtomicBoolean(false);
                 for (int i = index; i < gatherers.size(); i++) {
-                    AtomicBoolean isFinished = new AtomicBoolean(false);
                     ignoreRest.set(false);
                     final int finalI = i;
                     int iteratorIndex = iterators.size();
+
+                    // Run finish methods of every gatherer
                     gatherers.get(finalI).first.finish(next -> {
                         isFinished.set(true);
                         if (ignoreRest.get()) return;
+                        // 'pair.second' denoting if this is a flatGather instead of a gather
                         if (pair.second) {
                             iterators.add(iteratorIndex, new Pair<>(((Iterable) o).iterator(), finalI + 1));
                         } else {
@@ -106,6 +116,10 @@ public class StreamableManager {
                             }
                         }
                     });
+
+                    // If any elements were produced by the finish method no more gatherers needs to be run,
+                    // either because they were called by the recursive apply method
+                    // or because a new iterator is now present to be evaluated next.
                     if (isFinished.get()) break;
                 }
             }

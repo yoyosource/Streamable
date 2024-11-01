@@ -14,13 +14,13 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E
     }
 
     abstract class Option<T, E extends Throwable, R> {
-        protected abstract boolean test(Try<T, E> toTest);
+        protected abstract boolean check(Try<T, E> toCheck);
         protected abstract R unwrap(Try<T, E> toUnwrap);
 
         private static Option<?, ?, ?> SUCCESSFUL = new Option<>() {
             @Override
-            public boolean test(Try<Object, Throwable> toTest) {
-                return toTest.successful();
+            public boolean check(Try<Object, Throwable> toCheck) {
+                return toCheck.successful();
             }
 
             @Override
@@ -31,8 +31,8 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E
 
         private static Option<?, ?, ?> FAILED = new Option<>() {
             @Override
-            public boolean test(Try<Object, Throwable> toTest) {
-                return toTest.failed();
+            public boolean check(Try<Object, Throwable> toCheck) {
+                return toCheck.failed();
             }
 
             @Override
@@ -56,7 +56,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E
         return gather(new StreamableGatherer<>() {
             @Override
             public boolean apply(Try<T, E> input, Consumer<Try<T, E>> next) {
-                if (option.test(input)) next.accept(input);
+                if (option.check(input)) next.accept(input);
                 return false;
             }
 
@@ -88,7 +88,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E
         return gather(new StreamableGatherer<>() {
             @Override
             public boolean apply(Try<T, E> input, Consumer<Try<T, E>> next) {
-                if (option.test(input)) consumer.accept(option.unwrap(input));
+                if (option.check(input)) consumer.accept(option.unwrap(input));
                 next.accept(input);
                 return false;
             }
