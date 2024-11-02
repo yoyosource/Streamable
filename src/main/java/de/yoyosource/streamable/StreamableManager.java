@@ -182,7 +182,9 @@ public class StreamableManager {
                 @Override
                 public Object next() {
                     Object temp = values.remove(0);
-                    generateNext();
+                    if (values.isEmpty()) {
+                        generateNext();
+                    }
                     return temp;
                 }
             };

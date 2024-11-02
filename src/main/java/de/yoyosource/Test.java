@@ -90,6 +90,13 @@ public class Test {
                 .flatMap(d -> Streamable.from(Stream.generate(Math::random)))
                 .limit(10)
                 .flatMap(d -> Streamable.from(Stream.of(d, d, d, d, d)))
+                .mapMulti((aDouble, consumer) -> {
+                    consumer.accept(aDouble);
+                    consumer.accept(aDouble);
+                    consumer.accept(aDouble);
+                    consumer.accept(aDouble);
+                    consumer.accept(aDouble);
+                })
                 .iterator()
                 .forEachRemaining(aDouble -> {
                     count.incrementAndGet();
