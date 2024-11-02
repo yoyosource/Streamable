@@ -7,8 +7,26 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class StreamableManager {
+
+    private StreamableManager() {
+        throw new IllegalStateException("Utility class");
+    }
+
+    private static final StreamableGatherer NOOP_GATHERER = new StreamableGatherer() {
+        @Override
+        public boolean apply(Object input, Consumer next) {
+            next.accept(input);
+            return false;
+        }
+
+        @Override
+        public void finish(Consumer next) {
+
+        }
+    };
 
     private static class Pair<A, B> {
         private final A first;
@@ -127,7 +145,8 @@ public class StreamableManager {
         }
 
         private Iterator<Object> iterator() {
-            if (gatherers.isEmpty()) return iterator;
+            if (gatherers.size() <= 1) return iterator;
+
             return new Iterator<>() {
                 private List<Pair<Iterator, Integer>> iterators = new ArrayList<>();
 
@@ -202,15 +221,20 @@ public class StreamableManager {
                 return clazz.getTypeName() + "@" + System.identityHashCode(proxy);
             }
             if (layer != streamData.gatherers.size()) {
-                throw new IllegalArgumentException("This Streamable is already mutated. You cannot add another operation on this instance.");
+                throw new IllegalStateException("This Streamable is already mutated. You cannot add another operation on this instance.");
             }
             if (method.isDefault()) {
                 return InvocationHandler.invokeDefault(proxy, method, args);
             }
 
+            // Methods of Iterable
             if (is(method, "iterator")) {
+                // Forcing a mutation so that subsequent calls will result in an IllegalStateException
+                streamData.gatherers.add(new Pair<>(NOOP_GATHERER, false));
                 return streamData.iterator();
             }
+
+            // Methods of Streamable
             if (is(method, "as", Class.class)) {
                 Class<S> type = (Class<S>) args[0];
                 if (type.isInstance(proxy)) return proxy;
