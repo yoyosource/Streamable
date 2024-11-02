@@ -9,6 +9,10 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+/**
+ *
+ * @param <T>
+ */
 public interface Streamable<T> extends Iterable<T> {
 
     static <T> Streamable<T> empty() {
@@ -65,6 +69,10 @@ public interface Streamable<T> extends Iterable<T> {
 
     static <T> Streamable<T> from(Iterator<T> iterator) {
         return StreamableManager.from(iterator);
+    }
+
+    static <T> Class<Streamable<T>> type() {
+        return (Class<Streamable<T>>) (Class) Streamable.class;
     }
 
     <R, S extends Streamable<R>> S gather(StreamableGatherer<? super T, R> gatherer);

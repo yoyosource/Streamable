@@ -67,7 +67,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E
     }
 
     default <U> Streamable<U> unwrap(Option<T, E, U> option) {
-        return gather(new StreamableGatherer<>() {
+        return gather(new StreamableGatherer<Try<T, E>, U>() {
             @Override
             public boolean apply(Try<T, E> input, Consumer<U> next) {
                 next.accept(option.unwrap(input));
@@ -77,7 +77,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E
             @Override
             public void finish(Consumer<U> next) {
             }
-        });
+        }).as(Streamable.type());
     }
 
     default <U> Streamable<U> keepAndUnwrap(Option<T, E, U> option) {

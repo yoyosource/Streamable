@@ -8,6 +8,7 @@ import de.yoyosource.streamable.impl.*;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -288,5 +289,13 @@ public class Test {
                 .limit(1000)
                 .findLast()
                 .ifPresent(System.out::println);
+    }
+
+    public static void testOptionalStream() {
+        Streamable.of(Optional.of(0))
+                .as(OptionalStream.type())
+                .isPresent()
+                .get()
+                .forEach(System.out::println);
     }
 }
