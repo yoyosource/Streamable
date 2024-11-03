@@ -370,4 +370,122 @@ public interface AdvancedStream<T> extends Streamable<T> {
             }
         });
     }
+
+    default AdvancedStream<T> drop(long n) {
+        return drop(n, 0);
+    }
+
+    default AdvancedStream<T> drop(long n, long offset) {
+        if (n < 0) {
+            throw new IllegalArgumentException("n must be a positive number");
+        }
+        if (offset >= n) {
+            throw new IllegalArgumentException("offset must be a positive number");
+        }
+        return gather(new StreamableGatherer<>() {
+            private long dropCount = offset;
+
+            @Override
+            public boolean apply(T input, Consumer<T> next) {
+                if (dropCount-- == 0) {
+                    dropCount = n - 1;
+                    if (dropCount == 0) return true;
+                } else {
+                    next.accept(input);
+                }
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<T> next) {
+            }
+        });
+    }
+
+    default AdvancedStream<T> keep(long n) {
+        return keep(n, 0);
+    }
+
+    default AdvancedStream<T> keep(long n, long offset) {
+        if (n < 0) {
+            throw new IllegalArgumentException("n must be a positive number");
+        }
+        if (offset >= n) {
+            throw new IllegalArgumentException("offset must be a positive number");
+        }
+        return gather(new StreamableGatherer<>() {
+            private long dropCount = offset;
+
+            @Override
+            public boolean apply(T input, Consumer<T> next) {
+                if (dropCount-- == 0) {
+                    next.accept(input);
+                    dropCount = n - 1;
+                }
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<T> next) {
+            }
+        });
+    }
+
+    default AdvancedStream<Map.Entry<T, Long>> consecutiveElementCount() {
+        return consecutiveElementCountBy(Objects::equals);
+    }
+
+    default AdvancedStream<Map.Entry<T, Long>> consecutiveElementCountBy(BiPredicate<? super T, ? super T> equality) {
+        return gather(new StreamableGatherer<>() {
+            private boolean first = true;
+            private T element;
+            private long count;
+
+            @Override
+            public boolean apply(T input, Consumer<Map.Entry<T, Long>> next) {
+                if (first) {
+                    element = input;
+                    count = 1;
+                    first = false;
+                } else {
+                    if (equality.test(element, input)) {
+                        count++;
+                    } else {
+                        next.accept(Map.entry(element, count));
+                        element = input;
+                        count = 1;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<Map.Entry<T, Long>> next) {
+                if (first) return;
+                next.accept(Map.entry(element, count));
+
+                element = null;
+                first = true;
+                count = 0;
+            }
+        });
+    }
+
+    default AdvancedStream<List<T>> allElements() {
+        return gather(new StreamableGatherer<>() {
+            private List<T> elements = new ArrayList<>();
+
+            @Override
+            public boolean apply(T input, Consumer<List<T>> next) {
+                elements.add(input);
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<List<T>> next) {
+                next.accept(new ArrayList<>(elements));
+                elements.clear();
+            }
+        });
+    }
 }

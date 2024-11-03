@@ -17,7 +17,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E
         protected abstract boolean check(Try<T, E> toCheck);
         protected abstract R unwrap(Try<T, E> toUnwrap);
 
-        private static Option<?, ?, ?> SUCCESSFUL = new Option<>() {
+        private static final Option<?, ?, ?> SUCCESSFUL = new Option<>() {
             @Override
             public boolean check(Try<Object, Throwable> toCheck) {
                 return toCheck.successful();
@@ -29,7 +29,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E
             }
         };
 
-        private static Option<?, ?, ?> FAILED = new Option<>() {
+        private static final Option<?, ?, ?> FAILED = new Option<>() {
             @Override
             public boolean check(Try<Object, Throwable> toCheck) {
                 return toCheck.failed();

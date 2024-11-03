@@ -6,10 +6,7 @@ import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.impl.*;
 
 import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -17,21 +14,26 @@ import java.util.stream.Stream;
 public class Test {
 
     public static void main(String[] args) {
-        testSimpleForEach();
-        testGroupBy();
-        testIteratorAfterFlatMap();
-        testCountAfterFlatMap();
-        testCount();
-        testMapMulti();
-        testTry();
-        testFindFirst();
-        testSlidingWindow();
-        testFixedWindow();
-        testExplodingFlatMap();
+        // testSimpleForEach();
+        // testGroupBy();
+        // testIteratorAfterFlatMap();
+        // testCountAfterFlatMap();
+        // testCount();
+        // testMapMulti();
+        // testTry();
+        // testFindFirst();
+        // testSlidingWindow();
+        // testFixedWindow();
+        // testExplodingFlatMap();
         // testPrimeGenerator();
         // testDoubleMutate();
-        testStreamConcat();
-        testComparableStream();
+        // testStreamConcat();
+        // testComparableStream();
+        // testOptionalStream();
+        // testFactorialUsingStreamable(); // 358018
+        // testFactorialUsingStreamSequential(); // 352671
+        // testFactorialUsingStreamParallel(); // 15795
+        testTrySplit();
 
         if (true) return;
 
@@ -297,5 +299,50 @@ public class Test {
                 .isPresent()
                 .get()
                 .forEach(System.out::println);
+    }
+
+    public static void testFactorialUsingStreamable() {
+        long time = System.currentTimeMillis();
+        Optional<BigInteger> result = Streamable.iterate(BigInteger.ONE, l -> l.add(BigInteger.ONE))
+                .as(JavaStream.type())
+                .limit(1_000_000)
+                .reduce(BigInteger::multiply);
+        time = System.currentTimeMillis() - time;
+        System.out.println(result + " " + time);
+    }
+
+    public static void testFactorialUsingStreamSequential() {
+        long time = System.currentTimeMillis();
+        Optional<BigInteger> result = Stream.iterate(BigInteger.ONE, l -> l.add(BigInteger.ONE))
+                .limit(1_000_000)
+                .reduce(BigInteger::multiply);
+        time = System.currentTimeMillis() - time;
+        System.out.println(result + " " + time);
+    }
+
+    public static void testFactorialUsingStreamParallel() {
+        long time = System.currentTimeMillis();
+        Optional<BigInteger> result = Stream.iterate(BigInteger.ONE, l -> l.add(BigInteger.ONE))
+                .parallel()
+                .limit(1_000_000)
+                .reduce(BigInteger::multiply);
+        time = System.currentTimeMillis() - time;
+        System.out.println(result + " " + time);
+    }
+
+    public static void testTrySplit() {
+        Spliterator<Long> spliterator = Streamable.iterate(1l, l -> l + 1)
+                .as(JavaStream.type())
+                .limit(1_000_000)
+                .spliterator();
+        List<Spliterator<Long>> splits = new ArrayList<>();
+        while (true) {
+            Spliterator<Long> other = spliterator.trySplit();
+            if (other == null) break;
+            splits.add(other);
+            if (splits.size() >= Runtime.getRuntime().availableProcessors() - 1) break;
+        }
+        splits.add(spliterator);
+        System.out.println(splits.size());
     }
 }

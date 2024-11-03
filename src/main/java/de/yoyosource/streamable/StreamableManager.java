@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,7 +29,7 @@ public class StreamableManager {
         }
     };
 
-    private static class Pair<A, B> {
+    private static final class Pair<A, B> {
         private final A first;
         private final B second;
 
@@ -47,6 +48,9 @@ public class StreamableManager {
     }
 
     private static class StreamData {
+        private final Object lock = new Object();
+        private boolean evaluated;
+
         private final Iterator iterator;
         private List<Pair<StreamableGatherer, Boolean>> gatherers = new ArrayList<>();
 
@@ -55,6 +59,13 @@ public class StreamableManager {
         }
 
         private Object run(StreamableCollector collector) {
+            synchronized (lock) {
+                if (evaluated) {
+                    throw new IllegalStateException("Streamable is already evaluated");
+                }
+                evaluated = true;
+            }
+
             List<Pair<Iterator, Integer>> iterators = new ArrayList<>();
             iterators.add(new Pair<>(iterator, 0));
 
@@ -110,7 +121,7 @@ public class StreamableManager {
             // If the current gatherer says, that no previous iterators should be evaluated they will be removed
             if (finished) {
                 for (int i = removeUntil - 1; i >= 0; i--) {
-                    iterators.remove(i);
+                    iterators.set(i, new Pair<>(Collections.emptyIterator(), iterators.get(i).second));
                 }
             }
 
@@ -121,12 +132,14 @@ public class StreamableManager {
                     final int finalI = i;
                     int iteratorIndex = iterators.size();
 
+                    Pair<StreamableGatherer, Boolean> finishPair = gatherers.get(finalI);
+
                     // Run finish methods of every gatherer
-                    gatherers.get(finalI).first.finish(next -> {
+                    finishPair.first.finish(next -> {
                         isFinished.set(true);
                         if (ignoreRest.get()) return;
                         // 'pair.second' denoting if this is a flatGather instead of a gather
-                        if (pair.second) {
+                        if (finishPair.second) {
                             iterators.add(iteratorIndex, new Pair<>(((Iterable) o).iterator(), finalI + 1));
                         } else {
                             if (apply(iterators, next, finalI + 1, true, collector)) {
@@ -145,7 +158,16 @@ public class StreamableManager {
         }
 
         private Iterator<Object> iterator() {
-            if (gatherers.size() <= 1) return iterator;
+            synchronized (lock) {
+                if (evaluated) {
+                    throw new IllegalStateException("Streamable is already evaluated");
+                }
+                evaluated = true;
+            }
+
+            if (gatherers.size() == 1) {
+                return iterator;
+            }
 
             return new Iterator<>() {
                 private List<Pair<Iterator, Integer>> iterators = new ArrayList<>();

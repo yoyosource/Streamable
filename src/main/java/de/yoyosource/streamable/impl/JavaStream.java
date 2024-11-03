@@ -235,7 +235,7 @@ public interface JavaStream<T> extends Streamable<T> {
                 if (current == null) {
                     current = input;
                 } else {
-                    accumulator.apply(current, input);
+                    current = accumulator.apply(current, input);
                 }
                 return false;
             }

@@ -9,7 +9,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-interface OptionalBaseStream<T> extends Streamable<Optional<T>> {
+public interface OptionalBaseStream<T> extends Streamable<Optional<T>> {
 
     private static <T> Class<OptionalPresentStream<T>> presentType() {
         return (Class<OptionalPresentStream<T>>) (Class) OptionalPresentStream.class;
