@@ -3,11 +3,17 @@ package de.yoyosource;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
+import de.yoyosource.streamable.StreamableManager;
 import de.yoyosource.streamable.impl.*;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -133,7 +139,7 @@ public class Test {
     private static void testMapMulti() {
         long count = Streamable.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 .as(JavaStream.type())
-                .<Integer>mapMulti((integer, consumer) -> {
+                .<Integer> mapMulti((integer, consumer) -> {
                     consumer.accept(integer);
                     consumer.accept(integer);
                     consumer.accept(integer);
@@ -331,18 +337,61 @@ public class Test {
     }
 
     public static void testTrySplit() {
-        Spliterator<Long> spliterator = Streamable.iterate(1l, l -> l + 1)
+        /*
+        long time = System.currentTimeMillis();
+
+        Spliterator<BigInteger> spliterator = Streamable.iterate(BigInteger.ONE, l -> l.add(BigInteger.ONE))
                 .as(JavaStream.type())
                 .limit(1_000_000)
                 .spliterator();
-        List<Spliterator<Long>> splits = new ArrayList<>();
+
+        List<StreamableManager.Pair<Spliterator<BigInteger>, Integer>> splits = new ArrayList<>();
         while (true) {
-            Spliterator<Long> other = spliterator.trySplit();
+            Spliterator<BigInteger> other = spliterator.trySplit();
             if (other == null) break;
-            splits.add(other);
-            if (splits.size() >= Runtime.getRuntime().availableProcessors() - 1) break;
+            splits.add(new StreamableManager.Pair<>(other, splits.size()));
+            if (splits.size() > Runtime.getRuntime().availableProcessors() * 10) {
+                splits.add(new StreamableManager.Pair<>(spliterator, splits.size()));
+                break;
+            }
         }
-        splits.add(spliterator);
-        System.out.println(splits.size());
+
+        Map<Integer, BigInteger> results = new HashMap<>();
+        ExecutorService executorService = Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
+        for (StreamableManager.Pair<Spliterator<BigInteger>, Integer> other : splits) {
+            executorService.execute(() -> {
+                AtomicReference<BigInteger> reference = new AtomicReference<>();
+                other.first.forEachRemaining(bigInteger -> {
+                    if (reference.get() == null) {
+                        reference.set(bigInteger);
+                    } else {
+                        reference.set(reference.get().multiply(bigInteger));
+                    }
+                });
+                // System.out.println("Finished: " + other.first + " " + reference.get().bitLength());
+                results.put(other.second, reference.get());
+            });
+        }
+
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(1, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+        }
+
+        AtomicReference<BigInteger> reference = new AtomicReference<>();
+        results.keySet().stream().sorted().forEach(integer -> {
+            BigInteger bigInteger = results.get(integer);
+            if (reference.get() == null) {
+                reference.set(bigInteger);
+            } else {
+                reference.set(reference.get().multiply(bigInteger));
+            }
+        });
+
+        time = System.currentTimeMillis() - time;
+        System.out.println("Finished: " + reference.get().bitLength() + " " + time);
+         */
     }
 }
