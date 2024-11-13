@@ -6,7 +6,10 @@ import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.impl.*;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -123,7 +126,7 @@ public class Test {
                 .as(JavaStream.type())
                 .limit(10000)
                 .as(AdvancedStream.type())
-                .count()
+                .counts()
                 .as(JavaStream.type())
                 .flatMap(Map::entrySet)
                 .limit(10)
@@ -331,18 +334,61 @@ public class Test {
     }
 
     public static void testTrySplit() {
-        Spliterator<Long> spliterator = Streamable.iterate(1l, l -> l + 1)
+        /*
+        long time = System.currentTimeMillis();
+
+        Spliterator<BigInteger> spliterator = Streamable.iterate(BigInteger.ONE, l -> l.add(BigInteger.ONE))
                 .as(JavaStream.type())
                 .limit(1_000_000)
                 .spliterator();
-        List<Spliterator<Long>> splits = new ArrayList<>();
+
+        List<StreamableManager.Pair<Spliterator<BigInteger>, Integer>> splits = new ArrayList<>();
         while (true) {
-            Spliterator<Long> other = spliterator.trySplit();
+            Spliterator<BigInteger> other = spliterator.trySplit();
             if (other == null) break;
-            splits.add(other);
-            if (splits.size() >= Runtime.getRuntime().availableProcessors() - 1) break;
+            splits.add(new StreamableManager.Pair<>(other, splits.size()));
+            if (splits.size() > Runtime.getRuntime().availableProcessors() * 10) {
+                splits.add(new StreamableManager.Pair<>(spliterator, splits.size()));
+                break;
+            }
         }
-        splits.add(spliterator);
-        System.out.println(splits.size());
+
+        Map<Integer, BigInteger> results = new HashMap<>();
+        ExecutorService executorService = Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
+        for (StreamableManager.Pair<Spliterator<BigInteger>, Integer> other : splits) {
+            executorService.execute(() -> {
+                AtomicReference<BigInteger> reference = new AtomicReference<>();
+                other.first.forEachRemaining(bigInteger -> {
+                    if (reference.get() == null) {
+                        reference.set(bigInteger);
+                    } else {
+                        reference.set(reference.get().multiply(bigInteger));
+                    }
+                });
+                // System.out.println("Finished: " + other.first + " " + reference.get().bitLength());
+                results.put(other.second, reference.get());
+            });
+        }
+
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(1, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+        }
+
+        AtomicReference<BigInteger> reference = new AtomicReference<>();
+        results.keySet().stream().sorted().forEach(integer -> {
+            BigInteger bigInteger = results.get(integer);
+            if (reference.get() == null) {
+                reference.set(bigInteger);
+            } else {
+                reference.set(reference.get().multiply(bigInteger));
+            }
+        });
+
+        time = System.currentTimeMillis() - time;
+        System.out.println("Finished: " + reference.get().bitLength() + " " + time);
+         */
     }
 }

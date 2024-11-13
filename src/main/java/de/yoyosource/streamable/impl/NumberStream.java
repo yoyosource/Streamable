@@ -51,6 +51,52 @@ public interface NumberStream<T extends Number> extends Streamable<T> {
         });
     }
 
+    default Optional<T> product() {
+        return collect(new StreamableCollector<>() {
+            private T value;
+
+            @Override
+            public boolean apply(T input) {
+                if (value == null) {
+                    value = input;
+                    return false;
+                }
+
+                if (value instanceof Byte) {
+                    value = (T) (Object) ((Byte) value * (Byte) input);
+                    if (value == (Byte) (byte) 0) return true;
+                } else if (value instanceof Short) {
+                    value = (T) (Object) ((Short) value * (Short) input);
+                    if (value == (Short) (short) 0) return true;
+                } else if (value instanceof Integer) {
+                    value = (T) (Object) ((Integer) value * (Integer) input);
+                    if (value == (Integer) 0) return true;
+                } else if (value instanceof Long) {
+                    value = (T) (Object) ((Long) value * (Long) input);
+                    if (value == (Long) 0L) return true;
+                } else if (value instanceof Float) {
+                    value = (T) (Object) ((Float) value * (Float) input);
+                    if (value == (Float) 0f) return true;
+                } else if (value instanceof Double) {
+                    value = (T) (Object) ((Double) value * (Double) input);
+                    if (value == (Double) 0d) return true;
+                } else if (value instanceof BigDecimal) {
+                    value = (T) (((BigDecimal) value).multiply((BigDecimal) input));
+                    if (value.equals(BigDecimal.ZERO)) return true;
+                } else if (value instanceof BigInteger) {
+                    value = (T) (((BigInteger) value).multiply((BigInteger) input));
+                    if (value.equals(BigInteger.ZERO)) return true;
+                }
+                return false;
+            }
+
+            @Override
+            public Optional<T> finish() {
+                return Optional.ofNullable(value);
+            }
+        });
+    }
+
     default Optional<T> min() {
         return collect(new StreamableCollector<>() {
             private T value;

@@ -199,11 +199,11 @@ public interface AdvancedStream<T> extends Streamable<T> {
         });
     }
 
-    default AdvancedStream<Map<T, Long>> count() {
-        return countBy(Function.identity());
+    default AdvancedStream<Map<T, Long>> counts() {
+        return countsBy(Function.identity());
     }
 
-    default <K> AdvancedStream<Map<K, Long>> countBy(Function<? super T, ? extends K> keyExtractor) {
+    default <K> AdvancedStream<Map<K, Long>> countsBy(Function<? super T, ? extends K> keyExtractor) {
         return gather(new StreamableGatherer<>() {
             private Map<K, Long> data = new HashMap<>();
 
