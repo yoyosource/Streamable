@@ -11,6 +11,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class SpliteratorExecutor {
 
+    private static final ThreadGroup threadGroup = new ThreadGroup("SpliteratorExecutor");
+
     private static final int maxThread = Runtime.getRuntime().availableProcessors() + 2;
 
     private static final Set<ManagedThread> activeThreads = Collections.synchronizedSet(new HashSet<>());
@@ -18,11 +20,11 @@ public class SpliteratorExecutor {
     private static final Queue<Spliterator<BigInteger>> spliteratorQueue = new ConcurrentLinkedQueue<>();
 
     static {
-        Thread thread = new Thread(() -> {
+        Thread thread = new Thread(threadGroup, () -> {
             while (true) {
                 if (spliteratorQueue.isEmpty()) continue;
                 if (activeThreads.size() + threadQueue.size() < maxThread && threadQueue.isEmpty()) {
-                    ManagedThread managedThread = new ManagedThread();
+                    ManagedThread managedThread = new ManagedThread(threadGroup, threadGroup.getName() + "-" + threadGroup.activeCount());
                     System.out.println(System.currentTimeMillis() + ": Create managed " + managedThread);
                     threadQueue.add(managedThread);
                 }
@@ -40,6 +42,10 @@ public class SpliteratorExecutor {
     }
 
     private static class ManagedThread extends Thread {
+
+        public ManagedThread(ThreadGroup group, String name) {
+            super(group, name);
+        }
 
         private final Object lock = new Object();
         private volatile Spliterator<BigInteger> spliterator;
