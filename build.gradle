@@ -5,8 +5,8 @@ plugins {
 group = 'de.yoyosource'
 version = '1.0-SNAPSHOT'
 
-sourceCompatibility = '1.17'
-targetCompatibility = '1.17'
+sourceCompatibility = 21
+targetCompatibility = 21
 
 repositories {
     mavenCentral()

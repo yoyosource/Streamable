@@ -488,4 +488,27 @@ public interface AdvancedStream<T> extends Streamable<T> {
             }
         });
     }
+
+    default <B> ZippedStream<T, B> zip(Streamable<B> streamable) {
+        return gather(new StreamableGatherer<>() {
+            private Iterator<B> iterator = streamable.iterator();
+
+            @Override
+            public boolean apply(T input, Consumer<ZippedStream.Zip<T, B>> next) {
+                if (iterator.hasNext()) {
+                    next.accept(new ZippedStream.Zip<>(input, iterator.next()));
+                } else {
+                    next.accept(new ZippedStream.Zip<>(input, null));
+                }
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<ZippedStream.Zip<T, B>> next) {
+                iterator.forEachRemaining(b -> {
+                    next.accept(new ZippedStream.Zip<>(null, b));
+                });
+            }
+        });
+    }
 }
