@@ -1,5 +1,10 @@
 package de.yoyosource.streamable3;
 
+import de.yoyosource.streamable3.internal.Element;
+import de.yoyosource.streamable3.internal.root.Root;
+import de.yoyosource.streamable3.internal.step.ParallelStep;
+import de.yoyosource.streamable3.internal.step.Step;
+
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,88 +30,74 @@ public class Main {
             strings.add(generateRandomString(10));
         }
 
-        List<Element.Value<String>> elements = new ArrayList<>();
-        long index = 0;
-        for (String s : strings) {
-            elements.add(new Element.Value<>(index++, s));
-        }
+        long time = System.currentTimeMillis();
+        String result = new Root(strings.iterator())
+                .setNext(0, new StreamableGatherer<String, AtomicLong, Long>() {
+                    @Override
+                    public AtomicLong container() {
+                        return new AtomicLong();
+                    }
 
-        StreamableGathererStep2 step = new StreamableGathererStep2(new StreamableGatherer<String, AtomicLong, Long>() {
-            @Override
-            public AtomicLong container() {
-                return new AtomicLong();
-            }
+                    @Override
+                    public boolean integrate(AtomicLong container, long index, String element, Consumer<? super Long> next) {
+                        try {
+                            Thread.sleep(RANDOM.nextInt(1000) + 500);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        container.incrementAndGet();
+                        // System.out.println("Element: " + element);
+                        return false;
+                    }
 
-            @Override
-            public boolean integrate(AtomicLong container, Element.Value<String> element, Consumer<? super Long> next) {
-                try {
-                    Thread.sleep(RANDOM.nextInt(1000) + 500);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                container.incrementAndGet();
-                // System.out.println("Element: " + element);
-                return false;
-            }
+                    @Override
+                    public AtomicLong combine(AtomicLong firstContainer, AtomicLong secondContainer) {
+                        firstContainer.addAndGet(secondContainer.get());
+                        return firstContainer;
+                    }
 
-            @Override
-            public AtomicLong combine(AtomicLong firstContainer, AtomicLong secondContainer) {
-                firstContainer.addAndGet(secondContainer.get());
-                return firstContainer;
-            }
+                    @Override
+                    public void finish(AtomicLong container, Consumer<? super Long> next) {
+                        next.accept(container.get());
+                    }
+                })
+                .setNext(1, new StreamableGatherer.Simple<Long, String>() {
+                    @Override
+                    public boolean integrate(long index, Long element, Consumer<? super String> next) {
+                        next.accept("Count: " + element);
+                        return false;
+                    }
 
-            @Override
-            public void finish(AtomicLong container, Consumer<? super Long> next) {
-                next.accept(container.get());
-            }
-        });
-        step.setNext(new StreamableGathererStep2(new StreamableGatherer<Long, Object, String>() {
-            @Override
-            public Object container() {
-                return null;
-            }
+                    @Override
+                    public void finish(Consumer<? super String> next) {
 
-            @Override
-            public boolean integrate(Object container, Element.Value<Long> element, Consumer<? super String> next) {
-                next.accept("Count: " + element.value());
-                return false;
-            }
+                    }
+                }).setNext(1, new StreamableGatherer.Simple<String, String>() {
+                    @Override
+                    public boolean integrate(long index, String element, Consumer<? super String> next) {
+                        if (index % 2 == 0) next.accept(element);
+                        return false;
+                    }
 
-            @Override
-            public Object combine(Object firstContainer, Object secondContainer) {
-                return null;
-            }
+                    @Override
+                    public void finish(Consumer<? super String> next) {
 
-            @Override
-            public void finish(Object container, Consumer<? super String> next) {
-            }
-        })).setNext(new StreamableGathererStep2(new StreamableGatherer<String, Object, String>() {
-            @Override
-            public Object container() {
-                return null;
-            }
+                    }
+                }).setNext(1, new StreamableCollector.Simple<String, String>() {
+                    @Override
+                    public boolean accumulate(long index, String element) {
+                        System.out.println(element);
+                        return true;
+                    }
 
-            @Override
-            public boolean integrate(Object container, Element.Value<String> element, Consumer<? super String> next) {
-                // System.out.println(element);
-                if (element.index() % 2 == 0) next.accept(element.value());
-                return false;
-            }
+                    @Override
+                    public String finish() {
+                        return "Hello World";
+                    }
+                });
+        time = System.currentTimeMillis() - time;
 
-            @Override
-            public Object combine(Object firstContainer, Object secondContainer) {
-                return null;
-            }
-
-            @Override
-            public void finish(Object container, Consumer<? super String> next) {
-
-            }
-        })).setNext(Step.Printer.INSTANCE);
-
-        elements.forEach(step::consume);
-        step.consume(new Element.Finish());
-
-        Thread.sleep(120_000);
+        System.out.println(result);
+        System.out.println("Evaluation took: " + time + "ms");
     }
 }

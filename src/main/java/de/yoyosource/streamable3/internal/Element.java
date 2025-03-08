@@ -1,4 +1,4 @@
-package de.yoyosource.streamable3;
+package de.yoyosource.streamable3.internal;
 
 public interface Element<T> {
 

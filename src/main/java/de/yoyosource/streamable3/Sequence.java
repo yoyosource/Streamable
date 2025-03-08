@@ -1,23 +1,9 @@
 package de.yoyosource.streamable3;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicLong;
 
-// Median: 158ms
-// Average: 248.73ms
-// Min: 16ms
-// Max: 2764ms
-// Total: 24873ms
-
-// Median: 150ms
-// Average: 222.59ms
-// Min: 16ms
-// Max: 1178ms
-// Total: 22259ms
 public class Sequence<T> implements Iterable<T>, Iterator<T> {
-
-    private final AtomicLong unreleasedInserter = new AtomicLong();
 
     private long index = -1;
     private Node<T> head;
@@ -28,24 +14,14 @@ public class Sequence<T> implements Iterable<T>, Iterator<T> {
     }
 
     public synchronized Inserter<T> inserter() {
-        unreleasedInserter.incrementAndGet();
         Node<T> current = tail;
         tail.next = new BreakerNode<>();
         tail = tail.next;
-        return new Inserter<>(current, unreleasedInserter);
+        return new Inserter<>(current);
     }
 
     public boolean isEmpty() {
-        try {
-            System.out.println(head.next.next.next.next);
-        } catch (Exception e) {
-
-        }
         return head.next == null;
-    }
-
-    public boolean hasUnreleasedInserter() {
-        return unreleasedInserter.get() > 0;
     }
 
     private ElementNode<T> _getNext() {
@@ -129,17 +105,15 @@ public class Sequence<T> implements Iterable<T>, Iterator<T> {
     }
 
     public static class Inserter<T> {
-        private final AtomicLong unreleasedInserter;
         private BreakerNode<T> first;
         private Node<T> current;
 
-        private Inserter(Node<T> current, AtomicLong unreleasedInserter) {
+        private Inserter(Node<T> current) {
             if (!(current instanceof Sequence.BreakerNode<T>)) {
                 throw new IllegalArgumentException("Inserter requires a Sequence.BreakerNode");
             }
             this.first = (Sequence.BreakerNode<T>) current;
             this.current = current;
-            this.unreleasedInserter = unreleasedInserter;
         }
 
         public synchronized Inserter<T> add(T value) {
@@ -154,7 +128,6 @@ public class Sequence<T> implements Iterable<T>, Iterator<T> {
             first.released = true;
             first = null;
             current = null;
-            unreleasedInserter.decrementAndGet();
         }
     }
 }
