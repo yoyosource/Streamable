@@ -8,13 +8,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class SequentialFinish extends Finish {
 
+    private volatile Thread thread = null;
+    private volatile boolean finished = false;
+
     private final Sequence<Element> sequence = new Sequence<>();
 
-    private volatile boolean finished = false;
     private boolean containerInitialized = false;
     private Object container = null;
-
-    private volatile Thread thread = null;
 
     public SequentialFinish(StreamableCollector collector) {
         super(collector);
@@ -28,16 +28,15 @@ public class SequentialFinish extends Finish {
         if (thread == null) {
             thread = new Thread(() -> {
                 while (!finished) {
-                    sequence.forEachRemaining(this::processElement);
+                    if (sequence.hasNext()) {
+                        processElement(sequence.next());
+                    }
                 }
-                sequence.forEachRemaining(this::processElement);
+
+                processElement(new Element.Finish());
             });
             thread.setDaemon(true);
             thread.start();
-        }
-
-        if (element instanceof Element.Finish<?>) {
-            finished = true;
         }
     }
 
@@ -50,12 +49,10 @@ public class SequentialFinish extends Finish {
         if (element instanceof Element.Value<?> value) {
             try {
                 if (collector.accumulate(container, value.index(), value.value())) {
-                    consume(new Element.Finish());
+                    finished = true;
                 }
             } catch (Throwable e) {
-                if (!finished) {
-                    consume(new Element.Finish());
-                }
+                finished = true;
             }
         } else {
             try {

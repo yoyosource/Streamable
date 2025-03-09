@@ -20,6 +20,10 @@ public class Root extends StreamableSupplier {
             iterator.forEachRemaining(o -> {
                 next.consume(new Element.Value(index++, o));
             });
+        } catch (Throwable e) {
+            // Ignore
+        }
+        try {
             next.consume(new Element.Finish());
         } catch (Throwable e) {
             // Ignore
