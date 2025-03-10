@@ -1,6 +1,6 @@
 package de.yoyosource.streamable3.internal.step;
 
-import de.yoyosource.streamable3.Sequence;
+import de.yoyosource.streamable3.internal.Sequence;
 import de.yoyosource.streamable3.StreamableGatherer;
 import de.yoyosource.streamable3.internal.Element;
 
