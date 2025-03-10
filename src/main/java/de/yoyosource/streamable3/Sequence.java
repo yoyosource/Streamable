@@ -1,11 +1,9 @@
 package de.yoyosource.streamable3;
 
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class Sequence<T> implements Iterable<T>, Iterator<T> {
 
-    private long index = -1;
     private Node<T> head;
     private Node<T> tail;
 
@@ -38,7 +36,6 @@ public class Sequence<T> implements Iterable<T>, Iterator<T> {
             return null;
         }
 
-        index++;
         head = head.next;
         return elementNode;
     }
@@ -65,10 +62,6 @@ public class Sequence<T> implements Iterable<T>, Iterator<T> {
         T value = current.value;
         current = null;
         return value;
-    }
-
-    public long index() {
-        return index;
     }
 
     private abstract static class Node<T> {

@@ -4,107 +4,175 @@ import de.yoyosource.streamable3.Sequence;
 import de.yoyosource.streamable3.StreamableGatherer;
 import de.yoyosource.streamable3.internal.Element;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 public class ParallelStep extends Step {
 
-    private static final Executor EXECUTOR = Executors.newFixedThreadPool(2000, runnable -> {
-        Thread thread = new Thread(runnable);
-        thread.setDaemon(true);
-        return thread;
-    });
+    private AtomicLong processing = new AtomicLong();
 
-    // Finish/Short Circuit is missing!
-    private final AtomicLong counter = new AtomicLong();
-    private final Sequence sequence = new Sequence();
+    private AtomicBoolean processingIntermediateResults = new AtomicBoolean();
 
-    private Map<Thread, Object> containers = Collections.synchronizedMap(new HashMap<>());
+    private final Queue<Element.Value<Consumer<Long>>> queue = new LinkedList<>();
+
+    private long finish = Integer.MAX_VALUE;
+    private long counter = 0;
+
+    private final Map<Long, Object> containers = new HashMap<>();
+
+    private final AtomicLong index = new AtomicLong();
+    private final Sequence results = new Sequence();
 
     public ParallelStep(StreamableGatherer streamableGatherer, int maxParallelTasks) {
         super(streamableGatherer);
+        if (maxParallelTasks == 0) {
+            throw new IllegalArgumentException("maxParallelTasks must be greater than 0");
+        }
+        for (int i = 0; i < maxParallelTasks; i++) {
+            new WorkerThread();
+        }
     }
 
     @Override
-    public synchronized void consume(Element element) {
+    public void consume(Element element) {
+        if (counter > finish) throw new IllegalStateException("This Stream Step is already finished!");
+
         if (element instanceof Element.Value<?> value) {
-            counter.incrementAndGet();
-            EXECUTOR.execute(() -> value(value, sequence.inserter()));
+            Sequence.Inserter result = results.inserter();
+            synchronized (queue) {
+                queue.add(new Element.Value<>(counter++, __ -> processValue(value, result)));
+            }
         } else if (element instanceof Element.Finish<?>) {
-            EXECUTOR.execute(() -> finish());
+            synchronized (queue) {
+                finish = Math.min(finish, counter);
+                queue.add(new Element.Value<>(counter++, new Finisher()));
+            }
         }
     }
 
-    private void value(Element.Value<?> value, Sequence.Inserter<Object> inserter) {
-        Object container = containers.computeIfAbsent(Thread.currentThread(), thread -> gatherer.container());
+    private final class Finisher implements Consumer<Long> {
+
+        @Override
+        public void accept(Long aLong) {
+            processFinish(aLong);
+        }
+
+        @Override
+        public String toString() {
+            return "Finisher{}";
+        }
+    }
+
+    private class WorkerThread extends Thread {
+
+        public WorkerThread() {
+            setDaemon(true);
+            start();
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                Element.Value<Consumer<Long>> value;
+                synchronized (queue) {
+                    if (queue.isEmpty()) continue;
+                    value = queue.poll();
+                }
+
+                if (value.index() > finish) continue;
+                processing.getAndIncrement();
+                value.value().accept(value.index());
+                processing.getAndDecrement();
+            }
+        }
+    }
+
+    private void processValue(Element.Value<?> element, Sequence.Inserter resultInserter) {
+        Object container;
+        synchronized (containers) {
+            container = containers.remove(element.index() - 1);
+        }
+        if (container == null) {
+            container = gatherer.container();
+        }
+
         try {
-            if (gatherer.integrate(container, value.index(), value.value(), o -> {
-                inserter.add(o);
+            if (gatherer.integrate(container, element.index(), element.value(), o -> {
+                resultInserter.add(o);
             })) {
-                consume(new Element.Finish());
+                if (element.index() < finish) {
+                    finish = Math.min(finish, element.index());
+                    synchronized (queue) {
+                        queue.add(new Element.Value<>(finish, new Finisher()));
+                    }
+                }
             }
         } catch (Throwable e) {
-            consume(new Element.Finish());
+            if (element.index() < finish) {
+                finish = Math.min(finish, element.index());
+                synchronized (queue) {
+                    queue.add(new Element.Value<>(finish, new Finisher()));
+                }
+            }
         } finally {
-            inserter.release();
-        }
+            resultInserter.release();
 
-        synchronized (sequence) {
-            for (Object o : sequence) {
-                next.consume(new Element.Value<>(sequence.index(), o));
+            synchronized (containers) {
+                if (finish >= element.index() && containers.containsKey(element.index() - 1)) {
+                    container = gatherer.combine(containers.remove(element.index() - 1), container);
+                }
+                containers.put(element.index(), container);
             }
         }
-        counter.decrementAndGet();
+
+        if (!processingIntermediateResults.compareAndSet(false, true)) {
+            for (Object o : results) {
+                if (index.get() > finish) continue;
+                next.consume(new Element.Value<>(index.getAndIncrement(), o));
+            }
+            processingIntermediateResults.set(false);
+        }
     }
 
-    private void finish() {
-        while (counter.get() > 0) {
+    private void processFinish(long finishIndex) {
+        while (processing.get() > 1) {
+            if (finishIndex > finish) return;
             Thread.yield();
         }
 
-        Iterator<Object> objects = containers.values().iterator();
-        Object current = null;
-        for (long i = 0; true; i++) {
-            if (!objects.hasNext()) {
-                if (i == 0) {
-                    next.consume(new Element.Finish());
-                    return;
-                } else {
-                    break;
-                }
-            }
-
-            Object next = objects.next();
-            if (i == 0) {
-                current = next;
-            } else {
-                current = gatherer.combine(current, next);
-            }
+        // Finish everything left in results!
+        processingIntermediateResults.set(true);
+        for (Object o : results) {
+            if (index.get() > finish) continue;
+            next.consume(new Element.Value<>(index.getAndIncrement(), o));
         }
 
-        Sequence.Inserter<Object> inserter = sequence.inserter();
+        // Combining all containers to create a single result container!
+        Queue<Element.Value<Object>> priorityQueue = new PriorityQueue<>(Comparator.comparingLong(Element.Value::index));
+        containers.forEach((aLong, o) -> {
+            if (aLong > finish) return;
+            priorityQueue.add(new Element.Value<>(1L, o));
+        });
+        while (priorityQueue.size() > 1) {
+            Element.Value<Object> first = priorityQueue.poll();
+            Element.Value<Object> second = priorityQueue.poll();
+
+            Object combined = gatherer.combine(first.value(), second.value());
+
+            priorityQueue.add(new Element.Value<>(first.index() + second.index(), combined));
+        }
+
+        // Finishing the gatherer
+        Object container = priorityQueue.poll().value();
         try {
-            gatherer.finish(current, o -> {
-                inserter.add(o);
+            gatherer.finish(container, o -> {
+                next.consume(new Element.Value<>(index.getAndIncrement(), o));
             });
         } catch (Throwable e) {
             // Ignore
-        } finally {
-            inserter.release();
         }
-
-        synchronized (sequence) {
-            while (!sequence.isEmpty()) {
-                for (Object o : sequence) {
-                    next.consume(new Element.Value<>(sequence.index(), o));
-                }
-            }
-            next.consume(new Element.Finish());
-        }
+        next.consume(new Element.Finish());
     }
 }

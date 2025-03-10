@@ -3,10 +3,8 @@ package de.yoyosource.streamable3.internal;
 import de.yoyosource.streamable3.StreamableCollector;
 import de.yoyosource.streamable3.StreamableGatherer;
 import de.yoyosource.streamable3.internal.finish.Finish;
-import de.yoyosource.streamable3.internal.finish.ParallelFinish;
 import de.yoyosource.streamable3.internal.finish.SequentialFinish;
 import de.yoyosource.streamable3.internal.root.Root;
-import de.yoyosource.streamable3.internal.step.FixedParallelStep;
 import de.yoyosource.streamable3.internal.step.ParallelStep;
 import de.yoyosource.streamable3.internal.step.SequentialStep;
 import de.yoyosource.streamable3.internal.step.Step;
@@ -24,7 +22,7 @@ public abstract class StreamableSupplier {
         if (maxParallelTasks == 1) {
             step = new SequentialStep(gatherer);
         } else {
-            step = new FixedParallelStep(gatherer, maxParallelTasks);
+            step = new ParallelStep(gatherer, maxParallelTasks);
         }
         step.root = root;
         next = step;
@@ -35,12 +33,16 @@ public abstract class StreamableSupplier {
         if (collector == null) {
             throw new IllegalArgumentException("Collector must not be null!");
         }
+        Finish toEvaluate;
         if (maxParallelTasks == 1) {
-            this.next = new SequentialFinish(collector);
+            toEvaluate = new SequentialFinish(collector);
+            this.next = toEvaluate;
         } else {
-            this.next = new ParallelFinish(collector, maxParallelTasks);
+            this.next = new ParallelStep(collector.toGatherer(), maxParallelTasks);
+            toEvaluate = new SequentialFinish(new StreamableCollector.First());
+            ((Step) this.next).next = toEvaluate;
         }
         root.evaluate();
-        return (R) ((Finish) this.next).waitForResult();
+        return (R) toEvaluate.waitForResult();
     }
 }
