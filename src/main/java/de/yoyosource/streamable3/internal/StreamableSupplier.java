@@ -6,6 +6,7 @@ import de.yoyosource.streamable3.internal.finish.Finish;
 import de.yoyosource.streamable3.internal.finish.ParallelFinish;
 import de.yoyosource.streamable3.internal.finish.SequentialFinish;
 import de.yoyosource.streamable3.internal.root.Root;
+import de.yoyosource.streamable3.internal.step.FixedParallelStep;
 import de.yoyosource.streamable3.internal.step.ParallelStep;
 import de.yoyosource.streamable3.internal.step.SequentialStep;
 import de.yoyosource.streamable3.internal.step.Step;
@@ -23,7 +24,7 @@ public abstract class StreamableSupplier {
         if (maxParallelTasks == 1) {
             step = new SequentialStep(gatherer);
         } else {
-            step = new ParallelStep(gatherer, maxParallelTasks);
+            step = new FixedParallelStep(gatherer, maxParallelTasks);
         }
         step.root = root;
         next = step;

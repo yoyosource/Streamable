@@ -23,13 +23,13 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         List<String> strings = new ArrayList<>();
-        for (int i = 0; i < 10_000; i++) {
+        for (int i = 0; i < 1_000_000; i++) {
             strings.add(generateRandomString(10));
         }
 
         long time = System.currentTimeMillis();
         String result = new Root(strings.iterator())
-                .setNext(1, new StreamableGatherer<String, AtomicLong, Long>() {
+                .setNext(0, new StreamableGatherer<String, AtomicLong, Long>() {
                     @Override
                     public AtomicLong container() {
                         return new AtomicLong();
@@ -37,13 +37,11 @@ public class Main {
 
                     @Override
                     public boolean integrate(AtomicLong container, long index, String element, Consumer<? super Long> next) {
-                        /*
                         try {
                             Thread.sleep(RANDOM.nextInt(1000) + 500);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                         }
-                         */
                         container.incrementAndGet();
                         // System.out.println("Element: " + element);
                         return false;
