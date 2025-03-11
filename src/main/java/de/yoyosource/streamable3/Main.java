@@ -58,21 +58,20 @@ public class Main {
                         next.accept(container.get());
                     }
                 })
-                .setNext(1, new StreamableGatherer.Simple<Long, String>() {
+                .setNext(1, new StreamableGatherer.Simple<Long, Iterable<String>>() {
                     @Override
-                    public boolean integrate(long index, Long element, Consumer<? super String> next) {
-                        next.accept("Count: " + element);
-                        next.accept("Count: " + element);
-                        next.accept("Count: " + element);
-                        next.accept("Count: " + element);
+                    public boolean integrate(long index, Long element, Consumer<? super Iterable<String>> next) {
+                        next.accept(List.of("Count: " + element, "Count: " + element, "Count: " + element, "Count: " + element));
                         return false;
                     }
 
                     @Override
-                    public void finish(Consumer<? super String> next) {
+                    public void finish(Consumer<? super Iterable<String>> next) {
 
                     }
-                }).setNext(1, new StreamableGatherer.Simple<String, String>() {
+                })
+                .setNext(1, (StreamableGatherer<String, Object, String>) null)
+                .setNext(1, new StreamableGatherer.Simple<String, String>() {
                     @Override
                     public boolean integrate(long index, String element, Consumer<? super String> next) {
                         if (index % 2 == 0) next.accept(element);

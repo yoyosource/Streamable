@@ -5,6 +5,7 @@ import de.yoyosource.streamable3.StreamableGatherer;
 import de.yoyosource.streamable3.internal.finish.Finish;
 import de.yoyosource.streamable3.internal.finish.SequentialFinish;
 import de.yoyosource.streamable3.internal.root.Root;
+import de.yoyosource.streamable3.internal.step.FlattenStep;
 import de.yoyosource.streamable3.internal.step.ParallelStep;
 import de.yoyosource.streamable3.internal.step.SequentialStep;
 import de.yoyosource.streamable3.internal.step.Step;
@@ -15,11 +16,10 @@ public abstract class StreamableSupplier {
     protected volatile StreamableConsumer next = null;
 
     public final <T, A, B> Step setNext(int maxParallelTasks, StreamableGatherer<T, A, B> gatherer) {
-        if (gatherer == null) {
-            throw new IllegalArgumentException("Gatherer must not be null!");
-        }
         Step step;
-        if (maxParallelTasks == 1) {
+        if (gatherer == null) {
+            step = new FlattenStep();
+        } else if (maxParallelTasks == 1) {
             step = new SequentialStep(gatherer);
         } else {
             step = new ParallelStep(gatherer, maxParallelTasks);
