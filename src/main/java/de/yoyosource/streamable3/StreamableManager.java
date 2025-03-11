@@ -1,8 +1,11 @@
 package de.yoyosource.streamable3;
 
 import de.yoyosource.streamable3.internal.StreamableSupplier;
+import de.yoyosource.streamable3.internal.finish.Finish;
 import de.yoyosource.streamable3.internal.root.Root;
+import sun.misc.Unsafe;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -10,6 +13,20 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 public class StreamableManager {
+
+    private static final Unsafe unsafe;
+
+    static {
+        try {
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            unsafe = (Unsafe) field.get(null);
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private StreamableManager() {
         throw new IllegalStateException("Utility class");
@@ -78,7 +95,14 @@ public class StreamableManager {
                 return proxy;
             }
             if (is(method, "collect", StreamableCollector.class)) {
-                return streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableCollector) args[0]);
+                Finish finish = streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableCollector) args[0]);
+                while (finish.getResult() == null) {
+                    if (streamData.root.getError() != null) {
+                        unsafe.throwException(streamData.root.getError());
+                    }
+                    Thread.yield();
+                }
+                return finish.getResult().get();
             }
 
             // Methods of sub classes

@@ -53,6 +53,7 @@ public class SequentialFinish extends Finish {
                     finished = true;
                 }
             } catch (Throwable e) {
+                root.setError(e);
                 finished = true;
             }
         } else {
@@ -60,6 +61,7 @@ public class SequentialFinish extends Finish {
                 Object result = collector.finish(container);
                 this.result = new AtomicReference<>(result);
             } catch (Throwable e) {
+                root.setError(e);
                 this.result = new AtomicReference<>(null);
             }
         }

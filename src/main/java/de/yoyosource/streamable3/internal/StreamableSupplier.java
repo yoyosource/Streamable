@@ -10,6 +10,8 @@ import de.yoyosource.streamable3.internal.step.ParallelStep;
 import de.yoyosource.streamable3.internal.step.SequentialStep;
 import de.yoyosource.streamable3.internal.step.Step;
 
+import java.lang.reflect.Field;
+
 public abstract class StreamableSupplier {
 
     protected volatile Root root = null;
@@ -33,7 +35,7 @@ public abstract class StreamableSupplier {
         return step;
     }
 
-    public final <T, A, R> R setNext(int maxParallelTasks, StreamableCollector<T, A, R> collector) {
+    public final <T, A, R> Finish setNext(int maxParallelTasks, StreamableCollector<T, A, R> collector) {
         if (this.next != null) {
             throw new IllegalStateException("Cannot add more than one next steps");
         }
@@ -51,6 +53,13 @@ public abstract class StreamableSupplier {
             ((Step) this.next).next = toEvaluate;
         }
         root.evaluate();
-        return (R) toEvaluate.waitForResult();
+        try {
+            Field field = Finish.class.getDeclaredField("root");
+            field.setAccessible(true);
+            field.set(toEvaluate, root);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            // Ignore
+        }
+        return toEvaluate;
     }
 }
