@@ -1,21 +1,27 @@
 package de.yoyosource.streamable3;
 
+import de.yoyosource.streamable3.impl.JavaStream;
+
+import java.util.Collections;
 import java.util.function.Consumer;
+
+import static de.yoyosource.streamable3.impl.JavaStream.JavaStream;
 
 public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
 
-    static <S extends Streamable<S, T>, T> Class<Streamable<S, T>> type() {
-        return (Class<Streamable<S, T>>) (Class) Streamable.class;
+    static <T> JavaStream<T> of(T element) {
+        return StreamableManager.from(Collections.singletonList(element).iterator())
+                .as(JavaStream());
     }
 
-    <S extends Streamable<S, T>> S as(Class<S> clazz);
+    <N extends Streamable<N, T>> N as(Class<N> clazz);
 
     S sequential();
     S parallel(int maxParallelism);
 
-    <R, A, S extends Streamable<S, R>> S gather(StreamableGatherer<? super T, A, R> gatherer);
-    // <R, A, S extends Streamable<S, R>> S flatGather(StreamableGatherer<? super T, A, Iterable<R>> gatherer);
-    <R, A> R collect(StreamableCollector<? super T, A, R> collector);
+    <R, C, N extends Streamable<N, R>> N gather(StreamableGatherer<? super T, C, R> gatherer);
+    <R, C, N extends Streamable<N, R>> N flatGather(StreamableGatherer<? super T, C, Iterable<R>> gatherer);
+    <R, C> R collect(StreamableCollector<? super T, C, R> collector);
 
     @Override
     default void forEach(Consumer<? super T> action) {

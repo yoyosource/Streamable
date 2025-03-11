@@ -1,5 +1,6 @@
 package de.yoyosource.streamable3.internal.finish;
 
+import de.yoyosource.streamable3.internal.FinishException;
 import de.yoyosource.streamable3.internal.Sequence;
 import de.yoyosource.streamable3.StreamableCollector;
 import de.yoyosource.streamable3.internal.Element;
@@ -22,7 +23,7 @@ public class SequentialFinish extends Finish {
 
     @Override
     public void consume(Element element) {
-        if (finished) throw new IllegalStateException("This Stream Finish is already finished!");
+        if (finished) throw new FinishException();
         sequence.inserter().add(element).release();
 
         if (thread == null) {

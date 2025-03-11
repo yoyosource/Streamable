@@ -16,6 +16,10 @@ public abstract class StreamableSupplier {
     protected volatile StreamableConsumer next = null;
 
     public final <T, A, B> Step setNext(int maxParallelTasks, StreamableGatherer<T, A, B> gatherer) {
+        if (this.next != null) {
+            throw new IllegalStateException("Cannot add more than one next steps");
+        }
+
         Step step;
         if (gatherer == null) {
             step = new FlattenStep();
@@ -30,6 +34,10 @@ public abstract class StreamableSupplier {
     }
 
     public final <T, A, R> R setNext(int maxParallelTasks, StreamableCollector<T, A, R> collector) {
+        if (this.next != null) {
+            throw new IllegalStateException("Cannot add more than one next steps");
+        }
+
         if (collector == null) {
             throw new IllegalArgumentException("Collector must not be null!");
         }

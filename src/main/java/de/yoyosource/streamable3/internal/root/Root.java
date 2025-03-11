@@ -1,6 +1,7 @@
 package de.yoyosource.streamable3.internal.root;
 
 import de.yoyosource.streamable3.internal.Element;
+import de.yoyosource.streamable3.internal.FinishException;
 import de.yoyosource.streamable3.internal.StreamableSupplier;
 
 import java.util.Iterator;
@@ -20,12 +21,8 @@ public class Root extends StreamableSupplier {
             iterator.forEachRemaining(o -> {
                 next.consume(new Element.Value(index++, o));
             });
-        } catch (Throwable e) {
-            // Ignore
-        }
-        try {
             next.consume(new Element.Finish());
-        } catch (Throwable e) {
+        } catch (FinishException e) {
             // Ignore
         }
     }

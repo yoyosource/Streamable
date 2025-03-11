@@ -1,5 +1,6 @@
 package de.yoyosource.streamable3.internal.step;
 
+import de.yoyosource.streamable3.internal.FinishException;
 import de.yoyosource.streamable3.internal.Sequence;
 import de.yoyosource.streamable3.StreamableGatherer;
 import de.yoyosource.streamable3.internal.Element;
@@ -37,7 +38,7 @@ public class ParallelStep extends Step {
 
     @Override
     public void consume(Element element) {
-        if (counter > finish) throw new IllegalStateException("This Stream Step is already finished!");
+        if (counter > finish) throw new FinishException();
 
         if (element instanceof Element.Value<?> value) {
             Sequence.Inserter result = results.inserter();
@@ -170,9 +171,9 @@ public class ParallelStep extends Step {
             gatherer.finish(container, o -> {
                 next.consume(new Element.Value<>(index.getAndIncrement(), o));
             });
-        } catch (Throwable e) {
+            next.consume(new Element.Finish());
+        } catch (FinishException e) {
             // Ignore
         }
-        next.consume(new Element.Finish());
     }
 }

@@ -1,6 +1,7 @@
 package de.yoyosource.streamable3.internal.step;
 
 import de.yoyosource.streamable3.internal.Element;
+import de.yoyosource.streamable3.internal.FinishException;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -40,12 +41,18 @@ public class FlattenStep extends Step {
                 ((Iterable<Object>) value.value()).forEach(o -> {
                     next.consume(new Element.Value(index.getAndIncrement(), o));
                 });
+            } catch (FinishException e) {
+                finished = true;
             } catch (Throwable e) {
                 finished = true;
                 next.consume(new Element.Finish());
             }
         } else {
-            next.consume(element);
+            try {
+                next.consume(element);
+            } catch (FinishException e) {
+                // Ignore
+            }
         }
     }
 }
