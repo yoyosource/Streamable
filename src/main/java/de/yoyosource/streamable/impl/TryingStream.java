@@ -1,9 +1,9 @@
 package de.yoyosource.streamable.impl;
 
-import de.yoyosource.streamable.FunctionWithException;
+import de.yoyosource.streamable3.FunctionWithException;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableGatherer;
-import de.yoyosource.streamable.Try;
+import de.yoyosource.streamable3.Try;
 
 import java.util.function.Consumer;
 

@@ -1,4 +1,4 @@
-package de.yoyosource.streamable;
+package de.yoyosource.streamable3;
 
 import lombok.Getter;
 import lombok.NonNull;

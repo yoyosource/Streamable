@@ -1,15 +1,21 @@
-package de.yoyosource.streamable.impl;
+package de.yoyosource.streamable3.streams;
 
 import de.yoyosource.streamable3.FunctionWithException;
-import de.yoyosource.streamable.Streamable;
-import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable3.Try;
+import de.yoyosource.streamable3.Streamable;
+import de.yoyosource.streamable3.StreamableGatherer;
 
 import java.util.function.Consumer;
 
-public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E>> {
+import static de.yoyosource.streamable3.streams.JavaStream.JavaStream;
 
-    static <T, E extends Throwable> Class<TryedStream<T, E>> type() {
+public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStream<T, E>, Try<T, E>> {
+
+    static <T, E extends Throwable> Class<TryedStream<T, E>> TryedStream() {
+        return (Class<TryedStream<T, E>>) (Class) TryedStream.class;
+    }
+
+    static <T, E extends Throwable> Class<TryedStream<T, E>> TryedStream(Class<T> clazz1, Class<E> clazz2) {
         return (Class<TryedStream<T, E>>) (Class) TryedStream.class;
     }
 
@@ -53,70 +59,70 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<Try<T, E
     }
 
     default TryedStream<T, E> keep(Option<T, E, ?> option) {
-        return gather(new StreamableGatherer<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             @Override
-            public boolean apply(Try<T, E> input, Consumer<Try<T, E>> next) {
-                if (option.check(input)) next.accept(input);
+            public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<T, E>> next) {
+                if (option.check(element)) next.accept(element);
                 return false;
             }
 
             @Override
-            public void finish(Consumer<Try<T, E>> next) {
+            public void finish(Consumer<? super Try<T, E>> next) {
             }
         });
     }
 
-    default <U> Streamable<U> unwrap(Option<T, E, U> option) {
-        return gather(new StreamableGatherer<Try<T, E>, U>() {
+    default <U> JavaStream<U> unwrap(Option<T, E, U> option) {
+        return gather(new StreamableGatherer.Simple<Try<T, E>, U>() {
             @Override
-            public boolean apply(Try<T, E> input, Consumer<U> next) {
-                next.accept(option.unwrap(input));
+            public boolean integrate(long index, Try<T, E> element, Consumer<? super U> next) {
+                next.accept(option.unwrap(element));
                 return false;
             }
 
             @Override
-            public void finish(Consumer<U> next) {
+            public void finish(Consumer<? super U> next) {
             }
-        }).as(Streamable.type());
+        }).as(JavaStream());
     }
 
-    default <U> Streamable<U> keepAndUnwrap(Option<T, E, U> option) {
+    default <U> JavaStream<U> keepAndUnwrap(Option<T, E, U> option) {
         return keep(option).unwrap(option);
     }
 
     default <U> TryedStream<T, E> peek(Option<T, E, U> option, Consumer<U> consumer) {
-        return gather(new StreamableGatherer<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             @Override
-            public boolean apply(Try<T, E> input, Consumer<Try<T, E>> next) {
-                if (option.check(input)) consumer.accept(option.unwrap(input));
-                next.accept(input);
+            public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<T, E>> next) {
+                if (option.check(element)) consumer.accept(option.unwrap(element));
+                next.accept(element);
                 return false;
             }
 
             @Override
-            public void finish(Consumer<Try<T, E>> next) {
+            public void finish(Consumer<? super Try<T, E>> next) {
             }
         });
     }
 
     default <R> TryedStream<R, E> tryIt(FunctionWithException<T, R, E> functionWithException) {
-        return gather(new StreamableGatherer<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             @Override
-            public boolean apply(Try<T, E> input, Consumer<Try<R, E>> next) {
-                if (input.successful()) {
+            public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<R, E>> next) {
+                if (element.successful()) {
                     try {
-                        next.accept(Try.Success(functionWithException.apply(input.getSuccess())));
+                        next.accept(Try.Success(functionWithException.apply(element.getSuccess())));
                     } catch (Throwable e) {
                         next.accept(Try.Failure((E) e));
                     }
                 } else {
-                    next.accept(Try.Failure(input.getFailure()));
+                    next.accept(Try.Failure(element.getFailure()));
                 }
                 return false;
             }
 
             @Override
-            public void finish(Consumer<Try<R, E>> next) {
+            public void finish(Consumer<? super Try<R, E>> next) {
             }
         });
     }

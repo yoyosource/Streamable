@@ -1,28 +1,20 @@
-package de.yoyosource.streamable3.impl;
+package de.yoyosource.streamable3.streams;
 
 import de.yoyosource.streamable3.Streamable;
 import de.yoyosource.streamable3.StreamableCollector;
 import de.yoyosource.streamable3.StreamableGatherer;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collector;
 
 public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
     static <T> Class<JavaStream<T>> JavaStream() {
+        return (Class<JavaStream<T>>) (Class) JavaStream.class;
+    }
+
+    static <T> Class<JavaStream<T>> JavaStream(Class<T> clazz) {
         return (Class<JavaStream<T>>) (Class) JavaStream.class;
     }
 
@@ -99,19 +91,28 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default JavaStream<T> sorted(Comparator<? super T> comparator) {
-        return flatGather(new StreamableGatherer.Simple<>() {
-            private List<T> elements = new ArrayList<>();
+        return flatGather(new StreamableGatherer<T, List<T>, Iterable<T>>() {
+            @Override
+            public List<T> container() {
+                return new ArrayList<>();
+            }
 
             @Override
-            public boolean integrate(long index, T input, Consumer<? super Iterable<T>> next) {
-                elements.add(input);
+            public boolean integrate(List<T> container, long index, T element, Consumer<? super Iterable<T>> next) {
+                container.add(element);
                 return false;
             }
 
             @Override
-            public void finish(Consumer<? super Iterable<T>> next) {
-                elements.sort(comparator);
-                next.accept(elements);
+            public List<T> combine(List<T> firstContainer, List<T> secondContainer) {
+                firstContainer.addAll(secondContainer);
+                return firstContainer;
+            }
+
+            @Override
+            public void finish(List<T> container, Consumer<? super Iterable<T>> next) {
+                container.sort(comparator);
+                next.accept(container);
             }
         });
     }
@@ -133,13 +134,10 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
     default JavaStream<T> limit(long maxSize) {
         return gather(new StreamableGatherer.Simple<>() {
-            private long elementsLeft = maxSize;
-
             @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 next.accept(input);
-                elementsLeft--;
-                return elementsLeft == 0;
+                return index == maxSize - 1;
             }
 
             @Override
@@ -150,12 +148,9 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
     default JavaStream<T> skip(long skip) {
         return gather(new StreamableGatherer.Simple<>() {
-            private long elementsLeft = skip;
-
             @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
-                elementsLeft--;
-                if (elementsLeft < 0) next.accept(input);
+                if (index >= skip) next.accept(input);
                 return false;
             }
 
@@ -184,6 +179,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default JavaStream<T> dropWhile(Predicate<? super T> predicate) {
+        // TODO: Fix implementation!
         return gather(new StreamableGatherer.Simple<>() {
             private boolean take = false;
 
@@ -222,6 +218,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default T reduce(T identity, BinaryOperator<T> accumulator) {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private T current = identity;
 
@@ -239,6 +236,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> reduce(BinaryOperator<T> accumulator) {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private T current = null;
 
@@ -260,6 +258,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator) {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private U current = identity;
 
@@ -277,6 +276,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator) {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private R current = supplier.get();
 
@@ -294,6 +294,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default <R, A> R collect(Collector<? super T, A, R> collector) {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private A current = collector.supplier().get();
 
@@ -311,6 +312,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default List<T> toList() {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private List<T> elements = new ArrayList<>();
 
@@ -328,6 +330,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> min(Comparator<? super T> comparator) {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private T current = null;
 
@@ -352,6 +355,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> max(Comparator<? super T> comparator) {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private T current = null;
 
@@ -376,6 +380,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default long count() {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private long count = 0;
 
@@ -393,6 +398,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default boolean anyMatch(Predicate<? super T> predicate) {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private boolean anyMatch = false;
 
@@ -421,6 +427,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> findFirst() {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private T current = null;
 
@@ -443,6 +450,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> findLast() {
+        // TODO: Fix implementation!
         return collect(new StreamableCollector.Simple<>() {
             private T current = null;
 

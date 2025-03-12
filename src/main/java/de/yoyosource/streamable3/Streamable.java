@@ -1,6 +1,6 @@
 package de.yoyosource.streamable3;
 
-import de.yoyosource.streamable3.impl.JavaStream;
+import de.yoyosource.streamable3.streams.JavaStream;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,12 +11,12 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import static de.yoyosource.streamable3.impl.JavaStream.JavaStream;
+import static de.yoyosource.streamable3.streams.JavaStream.JavaStream;
 
 public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
 
     static <T> JavaStream<T> empty() {
-        return (JavaStream<T>) StreamableManager.from(Collections.emptyIterator())
+        return StreamableManager.from(Collections.<T>emptyIterator())
                 .as(JavaStream());
     }
 
@@ -41,7 +41,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
     }
 
     static <T> JavaStream<T> iterate(T seed, Predicate<? super T> hasNext, UnaryOperator<T> next) {
-        return (JavaStream<T>) StreamableManager.from(new Iterator<>() {
+        return StreamableManager.from(new Iterator<T>() {
             private T current = seed;
 
             @Override
