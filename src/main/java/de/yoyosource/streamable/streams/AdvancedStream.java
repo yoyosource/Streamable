@@ -1,6 +1,5 @@
 package de.yoyosource.streamable.streams;
 
-import de.yoyosource.streamable.impl.ZippedStream;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
