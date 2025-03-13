@@ -3,6 +3,9 @@ package de.yoyosource.streamable3.streams;
 import de.yoyosource.streamable3.Streamable;
 import de.yoyosource.streamable3.StreamableCollector;
 import de.yoyosource.streamable3.StreamableGatherer;
+import de.yoyosource.streamable3.data.SingleData;
+import de.yoyosource.streamable3.internal.InternalStreamable;
+import de.yoyosource.streamable3.internal.step.SequentialStep;
 
 import java.util.*;
 import java.util.function.*;
@@ -178,9 +181,9 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
         });
     }
 
+    @SuppressWarnings("unchecked")
     default JavaStream<T> dropWhile(Predicate<? super T> predicate) {
-        // TODO: Fix implementation!
-        return gather(new StreamableGatherer.Simple<>() {
+        return (JavaStream<T>) ((InternalStreamable) this).setNext(new SequentialStep(new StreamableGatherer.Simple<T, T>() {
             private boolean take = false;
 
             @Override
@@ -193,7 +196,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public void finish(Consumer<? super T> next) {
             }
-        });
+        }));
     }
 
     default Object[] toArray() {
@@ -218,202 +221,243 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default T reduce(T identity, BinaryOperator<T> accumulator) {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private T current = identity;
+        return collect(new StreamableCollector<T, SingleData<T>, T>() {
+            @Override
+            public SingleData<T> container() {
+                return new SingleData<>(null);
+            }
 
             @Override
-            public boolean accumulate(long index, T input) {
-                current = accumulator.apply(current, input);
+            public boolean accumulate(SingleData<T> container, long index, T element) {
+                if (container.first == null) {
+                    container.first = element;
+                } else {
+                    container.first = accumulator.apply(container.first, element);
+                }
                 return false;
             }
 
             @Override
-            public T finish() {
-                return current;
+            public SingleData<T> combine(SingleData<T> firstContainer, SingleData<T> secondContainer) {
+                if (firstContainer.first == null) {
+                    firstContainer.first = secondContainer.first;
+                } else {
+                    firstContainer.first = accumulator.apply(firstContainer.first, secondContainer.first);
+                }
+                return firstContainer;
+            }
+
+            @Override
+            public T finish(SingleData<T> container) {
+                if (container.first == null) {
+                    return identity;
+                } else {
+                    return accumulator.apply(identity, container.first);
+                }
             }
         });
     }
 
     default Optional<T> reduce(BinaryOperator<T> accumulator) {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private T current = null;
+        return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
+            @Override
+            public SingleData<T> container() {
+                return new SingleData<>(null);
+            }
 
             @Override
-            public boolean accumulate(long index, T input) {
-                if (current == null) {
-                    current = input;
+            public boolean accumulate(SingleData<T> container, long index, T element) {
+                if (container.first == null) {
+                    container.first = element;
                 } else {
-                    current = accumulator.apply(current, input);
+                    container.first = accumulator.apply(container.first, element);
                 }
                 return false;
             }
 
             @Override
-            public Optional<T> finish() {
-                return Optional.ofNullable(current);
-            }
-        });
-    }
-
-    default <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator) {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private U current = identity;
-
-            @Override
-            public boolean accumulate(long index, T input) {
-                current = accumulator.apply(current, input);
-                return false;
+            public SingleData<T> combine(SingleData<T> firstContainer, SingleData<T> secondContainer) {
+                if (firstContainer.first == null) {
+                    firstContainer.first = secondContainer.first;
+                } else {
+                    firstContainer.first = accumulator.apply(firstContainer.first, secondContainer.first);
+                }
+                return firstContainer;
             }
 
             @Override
-            public U finish() {
-                return current;
-            }
-        });
-    }
-
-    default <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator) {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private R current = supplier.get();
-
-            @Override
-            public boolean accumulate(long index, T input) {
-                accumulator.accept(current, input);
-                return false;
-            }
-
-            @Override
-            public R finish() {
-                return current;
+            public Optional<T> finish(SingleData<T> container) {
+                return Optional.ofNullable(container.first);
             }
         });
     }
 
     default <R, A> R collect(Collector<? super T, A, R> collector) {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private A current = collector.supplier().get();
+        return collect(new StreamableCollector<T, A, R>() {
+            @Override
+            public A container() {
+                return collector.supplier().get();
+            }
 
             @Override
-            public boolean accumulate(long index, T input) {
-                collector.accumulator().accept(current, input);
+            public boolean accumulate(A container, long index, T element) {
+                collector.accumulator().accept(container, element);
                 return false;
             }
 
             @Override
-            public R finish() {
-                return collector.finisher().apply(current);
+            public A combine(A firstContainer, A secondContainer) {
+                return collector.combiner().apply(firstContainer, secondContainer);
+            }
+
+            @Override
+            public R finish(A container) {
+                return collector.finisher().apply(container);
             }
         });
     }
 
     default List<T> toList() {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private List<T> elements = new ArrayList<>();
+        return collect(new StreamableCollector<T, List<T>, List<T>>() {
+            @Override
+            public List<T> container() {
+                return new ArrayList<>();
+            }
 
             @Override
-            public boolean accumulate(long index, T input) {
-                elements.add(input);
+            public boolean accumulate(List<T> container, long index, T element) {
+                container.add(element);
                 return false;
             }
 
             @Override
-            public List<T> finish() {
-                return elements;
+            public List<T> combine(List<T> firstContainer, List<T> secondContainer) {
+                firstContainer.addAll(secondContainer);
+                return firstContainer;
+            }
+
+            @Override
+            public List<T> finish(List<T> container) {
+                return container;
             }
         });
     }
 
     default Optional<T> min(Comparator<? super T> comparator) {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private T current = null;
+        return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
+            @Override
+            public SingleData<T> container() {
+                return new SingleData<>(null);
+            }
 
             @Override
-            public boolean accumulate(long index, T input) {
-                if (current == null) {
-                    current = input;
-                    return false;
-                }
-
-                if (comparator.compare(current, input) > 0) {
-                    current = input;
+            public boolean accumulate(SingleData<T> container, long index, T element) {
+                if (container.first == null || comparator.compare(container.first, element) > 0) {
+                    container.first = element;
                 }
                 return false;
             }
 
             @Override
-            public Optional<T> finish() {
-                return Optional.ofNullable(current);
+            public SingleData<T> combine(SingleData<T> firstContainer, SingleData<T> secondContainer) {
+                if (comparator.compare(firstContainer.first, secondContainer.first) > 0) {
+                    return secondContainer;
+                } else {
+                    return firstContainer;
+                }
+            }
+
+            @Override
+            public Optional<T> finish(SingleData<T> container) {
+                return Optional.ofNullable(container.first);
             }
         });
     }
 
     default Optional<T> max(Comparator<? super T> comparator) {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private T current = null;
+        return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
+            @Override
+            public SingleData<T> container() {
+                return new SingleData<>(null);
+            }
 
             @Override
-            public boolean accumulate(long index, T input) {
-                if (current == null) {
-                    current = input;
-                    return false;
-                }
-
-                if (comparator.compare(current, input) < 0) {
-                    current = input;
+            public boolean accumulate(SingleData<T> container, long index, T element) {
+                if (container.first == null || comparator.compare(container.first, element) < 0) {
+                    container.first = element;
                 }
                 return false;
             }
 
             @Override
-            public Optional<T> finish() {
-                return Optional.ofNullable(current);
+            public SingleData<T> combine(SingleData<T> firstContainer, SingleData<T> secondContainer) {
+                if (comparator.compare(firstContainer.first, secondContainer.first) < 0) {
+                    return secondContainer;
+                } else {
+                    return firstContainer;
+                }
+            }
+
+            @Override
+            public Optional<T> finish(SingleData<T> container) {
+                return Optional.ofNullable(container.first);
             }
         });
     }
 
     default long count() {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private long count = 0;
+        return collect(new StreamableCollector<T, SingleData<Long>, Long>() {
+            @Override
+            public SingleData<Long> container() {
+                return new SingleData<>(0L);
+            }
 
             @Override
-            public boolean accumulate(long index, T input) {
-                count++;
+            public boolean accumulate(SingleData<Long> container, long index, T element) {
+                container.first++;
                 return false;
             }
 
             @Override
-            public Long finish() {
-                return count;
+            public SingleData<Long> combine(SingleData<Long> firstContainer, SingleData<Long> secondContainer) {
+                firstContainer.first += secondContainer.first;
+                return firstContainer;
+            }
+
+            @Override
+            public Long finish(SingleData<Long> container) {
+                return container.first;
             }
         });
     }
 
     default boolean anyMatch(Predicate<? super T> predicate) {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private boolean anyMatch = false;
+        return collect(new StreamableCollector<T, SingleData<Boolean>, Boolean>() {
+            @Override
+            public SingleData<Boolean> container() {
+                return new SingleData<>(false);
+            }
 
             @Override
-            public boolean accumulate(long index, T input) {
-                if (predicate.test(input)) {
-                    anyMatch = true;
+            public boolean accumulate(SingleData<Boolean> container, long index, T element) {
+                if (predicate.test(element)) {
+                    container.first = true;
                     return true;
                 }
                 return false;
             }
 
             @Override
-            public Boolean finish() {
-                return anyMatch;
+            public SingleData<Boolean> combine(SingleData<Boolean> firstContainer, SingleData<Boolean> secondContainer) {
+                if (firstContainer.first || secondContainer.first) {
+                    firstContainer.first = true;
+                }
+                return firstContainer;
+            }
+
+            @Override
+            public Boolean finish(SingleData<Boolean> container) {
+                return container.first;
             }
         });
     }
@@ -427,21 +471,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> findFirst() {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private T current = null;
-
-            @Override
-            public boolean accumulate(long index, T input) {
-                current = input;
-                return true;
-            }
-
-            @Override
-            public Optional<T> finish() {
-                return Optional.ofNullable(current);
-            }
-        });
+        return Optional.ofNullable(collect(new StreamableCollector.First<>()));
     }
 
     default Optional<T> findAny() {
@@ -450,20 +480,6 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> findLast() {
-        // TODO: Fix implementation!
-        return collect(new StreamableCollector.Simple<>() {
-            private T current = null;
-
-            @Override
-            public boolean accumulate(long index, T input) {
-                current = input;
-                return false;
-            }
-
-            @Override
-            public Optional<T> finish() {
-                return Optional.ofNullable(current);
-            }
-        });
+        return Optional.ofNullable(collect(new StreamableCollector.Last<>()));
     }
 }

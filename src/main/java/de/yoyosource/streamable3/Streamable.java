@@ -81,6 +81,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
 
     S sequential();
     S parallel(int maxParallelism);
+    boolean isParallel();
 
     <R, C, N extends Streamable<N, R>> N gather(StreamableGatherer<? super T, C, R> gatherer);
     <R, C, N extends Streamable<N, R>> N flatGather(StreamableGatherer<? super T, C, Iterable<R>> gatherer);

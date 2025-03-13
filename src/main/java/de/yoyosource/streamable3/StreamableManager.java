@@ -1,5 +1,7 @@
 package de.yoyosource.streamable3;
 
+import de.yoyosource.streamable3.internal.InternalStreamable;
+import de.yoyosource.streamable3.internal.StreamableConsumer;
 import de.yoyosource.streamable3.internal.StreamableSupplier;
 import de.yoyosource.streamable3.internal.finish.Finish;
 import de.yoyosource.streamable3.internal.root.Root;
@@ -48,7 +50,7 @@ public class StreamableManager {
     }
 
     private static <T, S extends Streamable<S, T>> S from(StreamData streamData, Class<S> clazz) {
-        Object object = Proxy.newProxyInstance(StreamableManager.class.getClassLoader(), new Class[]{clazz}, (proxy, method, args) -> {
+        Object object = Proxy.newProxyInstance(StreamableManager.class.getClassLoader(), new Class[]{clazz, InternalStreamable.class}, (proxy, method, args) -> {
             // Methods of Object
             if (is(method, "toString")) {
                 return clazz.getTypeName() + "@" + System.identityHashCode(proxy);
@@ -62,7 +64,7 @@ public class StreamableManager {
 
             // Methods of Iterable
             if (is(method, "iterator")) {
-
+                throw new UnsupportedOperationException("Iterator not implemented yet!");
             }
 
             // Methods of Streamable
@@ -84,6 +86,9 @@ public class StreamableManager {
                 streamData.maxParallelTasks = maxParallelTasks;
                 return proxy;
             }
+            if (is(method, "isParallel")) {
+                return streamData.maxParallelTasks > 1;
+            }
 
             if (is(method, "gather", StreamableGatherer.class)) {
                 streamData.supplier = streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableGatherer) args[0]);
@@ -95,7 +100,24 @@ public class StreamableManager {
                 return proxy;
             }
             if (is(method, "collect", StreamableCollector.class)) {
-                Finish finish = streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableCollector) args[0]);
+                streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableCollector) args[0]);
+                return ((InternalStreamable) proxy).evaluate();
+            }
+
+            // Methods of InternalStreamable
+            if (is(method, "setNext", StreamableConsumer.class)) {
+                StreamableConsumer streamableConsumer = streamData.supplier.setNext((StreamableConsumer) args[0]);
+                if (streamableConsumer instanceof StreamableSupplier supplier) {
+                    streamData.supplier = supplier;
+                }
+                return proxy;
+            }
+            if (is(method, "evaluate")) {
+                if (!(streamData.supplier.getNext() instanceof Finish finish)) {
+                    throw new UnsupportedOperationException("evaluate() cannot be called when no Finish Object is present!");
+                }
+
+                streamData.root.evaluate();
                 while (finish.getResult() == null) {
                     if (streamData.root.getError() != null) {
                         unsafe.throwException(streamData.root.getError());
@@ -103,6 +125,13 @@ public class StreamableManager {
                     Thread.yield();
                 }
                 return finish.getResult().get();
+            }
+            if (is(method, "getMaxParallelTasks")) {
+                return streamData.maxParallelTasks;
+            }
+            if (is(method, "setMaxParallelTasks", int.class)) {
+                streamData.maxParallelTasks = (int) args[0];
+                return null;
             }
 
             // Methods of sub classes

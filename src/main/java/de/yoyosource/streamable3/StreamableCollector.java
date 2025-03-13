@@ -1,5 +1,7 @@
 package de.yoyosource.streamable3;
 
+import de.yoyosource.streamable3.data.SingleData;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -65,53 +67,49 @@ public interface StreamableCollector<T, A, R> {
         };
     }
 
-    class Last<R> implements StreamableCollector<R, Object, R> {
-        private final AtomicReference<R> result = new AtomicReference<>();
-
+    class Last<R> implements StreamableCollector<R, SingleData<R>, R> {
         @Override
-        public Object container() {
-            return null;
+        public SingleData<R> container() {
+            return new SingleData<>(null);
         }
 
         @Override
-        public boolean accumulate(Object container, long index, R element) {
-            result.set(element);
+        public boolean accumulate(SingleData<R> container, long index, R element) {
+            container.first = element;
             return false;
         }
 
         @Override
-        public Object combine(Object firstContainer, Object secondContainer) {
+        public SingleData<R> combine(SingleData<R> firstContainer, SingleData<R> secondContainer) {
             return null;
         }
 
         @Override
-        public R finish(Object container) {
-            return result.get();
+        public R finish(SingleData<R> container) {
+            return container.first;
         }
     }
 
-    class First<R> implements StreamableCollector<R, Object, R> {
-        private final AtomicReference<R> result = new AtomicReference<>();
-
+    class First<R> implements StreamableCollector<R, SingleData<R>, R> {
         @Override
-        public Object container() {
-            return null;
+        public SingleData<R> container() {
+            return new SingleData<>(null);
         }
 
         @Override
-        public boolean accumulate(Object container, long index, R element) {
-            result.set(element);
+        public boolean accumulate(SingleData<R> container, long index, R element) {
+            container.first = element;
             return true;
         }
 
         @Override
-        public Object combine(Object firstContainer, Object secondContainer) {
+        public SingleData<R> combine(SingleData<R> firstContainer, SingleData<R> secondContainer) {
             return null;
         }
 
         @Override
-        public R finish(Object container) {
-            return result.get();
+        public R finish(SingleData<R> container) {
+            return container.first;
         }
     }
 }

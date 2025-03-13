@@ -4,11 +4,15 @@ import de.yoyosource.streamable3.Streamable;
 import de.yoyosource.streamable3.StreamableCollector;
 import de.yoyosource.streamable3.StreamableGatherer;
 import lombok.AllArgsConstructor;
-import lombok.ToString;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public interface NumberStream<T extends Number & Comparable<T>> extends Streamable<NumberStream<T>, T> {
@@ -160,8 +164,7 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
                     case Double v -> container.sum = (T) (Object) (v + (Double) element);
                     case BigDecimal bigDecimal -> container.sum = (T) (bigDecimal.add((BigDecimal) element));
                     case BigInteger bigInteger -> container.sum = (T) (bigInteger.add((BigInteger) element));
-                    default -> {
-                    }
+                    default -> container.sum = element;
                 }
             }
 
@@ -176,8 +179,7 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
                     case Double v -> container.min = v > (Double) element ? element : container.min;
                     case BigDecimal bigDecimal -> container.min = bigDecimal.compareTo((BigDecimal) element) > 0 ? element : container.min;
                     case BigInteger bigInteger -> container.min = bigInteger.compareTo((BigInteger) element) > 0 ? element : container.min;
-                    default -> {
-                    }
+                    default -> container.min = element;
                 }
             }
 
@@ -192,8 +194,7 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
                     case Double v -> container.max = v < (Double) element ? element : container.max;
                     case BigDecimal bigDecimal -> container.max = bigDecimal.compareTo((BigDecimal) element) < 0 ? element : container.max;
                     case BigInteger bigInteger -> container.max = bigInteger.compareTo((BigInteger) element) < 0 ? element : container.max;
-                    default -> {
-                    }
+                    default -> container.max = element;
                 }
             }
 
@@ -208,9 +209,7 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
                     case Double v -> v / (double) container.count;
                     case BigDecimal bigDecimal -> bigDecimal.divide(BigDecimal.valueOf(container.count));
                     case BigInteger bigInteger -> bigInteger.divide(BigInteger.valueOf(container.count));
-                    default -> {
-                        throw new IllegalStateException("Unknown Number Type");
-                    }
+                    default -> null;
                 };
             }
 
@@ -222,18 +221,15 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
         });
     }
 
-    @ToString
     @AllArgsConstructor
     class SummaryStatistics<T extends Number> {
+        @Getter
         private long count;
+
         private T sum;
         private T average;
         private T min;
         private T max;
-
-        public long getCount() {
-            return count;
-        }
 
         public Optional<T> getSum() {
             return Optional.ofNullable(sum);
@@ -249,6 +245,19 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
 
         public Optional<T> getMax() {
             return Optional.ofNullable(max);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder st = new StringBuilder();
+            st.append("SummaryStatistics{");
+            st.append("count=").append(count);
+            if (sum != null) st.append(", sum=").append(sum);
+            if (average != null) st.append(", average=").append(average);
+            if (min != null) st.append(", min=").append(min);
+            if (max != null) st.append(", max=").append(max);
+            st.append("}");
+            return st.toString();
         }
     }
 }

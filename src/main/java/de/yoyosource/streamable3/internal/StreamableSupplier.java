@@ -9,12 +9,15 @@ import de.yoyosource.streamable3.internal.step.FlattenStep;
 import de.yoyosource.streamable3.internal.step.ParallelStep;
 import de.yoyosource.streamable3.internal.step.SequentialStep;
 import de.yoyosource.streamable3.internal.step.Step;
+import lombok.Getter;
 
 import java.lang.reflect.Field;
 
 public abstract class StreamableSupplier {
 
     protected volatile Root root = null;
+
+    @Getter
     protected volatile StreamableConsumer next = null;
 
     public final <T, A, B> Step setNext(int maxParallelTasks, StreamableGatherer<T, A, B> gatherer) {
@@ -22,17 +25,13 @@ public abstract class StreamableSupplier {
             throw new IllegalStateException("Cannot add more than one next steps");
         }
 
-        Step step;
         if (gatherer == null) {
-            step = new FlattenStep();
+            return setNext(new FlattenStep());
         } else if (maxParallelTasks == 1) {
-            step = new SequentialStep(gatherer);
+            return setNext(new SequentialStep(gatherer));
         } else {
-            step = new ParallelStep(gatherer, maxParallelTasks);
+            return new ParallelStep(gatherer, maxParallelTasks);
         }
-        step.root = root;
-        next = step;
-        return step;
     }
 
     public final <T, A, R> Finish setNext(int maxParallelTasks, StreamableCollector<T, A, R> collector) {
@@ -43,23 +42,27 @@ public abstract class StreamableSupplier {
         if (collector == null) {
             throw new IllegalArgumentException("Collector must not be null!");
         }
-        Finish toEvaluate;
         if (maxParallelTasks == 1) {
-            toEvaluate = new SequentialFinish(collector);
-            this.next = toEvaluate;
+            return setNext(new SequentialFinish(collector));
         } else {
-            this.next = new ParallelStep(collector.toGatherer(), maxParallelTasks);
-            toEvaluate = new SequentialFinish(new StreamableCollector.First());
-            ((Step) this.next).next = toEvaluate;
+            return setNext(new ParallelStep(collector.toGatherer(), maxParallelTasks))
+                    .setNext(new SequentialFinish(new StreamableCollector.First()));
         }
-        root.evaluate();
-        try {
-            Field field = Finish.class.getDeclaredField("root");
-            field.setAccessible(true);
-            field.set(toEvaluate, root);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            // Ignore
+    }
+
+    public final <T extends StreamableConsumer> T setNext(T streamableConsumer) {
+        this.next = streamableConsumer;
+        if (streamableConsumer instanceof StreamableSupplier streamableSupplier) {
+            streamableSupplier.root = root;
+        } else if (streamableConsumer instanceof Finish finish) {
+            try {
+                Field field = Finish.class.getDeclaredField("root");
+                field.setAccessible(true);
+                field.set(finish, root);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                // Ignore
+            }
         }
-        return toEvaluate;
+        return streamableConsumer;
     }
 }
