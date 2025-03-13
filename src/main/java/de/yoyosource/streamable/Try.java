@@ -152,5 +152,4 @@ public class Try<V, E extends Throwable> {
     public interface TryFunction<V, E extends Throwable> {
         V f() throws E;
     }
-
 }
