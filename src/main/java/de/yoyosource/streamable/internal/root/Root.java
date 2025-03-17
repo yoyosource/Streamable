@@ -1,6 +1,5 @@
 package de.yoyosource.streamable.internal.root;
 
-import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.Evaluators;
 import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.StreamableSupplier;
@@ -26,9 +25,9 @@ public class Root extends StreamableSupplier implements Evaluators {
     public void evaluate() {
         try {
             iterator.forEachRemaining(o -> {
-                next.consume(new Element.Value(index++, o));
+                next.consume(index++, o);
             });
-            next.consume(new Element.Finish());
+            next.finish();
         } catch (FinishException e) {
             // Ignore
         }
@@ -37,10 +36,10 @@ public class Root extends StreamableSupplier implements Evaluators {
     @Override
     public boolean evaluateNext() {
         if (iterator.hasNext()) {
-            next.consume(new Element.Value(index++, iterator.next()));
+            next.consume(index++, iterator.next());
             return true;
         } else {
-            next.consume(new Element.Finish());
+            next.finish();
             return false;
         }
     }

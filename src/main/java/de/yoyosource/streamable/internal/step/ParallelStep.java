@@ -1,9 +1,9 @@
 package de.yoyosource.streamable.internal.step;
 
-import de.yoyosource.streamable.internal.FinishException;
-import de.yoyosource.streamable.internal.Sequence;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.Element;
+import de.yoyosource.streamable.internal.FinishException;
+import de.yoyosource.streamable.internal.Sequence;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,19 +38,20 @@ public class ParallelStep extends Step {
     }
 
     @Override
-    public void consume(Element element) {
+    public void consume(long index, Object value) {
         if (counter > finish) throw new FinishException();
+        Sequence.Inserter result = results.inserter();
+        synchronized (queue) {
+            queue.add(new Element.Value<>(counter++, __ -> processValue(index, value, result)));
+        }
+    }
 
-        if (element instanceof Element.Value<?> value) {
-            Sequence.Inserter result = results.inserter();
-            synchronized (queue) {
-                queue.add(new Element.Value<>(counter++, __ -> processValue(value, result)));
-            }
-        } else if (element instanceof Element.Finish<?>) {
-            synchronized (queue) {
-                finish = Math.min(finish, counter);
-                queue.add(new Element.Value<>(counter++, this::processFinish));
-            }
+    @Override
+    public void finish() {
+        if (counter > finish) throw new FinishException();
+        synchronized (queue) {
+            finish = Math.min(finish, counter);
+            queue.add(new Element.Value<>(counter++, this::processFinish));
         }
     }
 
@@ -78,29 +79,29 @@ public class ParallelStep extends Step {
         }
     }
 
-    private void processValue(Element.Value<?> element, Sequence.Inserter resultInserter) {
+    private void processValue(long index, Object value, Sequence.Inserter resultInserter) {
         Object container;
         synchronized (containers) {
-            container = containers.remove(element.index() - 1);
+            container = containers.remove(index - 1);
         }
         if (container == null) {
             container = gatherer.container();
         }
 
         try {
-            if (gatherer.integrate(container, element.index(), element.value(), o -> {
+            if (gatherer.integrate(container, index, value, o -> {
                 resultInserter.add(o);
             })) {
-                if (element.index() < finish) {
-                    finish = Math.min(finish, element.index());
+                if (index < finish) {
+                    finish = Math.min(finish, index);
                     synchronized (queue) {
                         queue.add(new Element.Value<>(finish, this::processFinish));
                     }
                 }
             }
         } catch (Throwable e) {
-            if (element.index() < finish) {
-                finish = Math.min(finish, element.index());
+            if (index < finish) {
+                finish = Math.min(finish, index);
                 synchronized (queue) {
                     queue.add(new Element.Value<>(finish, this::processFinish));
                 }
@@ -109,10 +110,10 @@ public class ParallelStep extends Step {
             resultInserter.release();
 
             synchronized (containers) {
-                if (finish >= element.index() && containers.containsKey(element.index() - 1)) {
-                    container = gatherer.combine(containers.remove(element.index() - 1), container);
+                if (finish >= index && containers.containsKey(index - 1)) {
+                    container = gatherer.combine(containers.remove(index - 1), container);
                 }
-                containers.put(element.index(), container);
+                containers.put(index, container);
             }
         }
 
@@ -124,15 +125,15 @@ public class ParallelStep extends Step {
         }
 
         for (Object o : results) {
-            if (index.get() > finish) continue;
-            next.consume(new Element.Value<>(index.getAndIncrement(), o));
+            if (this.index.get() > finish) continue;
+            next.consume(this.index.getAndIncrement(), o);
         }
 
         synchronized (containers) {
             List<Long> indices = containers.keySet()
                     .stream()
                     .sorted()
-                    .filter(l -> l < element.index())
+                    .filter(l -> l < index)
                     .collect(Collectors.toList());
 
             for (int i = 0; i < indices.size() - 1; i++) {
@@ -160,7 +161,7 @@ public class ParallelStep extends Step {
         processingIntermediateResults.set(true);
         for (Object o : results) {
             if (index.get() > finish) continue;
-            next.consume(new Element.Value<>(index.getAndIncrement(), o));
+            next.consume(index.getAndIncrement(), o);
         }
 
         // Combining all containers to create a single result container!
@@ -183,9 +184,9 @@ public class ParallelStep extends Step {
         Object container = priorityQueue.poll().value();
         try {
             gatherer.finish(container, o -> {
-                next.consume(new Element.Value<>(index.getAndIncrement(), o));
+                next.consume(index.getAndIncrement(), o);
             });
-            next.consume(new Element.Finish());
+            next.finish();
         } catch (FinishException e) {
             // Ignore
         }

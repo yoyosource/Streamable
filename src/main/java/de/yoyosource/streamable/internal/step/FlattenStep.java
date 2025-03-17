@@ -21,13 +21,18 @@ public class FlattenStep extends Step implements Evaluators {
     }
 
     @Override
-    public void consume(Element element) {
-        if (element instanceof Element.Value<?> value) {
-            elements.add(new Element.Value(value.index(), ((Iterable) value.value()).iterator()));
-        } else {
-            elements.add(element);
-        }
+    public void consume(long index, Object value) {
+        elements.add(new Element.Value<>(index, ((Iterable) value).iterator()));
+        startThread();
+    }
 
+    @Override
+    public void finish() {
+        elements.add(new Element.Finish());
+        startThread();
+    }
+
+    private void startThread() {
         if (thread == null) {
             thread = new Thread(() -> {
                 while (!finished) {
@@ -45,17 +50,17 @@ public class FlattenStep extends Step implements Evaluators {
         if (element instanceof Element.Value<?> value) {
             try {
                 ((Iterable<Object>) value.value()).forEach(o -> {
-                    next.consume(new Element.Value(index.getAndIncrement(), o));
+                    next.consume(index.getAndIncrement(), o);
                 });
             } catch (FinishException e) {
                 finished = true;
             } catch (Throwable e) {
                 finished = true;
-                next.consume(new Element.Finish());
+                next.finish();
             }
         } else {
             try {
-                next.consume(element);
+                next.finish();
             } catch (FinishException e) {
                 // Ignore
             }
@@ -70,13 +75,13 @@ public class FlattenStep extends Step implements Evaluators {
         if (element instanceof Element.Value<?> value) {
             Iterator<Object> iterator = ((Iterator<Object>) value.value());
             if (iterator.hasNext()) {
-                next.consume(new Element.Value(index.getAndIncrement(), iterator.next()));
+                next.consume(index.getAndIncrement(), iterator.next());
             } else {
                 elements.remove();
             }
             return true;
         } else {
-            next.consume(element);
+            next.finish();
             return false;
         }
     }

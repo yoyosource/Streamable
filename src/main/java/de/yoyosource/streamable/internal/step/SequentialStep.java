@@ -1,9 +1,11 @@
 package de.yoyosource.streamable.internal.step;
 
-import de.yoyosource.streamable.internal.FinishException;
-import de.yoyosource.streamable.internal.Sequence;
 import de.yoyosource.streamable.StreamableGatherer;
-import de.yoyosource.streamable.internal.Element;
+import de.yoyosource.streamable.internal.FinishException;
+
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SequentialStep extends Step {
 
@@ -11,7 +13,8 @@ public class SequentialStep extends Step {
     private volatile long index = 0;
     private volatile boolean finished = false;
 
-    private final Sequence<Element> sequence = new Sequence<>();
+    private final Queue<Long> elementIndex = new LinkedList<>();
+    private final Queue<Object> elementValue = new LinkedList<>();
 
     private boolean containerInitialized = false;
     private Object container = null;
@@ -21,35 +24,58 @@ public class SequentialStep extends Step {
     }
 
     @Override
-    public synchronized void consume(Element element) {
+    public void consume(long index, Object value) {
         if (finished) throw new FinishException();
-        sequence.inserter().add(element).release();
+        synchronized (elementIndex) {
+            elementIndex.add(index);
+            elementValue.add(value);
+        }
+        startThread();
+    }
 
+    @Override
+    public void finish() {
+        if (finished) throw new FinishException();
+        synchronized (elementIndex) {
+            elementIndex.add(null);
+            elementValue.add(null);
+        }
+        startThread();
+    }
+
+    private void startThread() {
         if (thread == null) {
             thread = new Thread(() -> {
                 while (!finished) {
-                    if (sequence.hasNext()) {
-                        processElement(sequence.next());
+                    Long index;
+                    Object value;
+
+                    synchronized (elementIndex) {
+                        if (elementIndex.isEmpty() || elementValue.isEmpty()) continue;
+                        index = elementIndex.poll();
+                        value = elementValue.poll();
                     }
+
+                    processElement(index, value);
                 }
 
-                processElement(new Element.Finish());
+                processElement(null, null);
             });
             thread.setDaemon(true);
             thread.start();
         }
     }
 
-    private void processElement(Element element) {
+    private void processElement(Long index, Object value) {
         if (!containerInitialized) {
             container = gatherer.container();
             containerInitialized = true;
         }
 
-        if (element instanceof Element.Value<?> value) {
+        if (index != null) {
             try {
-                if (gatherer.integrate(container, value.index(), value.value(), o -> {
-                    next.consume(new Element.Value<>(index++, o));
+                if (gatherer.integrate(container, index, value, o -> {
+                    next.consume(this.index++, o);
                 })) {
                     finished = true;
                 }
@@ -59,9 +85,9 @@ public class SequentialStep extends Step {
         } else {
             try {
                 gatherer.finish(container, o -> {
-                    next.consume(new Element.Value(index++, o));
+                    next.consume(this.index++, o);
                 });
-                next.consume(new Element.Finish());
+                next.finish();
             } catch (FinishException e) {
                 // Ignore
             }
