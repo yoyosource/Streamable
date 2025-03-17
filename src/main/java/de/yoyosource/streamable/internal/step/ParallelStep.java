@@ -9,12 +9,13 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ParallelStep extends Step {
 
     private AtomicLong processing = new AtomicLong();
 
-    private AtomicBoolean processingIntermediateResults = new AtomicBoolean();
+    private final AtomicBoolean processingIntermediateResults = new AtomicBoolean();
 
     private final Queue<Element.Value<Consumer<Long>>> queue = new LinkedList<>();
 
@@ -48,21 +49,8 @@ public class ParallelStep extends Step {
         } else if (element instanceof Element.Finish<?>) {
             synchronized (queue) {
                 finish = Math.min(finish, counter);
-                queue.add(new Element.Value<>(counter++, new Finisher()));
+                queue.add(new Element.Value<>(counter++, this::processFinish));
             }
-        }
-    }
-
-    private final class Finisher implements Consumer<Long> {
-
-        @Override
-        public void accept(Long aLong) {
-            processFinish(aLong);
-        }
-
-        @Override
-        public String toString() {
-            return "Finisher{}";
         }
     }
 
@@ -106,7 +94,7 @@ public class ParallelStep extends Step {
                 if (element.index() < finish) {
                     finish = Math.min(finish, element.index());
                     synchronized (queue) {
-                        queue.add(new Element.Value<>(finish, new Finisher()));
+                        queue.add(new Element.Value<>(finish, this::processFinish));
                     }
                 }
             }
@@ -114,7 +102,7 @@ public class ParallelStep extends Step {
             if (element.index() < finish) {
                 finish = Math.min(finish, element.index());
                 synchronized (queue) {
-                    queue.add(new Element.Value<>(finish, new Finisher()));
+                    queue.add(new Element.Value<>(finish, this::processFinish));
                 }
             }
         } finally {
@@ -128,11 +116,36 @@ public class ParallelStep extends Step {
             }
         }
 
-        if (!processingIntermediateResults.compareAndSet(false, true)) {
-            for (Object o : results) {
-                if (index.get() > finish) continue;
-                next.consume(new Element.Value<>(index.getAndIncrement(), o));
+        synchronized (processingIntermediateResults) {
+            if (processingIntermediateResults.get()) {
+                return;
             }
+            processingIntermediateResults.set(true);
+        }
+
+        for (Object o : results) {
+            if (index.get() > finish) continue;
+            next.consume(new Element.Value<>(index.getAndIncrement(), o));
+        }
+
+        synchronized (containers) {
+            List<Long> indices = containers.keySet()
+                    .stream()
+                    .sorted()
+                    .filter(l -> l < element.index())
+                    .collect(Collectors.toList());
+
+            for (int i = 0; i < indices.size() - 1; i++) {
+                long i1 = indices.get(i);
+                long i2 = indices.get(i + 1);
+                Object c1 = containers.remove(i1);
+                Object c2 = containers.remove(i2);
+                Object cr = gatherer.combine(c1, c2);
+                containers.put(Math.max(i1, i2), cr);
+            }
+        }
+
+        synchronized (processingIntermediateResults) {
             processingIntermediateResults.set(false);
         }
     }
@@ -156,6 +169,7 @@ public class ParallelStep extends Step {
             if (aLong > finish) return;
             priorityQueue.add(new Element.Value<>(1L, o));
         });
+
         while (priorityQueue.size() > 1) {
             Element.Value<Object> first = priorityQueue.poll();
             Element.Value<Object> second = priorityQueue.poll();

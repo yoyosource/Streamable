@@ -113,8 +113,13 @@ public class StreamableManager {
                 return proxy;
             }
             if (is(method, "evaluate")) {
-                if (!(streamData.supplier.getNext() instanceof Finish finish)) {
-                    throw new UnsupportedOperationException("evaluate() cannot be called when no Finish Object is present!");
+                StreamableConsumer streamableConsumer = streamData.supplier.getNext();
+                while (!(streamableConsumer instanceof Finish finish)) {
+                    if (streamableConsumer instanceof StreamableSupplier supplier) {
+                        streamableConsumer = supplier.getNext();
+                    } else {
+                        throw new UnsupportedOperationException("evaluate() cannot be called when no Finish Object is present!");
+                    }
                 }
 
                 streamData.root.evaluate();

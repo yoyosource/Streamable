@@ -4,7 +4,6 @@ import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.InternalStreamable;
-import de.yoyosource.streamable.internal.step.SequentialStep;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -146,7 +145,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default AdvancedStream<T> dropWhileIndexed(BiPredicate<? super T, Long> predicate) {
-        return (AdvancedStream<T>) ((InternalStreamable) this).setNext(new SequentialStep(new StreamableGatherer.Simple<T, T>() {
+        return gather(new StreamableGatherer.Sequential.Simple<T, T>() {
             private boolean take = false;
 
             @Override
@@ -160,7 +159,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             public void finish(Consumer<? super T> next) {
 
             }
-        }));
+        });
     }
 
     default AdvancedStream<Map<T, List<T>>> group() {
@@ -262,7 +261,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         if (windowSize < 1) {
             throw new IllegalArgumentException("Window size must be at least 1");
         }
-        return (AdvancedStream<List<T>>) ((InternalStreamable) this).setNext(new SequentialStep(new StreamableGatherer.Simple<T, List<T>>() {
+        return gather(new StreamableGatherer.Sequential.Simple<>() {
             private List<T> elements = new ArrayList<>();
 
             @Override
@@ -281,7 +280,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                     next.accept(elements);
                 }
             }
-        }));
+        });
     }
 
     default AdvancedStream<List<T>> windowSliding(int windowSize) {
@@ -293,7 +292,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         if (windowSize < 1) {
             throw new IllegalArgumentException("Window size must be at least 1");
         }
-        return (AdvancedStream<List<T>>) ((InternalStreamable) this).setNext(new SequentialStep(new StreamableGatherer.Simple<T, List<T>>() {
+        return gather(new StreamableGatherer.Sequential.Simple<>() {
             private boolean hadOneResult = false;
             private List<T> elements = new ArrayList<>();
 
@@ -316,7 +315,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                     next.accept(elements);
                 }
             }
-        }));
+        });
     }
 
     default AdvancedStream<T> concat(Streamable<?, T>... others) {
@@ -393,7 +392,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default AdvancedStream<T> scan(BiFunction<T, T, T> accumulator) {
-        return (AdvancedStream<T>) ((InternalStreamable) this).setNext(new SequentialStep(new StreamableGatherer.Simple<T, T>() {
+        return gather(new StreamableGatherer.Sequential.Simple<>() {
             private boolean first = true;
             private T current;
 
@@ -413,7 +412,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public void finish(Consumer<? super T> next) {
             }
-        }));
+        });
     }
 
     default AdvancedStream<Map.Entry<T, Long>> consecutiveElementCount() {
@@ -422,7 +421,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default AdvancedStream<Map.Entry<T, Long>> consecutiveElementCountBy(BiPredicate<? super T, ? super T> equality) {
-        return (AdvancedStream<Map.Entry<T, Long>>) ((InternalStreamable) this).setNext(new SequentialStep(new StreamableGatherer.Simple<T, Map.Entry<T, Long>>() {
+        return gather(new StreamableGatherer.Sequential.Simple<>() {
             private boolean first = true;
             private T element;
             private long count;
@@ -454,7 +453,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                 first = true;
                 count = 0;
             }
-        }));
+        });
     }
 
     default AdvancedStream<List<T>> allElements() {

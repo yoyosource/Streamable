@@ -25,18 +25,26 @@ public abstract class StreamableSupplier {
             throw new IllegalStateException("Cannot add more than one next steps");
         }
 
+        if (gatherer instanceof StreamableGatherer.Sequential<T,A,B>) {
+            maxParallelTasks = 1;
+        }
+
         if (gatherer == null) {
             return setNext(new FlattenStep());
         } else if (maxParallelTasks == 1) {
             return setNext(new SequentialStep(gatherer));
         } else {
-            return new ParallelStep(gatherer, maxParallelTasks);
+            return setNext(new ParallelStep(gatherer, maxParallelTasks));
         }
     }
 
     public final <T, A, R> Finish setNext(int maxParallelTasks, StreamableCollector<T, A, R> collector) {
         if (this.next != null) {
             throw new IllegalStateException("Cannot add more than one next steps");
+        }
+
+        if (collector instanceof StreamableCollector.Sequential<T,A,R>) {
+            maxParallelTasks = 1;
         }
 
         if (collector == null) {

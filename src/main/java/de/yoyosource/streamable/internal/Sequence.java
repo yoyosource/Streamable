@@ -22,7 +22,7 @@ public class Sequence<T> implements Iterable<T>, Iterator<T> {
         return head.next == null;
     }
 
-    private ElementNode<T> _getNext() {
+    private synchronized ElementNode<T> _getNext() {
         if (!head.released) {
             return null;
         }

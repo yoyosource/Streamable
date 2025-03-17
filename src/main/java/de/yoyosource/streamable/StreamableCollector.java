@@ -10,6 +10,35 @@ public interface StreamableCollector<T, A, R> {
     A combine(A firstContainer, A secondContainer);
     R finish(A container);
 
+    interface Sequential<T, A, R> extends StreamableCollector<T, A, R> {
+
+        abstract class Simple<T, R> implements StreamableCollector<T, Object, R> {
+            @Override
+            public final Object container() {
+                return null;
+            }
+
+            @Override
+            public final boolean accumulate(Object container, long index, T element) {
+                return accumulate(index, element);
+            }
+
+            public abstract boolean accumulate(long index, T element);
+
+            @Override
+            public final Object combine(Object firstContainer, Object secondContainer) {
+                return null;
+            }
+
+            @Override
+            public final R finish(Object container) {
+                return finish();
+            }
+
+            public abstract R finish();
+        }
+    }
+
     abstract class Simple<T, R> implements StreamableCollector<T, Object, R> {
         @Override
         public final Object container() {

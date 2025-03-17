@@ -77,7 +77,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
                 .as(JavaStream());
     }
 
-    <N extends Streamable<N, T>> N as(Class<N> clazz);
+    <N extends Streamable<N, ? super T>> N as(Class<N> clazz);
 
     S sequential();
     S parallel(int maxParallelism);

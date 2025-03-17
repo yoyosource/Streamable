@@ -4,11 +4,19 @@ import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.data.SingleData;
-import de.yoyosource.streamable.internal.InternalStreamable;
-import de.yoyosource.streamable.internal.step.SequentialStep;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 
 public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
@@ -183,7 +191,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default JavaStream<T> dropWhile(Predicate<? super T> predicate) {
-        return (JavaStream<T>) ((InternalStreamable) this).setNext(new SequentialStep(new StreamableGatherer.Simple<T, T>() {
+        return gather(new StreamableGatherer.Sequential.Simple<>() {
             private boolean take = false;
 
             @Override
@@ -196,7 +204,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public void finish(Consumer<? super T> next) {
             }
-        }));
+        });
     }
 
     default Object[] toArray() {
