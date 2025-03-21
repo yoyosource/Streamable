@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import static de.yoyosource.streamable.streams.JavaStream.JavaStream;
 import static de.yoyosource.streamable.streams.NumberStream.NumberStream;
@@ -15,7 +16,7 @@ import static de.yoyosource.streamable.streams.NumberStream.SummaryStatistics;
 public class Test {
 
     public static void main(String[] args) {
-        test_1();
+        test_3();
     }
 
     private static void test_1() {
@@ -58,5 +59,12 @@ public class Test {
 
         time = System.currentTimeMillis() - time;
         System.out.println(maxConsecutiveElements + ": " + maxConsecutiveElement + " in " + time + "ms");
+    }
+
+    private static void test_3() {
+        long count = Streamable.iterate(0L, aLong -> aLong < 1_000_000L, aLong -> aLong + 1)
+                .flatMap(aLong -> List.of(aLong, aLong, aLong, aLong, aLong))
+                .count();
+        System.out.println(count);
     }
 }

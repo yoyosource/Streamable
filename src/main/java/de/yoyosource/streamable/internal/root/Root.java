@@ -1,6 +1,6 @@
 package de.yoyosource.streamable.internal.root;
 
-import de.yoyosource.streamable.internal.Evaluators;
+import de.yoyosource.streamable.internal.Evaluator;
 import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.StreamableSupplier;
 import lombok.Getter;
@@ -8,10 +8,11 @@ import lombok.Setter;
 
 import java.util.Iterator;
 
-public class Root extends StreamableSupplier implements Evaluators {
+public class Root extends StreamableSupplier implements Evaluator {
 
     private long index = 0;
     private Iterator iterator;
+    private boolean finished = false;
 
     @Setter
     @Getter
@@ -35,12 +36,24 @@ public class Root extends StreamableSupplier implements Evaluators {
 
     @Override
     public boolean evaluateNext() {
-        if (iterator.hasNext()) {
-            next.consume(index++, iterator.next());
-            return true;
-        } else {
-            next.finish();
+        if (finished) return false;
+        try {
+            if (iterator.hasNext()) {
+                Object current = iterator.next();
+                next.consume(index++, current);
+                return true;
+            } else {
+                next.finish();
+                return false;
+            }
+        } catch (FinishException e) {
+            finished = true;
             return false;
         }
+    }
+
+    @Override
+    public int backlogSize() {
+        return 0;
     }
 }

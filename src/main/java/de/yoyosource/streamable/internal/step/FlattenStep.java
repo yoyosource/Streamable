@@ -1,7 +1,7 @@
 package de.yoyosource.streamable.internal.step;
 
 import de.yoyosource.streamable.internal.Element;
-import de.yoyosource.streamable.internal.Evaluators;
+import de.yoyosource.streamable.internal.Evaluator;
 import de.yoyosource.streamable.internal.FinishException;
 
 import java.util.Iterator;
@@ -9,7 +9,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class FlattenStep extends Step implements Evaluators {
+public class FlattenStep extends Step implements Evaluator {
 
     private volatile Thread thread = null;
     private volatile boolean finished = false;
@@ -49,7 +49,7 @@ public class FlattenStep extends Step implements Evaluators {
     private void processElement(Element element) {
         if (element instanceof Element.Value<?> value) {
             try {
-                ((Iterable<Object>) value.value()).forEach(o -> {
+                ((Iterator<Object>) value.value()).forEachRemaining(o -> {
                     next.consume(index.getAndIncrement(), o);
                 });
             } catch (FinishException e) {
@@ -57,6 +57,7 @@ public class FlattenStep extends Step implements Evaluators {
             } catch (Throwable e) {
                 finished = true;
                 next.finish();
+                root.setError(e);
             }
         } else {
             try {
@@ -69,13 +70,19 @@ public class FlattenStep extends Step implements Evaluators {
 
     @Override
     public boolean evaluateNext() {
+        if (finished) return false;
         Element element = elements.peek();
         if (element == null) return false;
 
         if (element instanceof Element.Value<?> value) {
             Iterator<Object> iterator = ((Iterator<Object>) value.value());
             if (iterator.hasNext()) {
-                next.consume(index.getAndIncrement(), iterator.next());
+                try {
+                    next.consume(index.getAndIncrement(), iterator.next());
+                } catch (FinishException e) {
+                    finished = true;
+                    return false;
+                }
             } else {
                 elements.remove();
             }
@@ -84,5 +91,10 @@ public class FlattenStep extends Step implements Evaluators {
             next.finish();
             return false;
         }
+    }
+
+    @Override
+    public int backlogSize() {
+        return elements.size();
     }
 }

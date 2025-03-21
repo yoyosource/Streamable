@@ -1,6 +1,7 @@
 package de.yoyosource.streamable.internal;
 
-public interface Evaluators {
+public interface Evaluator {
 
     boolean evaluateNext();
+    int backlogSize();
 }

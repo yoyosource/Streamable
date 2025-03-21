@@ -1,5 +1,6 @@
 package de.yoyosource.streamable;
 
+import de.yoyosource.streamable.internal.Evaluator;
 import de.yoyosource.streamable.internal.InternalStreamable;
 import de.yoyosource.streamable.internal.StreamableConsumer;
 import de.yoyosource.streamable.internal.StreamableSupplier;
@@ -11,8 +12,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 public class StreamableManager {
 
@@ -122,7 +125,32 @@ public class StreamableManager {
                     }
                 }
 
-                streamData.root.evaluate();
+                if (false) {
+                    List<Evaluator> evaluators = new ArrayList<>();
+                    StreamableSupplier streamableSupplier = streamData.root;
+                    while (streamableSupplier != null) {
+                        if (streamableSupplier instanceof Evaluator evaluator) {
+                            evaluators.add(evaluator);
+                        }
+                        if (streamableSupplier.getNext() instanceof StreamableSupplier supplier) {
+                            streamableSupplier = supplier;
+                        } else {
+                            streamableSupplier = null;
+                        }
+                    }
+
+                    while (finish.getResult() == null) {
+                        for (int i = evaluators.size() - 1; i >= 0; i--) {
+                            Evaluator evaluator = evaluators.get(i);
+                            do {
+                                if (evaluator.evaluateNext()) break;
+                            } while (evaluator.backlogSize() > 1_000_000);
+                        }
+                    }
+                } else {
+                    streamData.root.evaluate();
+                }
+
                 while (finish.getResult() == null) {
                     if (streamData.root.getError() != null) {
                         unsafe.throwException(streamData.root.getError());
