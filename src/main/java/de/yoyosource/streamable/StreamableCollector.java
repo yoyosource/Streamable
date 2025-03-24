@@ -1,7 +1,5 @@
 package de.yoyosource.streamable;
 
-import de.yoyosource.streamable.data.SingleData;
-
 import java.util.function.Consumer;
 
 public interface StreamableCollector<T, A, R> {
@@ -65,7 +63,7 @@ public interface StreamableCollector<T, A, R> {
         public abstract R finish();
     }
 
-    default void onClose() {
+    default void close() {
     }
 
     // Special internal API methods or classes
@@ -93,51 +91,5 @@ public interface StreamableCollector<T, A, R> {
                 next.accept(collector.finish(container));
             }
         };
-    }
-
-    class Last<R> implements StreamableCollector<R, SingleData<R>, R> {
-        @Override
-        public SingleData<R> container() {
-            return new SingleData<>(null);
-        }
-
-        @Override
-        public boolean accumulate(SingleData<R> container, long index, R element) {
-            container.first = element;
-            return false;
-        }
-
-        @Override
-        public SingleData<R> combine(SingleData<R> firstContainer, SingleData<R> secondContainer) {
-            return null;
-        }
-
-        @Override
-        public R finish(SingleData<R> container) {
-            return container.first;
-        }
-    }
-
-    class First<R> implements StreamableCollector<R, SingleData<R>, R> {
-        @Override
-        public SingleData<R> container() {
-            return new SingleData<>(null);
-        }
-
-        @Override
-        public boolean accumulate(SingleData<R> container, long index, R element) {
-            container.first = element;
-            return true;
-        }
-
-        @Override
-        public SingleData<R> combine(SingleData<R> firstContainer, SingleData<R> secondContainer) {
-            return null;
-        }
-
-        @Override
-        public R finish(SingleData<R> container) {
-            return container.first;
-        }
     }
 }

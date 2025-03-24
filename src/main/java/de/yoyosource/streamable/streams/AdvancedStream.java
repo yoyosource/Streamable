@@ -214,7 +214,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             }
 
             @Override
-            public void onClose() {
+            public void close() {
                 consumer.accept(count);
             }
         });

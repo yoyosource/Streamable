@@ -10,6 +10,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class Finish implements StreamableConsumer {
 
     protected volatile Root root = null;
+
+    @Getter
     protected final StreamableCollector collector;
 
     @Getter

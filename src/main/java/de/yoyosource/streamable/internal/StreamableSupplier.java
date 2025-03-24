@@ -54,7 +54,7 @@ public abstract class StreamableSupplier {
             return setNext(new SequentialFinish(collector));
         } else {
             return setNext(new ParallelStep(collector.toGatherer(), maxParallelTasks))
-                    .setNext(new SequentialFinish(new StreamableCollector.First()));
+                    .setNext(new SequentialFinish(new InternalStreamableCollector.First()));
         }
     }
 
