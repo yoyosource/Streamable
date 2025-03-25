@@ -1,9 +1,9 @@
 package de.yoyosource.streamable.internal.finish;
 
-import de.yoyosource.streamable.internal.FinishException;
-import de.yoyosource.streamable.internal.Sequence;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.internal.Element;
+import de.yoyosource.streamable.internal.FinishException;
+import de.yoyosource.streamable.internal.Sequence;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,8 +33,6 @@ public class SequentialFinish extends Finish {
                         processElement(sequence.next());
                     }
                 }
-
-                processElement(new Element.Finish());
             });
             thread.setDaemon(true);
             thread.start();
@@ -61,6 +59,7 @@ public class SequentialFinish extends Finish {
                 Object result = collector.finish(container);
                 collector.close();
                 this.result = new AtomicReference<>(result);
+                finished = true;
             } catch (Throwable e) {
                 root.setError(e);
                 this.result = new AtomicReference<>(null);
