@@ -19,6 +19,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
@@ -327,29 +328,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default List<T> toList() {
-        return collect(new StreamableCollector<T, List<T>, List<T>>() {
-            @Override
-            public List<T> container() {
-                return new ArrayList<>();
-            }
-
-            @Override
-            public boolean accumulate(List<T> container, long index, T element) {
-                container.add(element);
-                return false;
-            }
-
-            @Override
-            public List<T> combine(List<T> firstContainer, List<T> secondContainer) {
-                firstContainer.addAll(secondContainer);
-                return firstContainer;
-            }
-
-            @Override
-            public List<T> finish(List<T> container) {
-                return container;
-            }
-        });
+        return collect(Collectors.toList());
     }
 
     default Optional<T> min(Comparator<? super T> comparator) {

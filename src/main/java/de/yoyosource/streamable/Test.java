@@ -1,6 +1,7 @@
 package de.yoyosource.streamable;
 
 import de.yoyosource.streamable.streams.AdvancedStream;
+import de.yoyosource.streamable.streams.IterableStream;
 import de.yoyosource.streamable.streams.JavaStream;
 
 import java.util.ArrayList;
@@ -16,7 +17,9 @@ import static de.yoyosource.streamable.streams.NumberStream.SummaryStatistics;
 public class Test {
 
     public static void main(String[] args) {
-        test_3();
+        if (false) test_3();
+        if (true) test_4();
+        if (false) test_5();
     }
 
     private static void test_1() {
@@ -62,9 +65,26 @@ public class Test {
     }
 
     private static void test_3() {
-        long count = Streamable.iterate(0L, aLong -> aLong < 1_000_000L, aLong -> aLong + 1)
+        long count = Streamable.iterate(0L, aLong -> aLong < 10_000_000L, aLong -> aLong + 1)
+                .parallel(16)
                 .flatMap(aLong -> List.of(aLong, aLong, aLong, aLong, aLong))
                 .count();
         System.out.println(count);
+    }
+
+    private static void test_4() {
+        Streamable.of(1, 2, 3, 4)
+                .map(integer -> List.of(integer, integer, integer, integer))
+                .as(IterableStream.IterableStream())
+                .map(integer -> integer * 2)
+                .distinct()
+                .flatten()
+                .forEach(System.out::println);
+    }
+
+    private static void test_5() {
+        Streamable.of(1, 2, 3, 4)
+                .iterator()
+                .forEachRemaining(System.out::println);
     }
 }

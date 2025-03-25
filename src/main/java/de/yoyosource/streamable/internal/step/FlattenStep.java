@@ -23,27 +23,11 @@ public class FlattenStep extends Step implements Evaluator {
     @Override
     public void consume(long index, Object value) {
         elements.add(new Element.Value<>(index, ((Iterable) value).iterator()));
-        startThread();
     }
 
     @Override
     public void finish() {
         elements.add(new Element.Finish());
-        startThread();
-    }
-
-    private void startThread() {
-        if (thread == null) {
-            thread = new Thread(() -> {
-                while (!finished) {
-                    while (!elements.isEmpty()) {
-                        processElement(elements.poll());
-                    }
-                }
-            });
-            thread.setDaemon(true);
-            thread.start();
-        }
     }
 
     private void processElement(Element element) {
@@ -56,7 +40,11 @@ public class FlattenStep extends Step implements Evaluator {
                 finished = true;
             } catch (Throwable e) {
                 finished = true;
-                next.finish();
+                try {
+                    next.finish();
+                } catch (FinishException ex) {
+                    // Ignore
+                }
                 root.setError(e);
             }
         } else {
@@ -88,7 +76,11 @@ public class FlattenStep extends Step implements Evaluator {
             }
             return true;
         } else {
-            next.finish();
+            try {
+                next.finish();
+            } catch (FinishException e) {
+                finished = true;
+            }
             return false;
         }
     }

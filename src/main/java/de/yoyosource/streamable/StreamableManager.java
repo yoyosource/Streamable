@@ -67,7 +67,64 @@ public class StreamableManager {
 
             // Methods of Iterable
             if (is(method, "iterator")) {
-                throw new UnsupportedOperationException("Iterator not implemented yet!");
+                List<Object> data = new ArrayList<>();
+                streamData.supplier.setNext(1, new StreamableCollector.Simple<>() {
+                    @Override
+                    public boolean accumulate(long index, Object element) {
+                        data.add(element);
+                        return false;
+                    }
+
+                    @Override
+                    public Object finish() {
+                        return null;
+                    }
+                });
+
+                StreamableConsumer streamableConsumer = streamData.supplier.getNext();
+                while (!(streamableConsumer instanceof Finish finish)) {
+                    if (streamableConsumer instanceof StreamableSupplier supplier) {
+                        streamableConsumer = supplier.getNext();
+                    } else {
+                        throw new UnsupportedOperationException("evaluate() cannot be called when no Finish Object is present!");
+                    }
+                }
+
+                List<Evaluator> evaluators = new ArrayList<>();
+                StreamableSupplier streamableSupplier = streamData.root;
+                while (streamableSupplier != null) {
+                    if (streamableSupplier instanceof Evaluator evaluator) {
+                        evaluators.add(evaluator);
+                    }
+                    if (streamableSupplier.getNext() instanceof StreamableSupplier supplier) {
+                        streamableSupplier = supplier;
+                    } else {
+                        streamableSupplier = null;
+                    }
+                }
+
+                return new Iterator<>() {
+                    private void generateNext() {
+                        for (int i = evaluators.size() - 1; i >= 0; i--) {
+                            Evaluator evaluator = evaluators.get(i);
+                            evaluator.evaluateNext();
+                            if (evaluator.backlogSize() > 1_000_000) break;
+                        }
+                    }
+
+                    @Override
+                    public boolean hasNext() {
+                        while (data.isEmpty() && finish.getResult() == null) {
+                            generateNext();
+                        }
+                        return !data.isEmpty();
+                    }
+
+                    @Override
+                    public Object next() {
+                        return data.removeFirst();
+                    }
+                };
             }
 
             // Methods of Streamable
@@ -125,37 +182,28 @@ public class StreamableManager {
                     }
                 }
 
-                if (false) {
-                    List<Evaluator> evaluators = new ArrayList<>();
-                    StreamableSupplier streamableSupplier = streamData.root;
-                    while (streamableSupplier != null) {
-                        if (streamableSupplier instanceof Evaluator evaluator) {
-                            evaluators.add(evaluator);
-                        }
-                        if (streamableSupplier.getNext() instanceof StreamableSupplier supplier) {
-                            streamableSupplier = supplier;
-                        } else {
-                            streamableSupplier = null;
-                        }
+                List<Evaluator> evaluators = new ArrayList<>();
+                StreamableSupplier streamableSupplier = streamData.root;
+                while (streamableSupplier != null) {
+                    if (streamableSupplier instanceof Evaluator evaluator) {
+                        evaluators.add(evaluator);
                     }
-
-                    while (finish.getResult() == null) {
-                        for (int i = evaluators.size() - 1; i >= 0; i--) {
-                            Evaluator evaluator = evaluators.get(i);
-                            do {
-                                if (evaluator.evaluateNext()) break;
-                            } while (evaluator.backlogSize() > 1_000_000);
-                        }
+                    if (streamableSupplier.getNext() instanceof StreamableSupplier supplier) {
+                        streamableSupplier = supplier;
+                    } else {
+                        streamableSupplier = null;
                     }
-                } else {
-                    streamData.root.evaluate();
                 }
 
                 while (finish.getResult() == null) {
                     if (streamData.root.getError() != null) {
                         unsafe.throwException(streamData.root.getError());
                     }
-                    Thread.yield();
+                    for (int i = evaluators.size() - 1; i >= 0; i--) {
+                        Evaluator evaluator = evaluators.get(i);
+                        evaluator.evaluateNext();
+                        if (evaluator.backlogSize() > 1_000_000) break;
+                    }
                 }
                 return finish.getResult().get();
             }
