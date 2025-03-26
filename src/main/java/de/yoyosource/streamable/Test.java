@@ -18,8 +18,9 @@ public class Test {
 
     public static void main(String[] args) {
         if (false) test_3();
-        if (true) test_4();
+        if (false) test_4();
         if (false) test_5();
+        if (true) test_6();
     }
 
     private static void test_1() {
@@ -86,5 +87,18 @@ public class Test {
         Streamable.of(1, 2, 3, 4)
                 .iterator()
                 .forEachRemaining(System.out::println);
+    }
+
+    private static void test_6() {
+        Streamable.generate(() -> new Random().nextBoolean())
+                .flatMap(aBoolean -> List.of(aBoolean, aBoolean, aBoolean, aBoolean, aBoolean))
+                .flatMap(aBoolean -> List.of(aBoolean, aBoolean, aBoolean, aBoolean, aBoolean))
+                .flatMap(aBoolean -> List.of(aBoolean, aBoolean, aBoolean, aBoolean, aBoolean))
+                .flatMap(aBoolean -> List.of(aBoolean, aBoolean, aBoolean, aBoolean, aBoolean))
+                .flatMap(aBoolean -> List.of(aBoolean, aBoolean, aBoolean, aBoolean, aBoolean))
+                .flatMap(aBoolean -> List.of(aBoolean, aBoolean, aBoolean, aBoolean, aBoolean))
+                // .limit(1_000_000_000_000L)
+                .limit(100_000_000L)
+                .count();
     }
 }

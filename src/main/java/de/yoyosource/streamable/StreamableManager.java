@@ -13,7 +13,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -86,7 +85,7 @@ public class StreamableManager {
                     if (streamableConsumer instanceof StreamableSupplier supplier) {
                         streamableConsumer = supplier.getNext();
                     } else {
-                        throw new UnsupportedOperationException("evaluate() cannot be called when no Finish Object is present!");
+                        throw new UnsupportedOperationException(method.getName() + "() cannot be called when no Finish Object is present!");
                     }
                 }
 
@@ -103,12 +102,14 @@ public class StreamableManager {
                     }
                 }
 
+                int maxBacklogPerEvaluator = 100_000_000 / evaluators.size();
+
                 return new Iterator<>() {
                     private void generateNext() {
                         for (int i = evaluators.size() - 1; i >= 0; i--) {
                             Evaluator evaluator = evaluators.get(i);
                             evaluator.evaluateNext();
-                            if (evaluator.backlogSize() > 1_000_000) break;
+                            if (evaluator.backlogSize() > maxBacklogPerEvaluator) break;
                         }
                     }
 
@@ -178,7 +179,7 @@ public class StreamableManager {
                     if (streamableConsumer instanceof StreamableSupplier supplier) {
                         streamableConsumer = supplier.getNext();
                     } else {
-                        throw new UnsupportedOperationException("evaluate() cannot be called when no Finish Object is present!");
+                        throw new UnsupportedOperationException(method.getName() + "() cannot be called when no Finish Object is present!");
                     }
                 }
 
@@ -195,6 +196,8 @@ public class StreamableManager {
                     }
                 }
 
+                int maxBacklogPerEvaluator = 100_000_000 / evaluators.size();
+
                 while (finish.getResult() == null) {
                     if (streamData.root.getError() != null) {
                         unsafe.throwException(streamData.root.getError());
@@ -202,7 +205,7 @@ public class StreamableManager {
                     for (int i = evaluators.size() - 1; i >= 0; i--) {
                         Evaluator evaluator = evaluators.get(i);
                         evaluator.evaluateNext();
-                        if (evaluator.backlogSize() > 1_000_000) break;
+                        if (evaluator.backlogSize() > maxBacklogPerEvaluator) break;
                     }
                 }
                 return finish.getResult().get();
@@ -219,7 +222,6 @@ public class StreamableManager {
             if (method.isDefault()) {
                 return InvocationHandler.invokeDefault(proxy, method, args);
             }
-            System.out.println(method + " " + Arrays.toString(args));
             throw new NoSuchMethodException("Method " + method.getName() + " not implemented!");
         });
         return clazz.cast(object);
