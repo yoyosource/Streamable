@@ -5,8 +5,8 @@ plugins {
 group = 'de.yoyosource'
 version = '1.0-SNAPSHOT'
 
-sourceCompatibility = 21
-targetCompatibility = 21
+sourceCompatibility = "23.PREVIEW"
+targetCompatibility = "23.PREVIEW"
 
 repositories {
     mavenCentral()
@@ -21,4 +21,8 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+compileJava {
+    options.compilerArgs += ['--enable-preview']
 }
