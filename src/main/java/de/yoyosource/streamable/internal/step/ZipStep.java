@@ -14,13 +14,16 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ZipStep extends Step implements Evaluator {
 
     private Iterator<Object> iterator;
+    private boolean ignoreNulls;
+
     private volatile boolean finished = false;
     private final AtomicLong index = new AtomicLong();
     private Queue<Element<?>> elements = new LinkedList<>();
 
-    public ZipStep(Streamable streamable) {
+    public ZipStep(Streamable streamable, boolean ignoreNulls) {
         super(null);
         iterator = streamable.iterator();
+        this.ignoreNulls = ignoreNulls;
     }
 
     @Override
@@ -36,6 +39,9 @@ public class ZipStep extends Step implements Evaluator {
     @Override
     public boolean evaluateNext() {
         if (finished) {
+            if (ignoreNulls) {
+                return false;
+            }
             if (iterator.hasNext()) {
                 Object value = iterator.next();
                 next.consume(index.getAndIncrement(), new ZippedStream.Zip<>(null, value));
@@ -57,12 +63,13 @@ public class ZipStep extends Step implements Evaluator {
                 Object other = iterator.next();
                 next.consume(index.getAndIncrement(), new ZippedStream.Zip<>(value.value(), other));
             } else {
+                if (ignoreNulls) return false;
                 next.consume(index.getAndIncrement(), new ZippedStream.Zip<>(value.value(), null));
             }
             return true;
         } else {
             finished = true;
-            if (iterator.hasNext()) {
+            if (!ignoreNulls && iterator.hasNext()) {
                 return true;
             }
             try {

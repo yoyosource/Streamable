@@ -101,9 +101,9 @@ public class Test {
     }
 
     private static void test_7() {
-        Streamable.of(1, 2, 3, 4, 5, 6)
+        Streamable.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
                 .as(AdvancedStream.AdvancedStream())
-                .zip(Streamable.of(4, 3, 2, 1, 0))
+                .zip(Streamable.of(4, 3, 2, 1, 0), true)
                 .forEach(System.out::println);
     }
 }

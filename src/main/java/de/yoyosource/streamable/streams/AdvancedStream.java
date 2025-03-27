@@ -473,6 +473,10 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     }
 
     default <B> ZippedStream<T, B> zip(Streamable<?, B> streamable) {
-        return ((Streamable<?, ZippedStream.Zip<?, ?>>) ((InternalStreamable) this).setNext(new ZipStep(streamable))).as(ZippedStream.class);
+        return ((Streamable<?, ZippedStream.Zip<?, ?>>) ((InternalStreamable) this).setNext(new ZipStep(streamable, false))).as(ZippedStream.class);
+    }
+
+    default <B> ZippedStream<T, B> zip(Streamable<?, B> streamable, boolean ignoreNulls) {
+        return ((Streamable<?, ZippedStream.Zip<?, ?>>) ((InternalStreamable) this).setNext(new ZipStep(streamable, ignoreNulls))).as(ZippedStream.class);
     }
 }
