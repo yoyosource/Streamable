@@ -4,20 +4,10 @@ import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.InternalStreamable;
+import de.yoyosource.streamable.internal.step.ZipStep;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.*;
+import java.util.function.*;
 
 public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
@@ -482,28 +472,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         });
     }
 
-    /*
-    default <B> ZippedStream<T, B> zip(de.yoyosource.streamable.Streamable<B> streamable) {
-        return gather(new de.yoyosource.streamable.StreamableGatherer<>() {
-            private Iterator<B> iterator = streamable.iterator();
-
-            @Override
-            public boolean apply(T input, Consumer<ZippedStream.Zip<T, B>> next) {
-                if (iterator.hasNext()) {
-                    next.accept(new ZippedStream.Zip<>(input, iterator.next()));
-                } else {
-                    next.accept(new ZippedStream.Zip<>(input, null));
-                }
-                return false;
-            }
-
-            @Override
-            public void finish(Consumer<ZippedStream.Zip<T, B>> next) {
-                iterator.forEachRemaining(b -> {
-                    next.accept(new ZippedStream.Zip<>(null, b));
-                });
-            }
-        });
+    default <B> ZippedStream<T, B> zip(Streamable<?, B> streamable) {
+        return ((Streamable<?, ZippedStream.Zip<?, ?>>) ((InternalStreamable) this).setNext(new ZipStep(streamable))).as(ZippedStream.class);
     }
-     */
 }

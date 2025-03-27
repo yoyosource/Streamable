@@ -4,10 +4,7 @@ import de.yoyosource.streamable.streams.AdvancedStream;
 import de.yoyosource.streamable.streams.IterableStream;
 import de.yoyosource.streamable.streams.JavaStream;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static de.yoyosource.streamable.streams.JavaStream.JavaStream;
@@ -20,7 +17,8 @@ public class Test {
         if (false) test_3();
         if (false) test_4();
         if (false) test_5();
-        if (true) test_6();
+        if (false) test_6();
+        if (true) test_7();
     }
 
     private static void test_1() {
@@ -100,5 +98,12 @@ public class Test {
                 // .limit(1_000_000_000_000L)
                 .limit(100_000_000L)
                 .count();
+    }
+
+    private static void test_7() {
+        Streamable.of(1, 2, 3, 4, 5, 6)
+                .as(AdvancedStream.AdvancedStream())
+                .zip(Streamable.of(4, 3, 2, 1, 0))
+                .forEach(System.out::println);
     }
 }
