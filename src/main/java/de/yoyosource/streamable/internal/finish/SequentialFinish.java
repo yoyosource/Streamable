@@ -49,6 +49,7 @@ public class SequentialFinish extends Finish {
             try {
                 if (collector.accumulate(container, value.index(), value.value())) {
                     finished = true;
+                    processElement(new Element.Finish());
                 }
             } catch (Throwable e) {
                 root.setError(e);
