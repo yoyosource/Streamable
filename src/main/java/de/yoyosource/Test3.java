@@ -52,6 +52,15 @@ public class Test3 {
                 ORDER.add(4);
             }));
         }
+        for (int i = 0; i < 5; i++) {
+            keys.add(ThreadManager.queue(() -> {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                }
+                ORDER.add(5);
+            }));
+        }
 
         Thread.sleep(100000);
         keys.forEach(ThreadManager.QueueKey::dequeue);
