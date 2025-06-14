@@ -1,17 +1,15 @@
-package de.yoyosource.streamable;
+package de.yoyosource;
 
+import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.streams.AdvancedStream;
 import de.yoyosource.streamable.streams.IterableStream;
-import de.yoyosource.streamable.streams.JavaStream;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 import static de.yoyosource.streamable.streams.JavaStream.JavaStream;
 import static de.yoyosource.streamable.streams.NumberStream.NumberStream;
-import static de.yoyosource.streamable.streams.NumberStream.SummaryStatistics;
 
-public class Test {
+public class Test4 {
 
     public static void main(String[] args) {
         if (false) test_3();

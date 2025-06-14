@@ -22,7 +22,7 @@ public class Sequence<T> implements Iterable<T>, Iterator<T> {
         return head.next == null;
     }
 
-    private synchronized ElementNode<T> _getNext() {
+    private ElementNode<T> _getNext() {
         if (!head.released) {
             return null;
         }
@@ -49,7 +49,7 @@ public class Sequence<T> implements Iterable<T>, Iterator<T> {
     private ElementNode<T> current = null;
 
     @Override
-    public boolean hasNext() {
+    public synchronized boolean hasNext() {
         if (current == null) {
             current = _getNext();
         }
@@ -58,7 +58,7 @@ public class Sequence<T> implements Iterable<T>, Iterator<T> {
 
     @Override
     @SuppressWarnings("java:S2272")
-    public T next() {
+    public synchronized T next() {
         T value = current.value;
         current = null;
         return value;

@@ -1,8 +1,8 @@
-package de.yoyosource.streamable;
+package de.yoyosource;
 
 import de.yoyosource.streamable.internal.SplittedQueue;
 
-public class Test2 {
+public class Test5 {
 
     public static void main(String[] args) {
         SplittedQueue<Integer> splittedQueue = new SplittedQueue<>();

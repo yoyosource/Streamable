@@ -4,12 +4,13 @@ import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.Sequence;
+import de.yoyosource.streamable.ThreadManager;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SequentialFinish extends Finish {
 
-    private volatile Thread thread = null;
+    private final ThreadManager.QueueKey queueKey;
     private volatile boolean finished = false;
 
     private final Sequence<Element> sequence = new Sequence<>();
@@ -19,24 +20,17 @@ public class SequentialFinish extends Finish {
 
     public SequentialFinish(StreamableCollector collector) {
         super(collector);
+        queueKey = ThreadManager.queueToCurrent(() -> {
+            if (sequence.hasNext()) {
+                processElement(sequence.next());
+            }
+        }, 1);
     }
 
     @Override
     public void consume(Element element) {
         if (finished) throw new FinishException();
         sequence.inserter().add(element).release();
-
-        if (thread == null) {
-            thread = new Thread(() -> {
-                while (!finished) {
-                    if (sequence.hasNext()) {
-                        processElement(sequence.next());
-                    }
-                }
-            });
-            thread.setDaemon(true);
-            thread.start();
-        }
     }
 
     private void processElement(Element element) {
@@ -52,10 +46,12 @@ public class SequentialFinish extends Finish {
                     processElement(new Element.Finish());
                 }
             } catch (Throwable e) {
+                queueKey.dequeue();
                 root.setError(e);
                 finished = true;
             }
         } else {
+            queueKey.dequeue();
             try {
                 Object result = collector.finish(container);
                 collector.close();

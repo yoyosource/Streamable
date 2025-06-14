@@ -2,14 +2,14 @@ package de.yoyosource.streamable.internal.step;
 
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.FinishException;
+import de.yoyosource.streamable.ThreadManager;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SequentialStep extends Step {
 
-    private volatile Thread thread = null;
+    private final ThreadManager.QueueKey queueKey;
     private volatile long index = 0;
     private volatile boolean finished = false;
 
@@ -21,6 +21,23 @@ public class SequentialStep extends Step {
 
     public SequentialStep(StreamableGatherer streamableGatherer) {
         super(streamableGatherer);
+        queueKey = ThreadManager.queueToCurrent(() -> {
+            if (finished) {
+                processElement(null, null);
+                return;
+            }
+
+            Long index;
+            Object value;
+
+            synchronized (elementIndex) {
+                if (elementIndex.isEmpty() || elementValue.isEmpty()) return;
+                index = elementIndex.poll();
+                value = elementValue.poll();
+            }
+
+            processElement(index, value);
+        }, 1);
     }
 
     @Override
@@ -30,7 +47,6 @@ public class SequentialStep extends Step {
             elementIndex.add(index);
             elementValue.add(value);
         }
-        startThread();
     }
 
     @Override
@@ -39,30 +55,6 @@ public class SequentialStep extends Step {
         synchronized (elementIndex) {
             elementIndex.add(null);
             elementValue.add(null);
-        }
-        startThread();
-    }
-
-    private void startThread() {
-        if (thread == null) {
-            thread = new Thread(() -> {
-                while (!finished) {
-                    Long index;
-                    Object value;
-
-                    synchronized (elementIndex) {
-                        if (elementIndex.isEmpty() || elementValue.isEmpty()) continue;
-                        index = elementIndex.poll();
-                        value = elementValue.poll();
-                    }
-
-                    processElement(index, value);
-                }
-
-                processElement(null, null);
-            });
-            thread.setDaemon(true);
-            thread.start();
         }
     }
 
@@ -81,8 +73,13 @@ public class SequentialStep extends Step {
                 }
             } catch (FinishException e) {
                 finished = true;
+            } catch (Throwable e) {
+                queueKey.dequeue();
+                root.setError(e);
+                finished = true;
             }
         } else {
+            queueKey.dequeue();
             try {
                 gatherer.finish(container, o -> {
                     next.consume(this.index++, o);
@@ -91,6 +88,9 @@ public class SequentialStep extends Step {
                 next.finish();
             } catch (FinishException e) {
                 // Ignore
+            } catch (Throwable e) {
+                root.setError(e);
+                finished = true;
             }
         }
     }
