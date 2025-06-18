@@ -146,31 +146,63 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default JavaStream<T> limit(long maxSize) {
-        return gather(new StreamableGatherer.Simple<>() {
-            @Override
-            public boolean integrate(long index, T input, Consumer<? super T> next) {
-                next.accept(input);
-                return index == maxSize - 1;
-            }
+        if (maxSize < 0) {
+            throw new IllegalArgumentException("Size cannot be negative!");
+        }
+        if (maxSize == 0) {
+            return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public boolean integrate(long index, T element, Consumer<? super T> next) {
+                    return true;
+                }
 
-            @Override
-            public void finish(Consumer<? super T> next) {
-            }
-        });
+                @Override
+                public void finish(Consumer<? super T> next) {
+                }
+            });
+        } else {
+            return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public boolean integrate(long index, T input, Consumer<? super T> next) {
+                    next.accept(input);
+                    return index == maxSize - 1;
+                }
+
+                @Override
+                public void finish(Consumer<? super T> next) {
+                }
+            });
+        }
     }
 
     default JavaStream<T> skip(long skip) {
-        return gather(new StreamableGatherer.Simple<>() {
-            @Override
-            public boolean integrate(long index, T input, Consumer<? super T> next) {
-                if (index >= skip) next.accept(input);
-                return false;
-            }
+        if (skip < 0) {
+            throw new IllegalArgumentException("Skip cannot be negative!");
+        } else if (skip == 0) {
+            return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public boolean integrate(long index, T element, Consumer<? super T> next) {
+                    next.accept(element);
+                    return false;
+                }
 
-            @Override
-            public void finish(Consumer<? super T> next) {
-            }
-        });
+                @Override
+                public void finish(Consumer<? super T> next) {
+                }
+            });
+        } else {
+            return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public boolean integrate(long index, T input, Consumer<? super T> next) {
+                    if (index >= skip) next.accept(input);
+                    return false;
+                }
+
+                @Override
+                public void finish(Consumer<? super T> next) {
+                }
+            });
+        }
     }
 
     default JavaStream<T> takeWhile(Predicate<? super T> predicate) {
