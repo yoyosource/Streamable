@@ -5,11 +5,11 @@ import de.yoyosource.streamable.internal.FinishException;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class FindFirstFinish extends Finish {
+public class FindAnyFinish extends Finish {
 
     private volatile boolean finished = false;
 
-    public FindFirstFinish() {
+    public FindAnyFinish() {
         super(null);
     }
 

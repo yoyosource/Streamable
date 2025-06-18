@@ -6,7 +6,7 @@ import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.data.SingleData;
 import de.yoyosource.streamable.internal.InternalStreamable;
 import de.yoyosource.streamable.internal.InternalStreamableCollector;
-import de.yoyosource.streamable.internal.finish.FindFirstFinish;
+import de.yoyosource.streamable.internal.finish.FindAnyFinish;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -488,7 +488,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> findAny() {
-        return Optional.ofNullable(((InternalStreamable) this).setNext(new FindFirstFinish()).evaluate());
+        return Optional.ofNullable(((InternalStreamable) this).setNext(new FindAnyFinish()).evaluate());
     }
 
     default Optional<T> findLast() {

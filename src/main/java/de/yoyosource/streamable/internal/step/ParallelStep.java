@@ -27,6 +27,7 @@ public class ParallelStep extends Step {
     private final Map<Long, Object> containers = new HashMap<>();
 
     private final AtomicLong index = new AtomicLong();
+    // TODO: Dont use result Sequence if next Element is a FindAnyFinish!
     private final Sequence results = new Sequence();
 
     public ParallelStep(StreamableGatherer streamableGatherer, int maxParallelTasks) {
