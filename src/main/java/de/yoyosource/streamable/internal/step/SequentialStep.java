@@ -80,6 +80,7 @@ public class SequentialStep extends Step {
             }
         } else {
             queueKey.dequeue();
+            finished = true;
             try {
                 gatherer.finish(container, o -> {
                     next.consume(this.index++, o);
@@ -90,7 +91,6 @@ public class SequentialStep extends Step {
                 // Ignore
             } catch (Throwable e) {
                 root.setError(e);
-                finished = true;
             }
         }
     }
