@@ -4,7 +4,9 @@ import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.data.SingleData;
+import de.yoyosource.streamable.internal.InternalStreamable;
 import de.yoyosource.streamable.internal.InternalStreamableCollector;
+import de.yoyosource.streamable.internal.finish.FindFirstFinish;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -230,7 +232,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
             @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
-                if (predicate.test(input)) take = true;
+                if (!predicate.test(input)) take = true;
                 if (take) next.accept(input);
                 return false;
             }
@@ -486,8 +488,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> findAny() {
-        // TODO: Optimize this for multithreading element before!
-        return findFirst();
+        return Optional.ofNullable(((InternalStreamable) this).setNext(new FindFirstFinish()).evaluate());
     }
 
     default Optional<T> findLast() {
