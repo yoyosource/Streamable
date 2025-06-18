@@ -113,7 +113,12 @@ public class ParallelStep extends Step {
 
         for (Object o : results) {
             if (this.index.get() > finish) continue;
-            next.consume(this.index.getAndIncrement(), o);
+            try {
+                next.consume(this.index.getAndIncrement(), o);
+            } catch (FinishException e) {
+                finish = Math.min(finish, this.index.get());
+                break;
+            }
         }
 
         synchronized (containers) {
