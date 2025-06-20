@@ -1,8 +1,8 @@
 package de.yoyosource.streamable.internal.step;
 
 import de.yoyosource.streamable.StreamableGatherer;
-import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.ThreadManager;
+import de.yoyosource.streamable.internal.FinishException;
 
 import java.util.LinkedList;
 import java.util.Queue;

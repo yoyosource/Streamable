@@ -1,10 +1,14 @@
 package de.yoyosource.streamable;
 
-import de.yoyosource.streamable.internal.Ring;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class ThreadManager {
 
@@ -25,28 +29,12 @@ public class ThreadManager {
         return LOCAL.get().queue(runnable, concurrentInstances);
     }
 
-    public static ThreadManager getInstance() {
-        Thread thread = Thread.currentThread();
-        if (thread instanceof Worker) {
-            return ((Worker) thread).getThreadManager();
-        } else {
-            return LOCAL.get();
-        }
-    }
-
     @Getter
     private final String name;
+    private List<Worker> workers = new ArrayList<>();
+    private List<QueueKey> work = new ArrayList<>();
 
-    public ThreadManager() {
-        int num = THREAD_MANAGER_ID.getAndIncrement();
-        if (num == 0) {
-            name = "GlobalThreadManager";
-        } else {
-            name = "ThreadManager" + num;
-        }
-    }
-
-    private AtomicInteger workerThreadIds = new AtomicInteger();
+    private final AtomicInteger workerThreadIds = new AtomicInteger();
 
     @Setter
     private long maxWorkIdleTime = 50;
@@ -61,20 +49,37 @@ public class ThreadManager {
         this.maxNumberOfThreads = maxNumberOfThreads;
     }
 
-    private final Ring<Worker> workers = new Ring<>();
-    private final Ring<QueueKey> work = new Ring<>();
+    public ThreadManager() {
+        int num = THREAD_MANAGER_ID.getAndIncrement();
+        if (num == 0) {
+            name = "GlobalThreadManager";
+        } else {
+            name = "ThreadManager" + num;
+        }
+
+        Thread manager = new Thread(this::run);
+        manager.setDaemon(true);
+        manager.setName(name + "-Manager");
+        manager.start();
+    }
+
+    public QueueKey queue(Runnable runnable, int concurrentInstances) {
+        QueueKey queueKey = new QueueKey(runnable, concurrentInstances);
+        work.add(queueKey);
+        return queueKey;
+    }
 
     public static final class QueueKey {
-
         private final Runnable runnable;
-        private boolean dequeued = false;
-        private long lastFinish = System.currentTimeMillis();
         private AtomicInteger running = new AtomicInteger();
 
-        private QueueKey(Runnable runnable, int concurrentInstances) {
+        public QueueKey(Runnable runnable, int concurrentInstances) {
             this.runnable = runnable;
             running.set(concurrentInstances);
         }
+
+        private boolean dequeued = false;
+        private long lastFinish = System.currentTimeMillis();
 
         public void dequeue() {
             dequeued = true;
@@ -84,98 +89,127 @@ public class ThreadManager {
         public String toString() {
             return "QueueKey{" +
                     "runnable=" + runnable +
+                    ", running=" + running +
                     ", dequeued=" + dequeued +
                     ", lastFinish=" + lastFinish +
-                    ", running=" + running +
                     '}';
         }
     }
 
-    private final class Worker extends Thread {
+    private void run() {
+        while (true) {
+            long now = System.currentTimeMillis();
+            // Remove all Dead Thread!
+            workers.removeIf(worker -> !worker.isAlive());
 
-        public Worker() {
-            setDaemon(true);
-            setName(getThreadManager().name + "-Worker-" + workerThreadIds.getAndIncrement());
-            start();
-        }
-
-        public ThreadManager getThreadManager() {
-            return ThreadManager.this;
-        }
-
-        @Override
-        public void run() {
-            long lastRun = System.currentTimeMillis();
-            while (true) {
-                if (!workers.hasData()) {
-                    continue;
+            // Check if anything needs to be dequeued
+            List<QueueKey> dequeuedQueueKeys = new ArrayList<>();
+            work.removeIf(queueKey -> {
+                if (!queueKey.dequeued) return false;
+                dequeuedQueueKeys.add(queueKey);
+                return true;
+            });
+            // Interrupt all Threads that should be dequeued and remove them from the workers list
+            dequeuedQueueKeys.forEach(queueKey -> {
+                List<Worker> toRemove = workers.stream()
+                        .filter(worker -> worker.currentWork.get() == queueKey)
+                        .toList();
+                for (Worker worker : toRemove) {
+                    worker.interrupt();
+                    workers.remove(worker);
                 }
+            });
 
-                if (workers.getData() != this) {
-                    Thread.yield();
-                    continue;
-                }
+            // Retrieve all open work from most important to run next to least important
+            List<QueueKey> openWork = work.stream()
+                    .filter(queueKey -> queueKey.running.get() > 0)
+                    .sorted(Comparator.<QueueKey>comparingInt(value -> -value.running.get())
+                            .thenComparingLong(value -> value.lastFinish))
+                    .collect(Collectors.toList());
 
-                if (!work.hasData()) {
-                    // Remove and stop current Thread if idle for longer than a second
-                    if (System.currentTimeMillis() - lastRun > maxThreadIdleTime) {
-                        workers.remove();
-                        return;
+            // Retrieve all open workers without anything to do
+            List<Worker> openWorkers = workers.stream()
+                    .filter(worker -> worker.currentWork.get() == null)
+                    .collect(Collectors.toList());
+
+            // System.out.println(openWork + " " + openWorkers);
+
+            // Assign everything to the openWorkers until no work or no workers are left
+            while (!openWork.isEmpty() && !openWorkers.isEmpty()) {
+                QueueKey queueKey = openWork.removeFirst();
+                Worker worker = openWorkers.removeFirst();
+                worker.setWork(queueKey);
+            }
+
+            // Check for every remaining work and create a Worker if absolutely necessary (see maxWorkIdleTime)
+            for (QueueKey queueKey : openWork) {
+                if (now - queueKey.lastFinish > maxWorkIdleTime) {
+                    if (workers.size() >= maxNumberOfThreads) {
+                        break;
                     }
-
-                    Thread.yield();
-                    continue;
+                    Worker worker = new Worker(this);
+                    // System.out.println("Starting new Thread");
+                    worker.setWork(queueKey);
+                    workers.add(worker);
+                } else {
+                    break;
                 }
+            }
 
-                // Remove any work that should not run any longer
-                if (work.getData().dequeued) {
-                    work.remove();
-                    continue;
+            // Remove any worker not having something to do for more than maxThreadIdleTime
+            for (Worker worker : openWorkers) {
+                if (now - worker.lastFinish > maxThreadIdleTime) {
+                    worker.interrupt();
+                    workers.remove(worker);
+                    // System.out.println("Stopping worker!");
                 }
-
-                QueueKey key = work.getData();
-                if (key.running.get() == 0) {
-                    work.next();
-                    continue;
-                }
-
-                key.running.decrementAndGet();
-                work.next();
-                if (workers.getSize() < maxNumberOfThreads && work.getData().running.get() > 0 && System.currentTimeMillis() - work.getData().lastFinish > maxWorkIdleTime) {
-                    workers.add(new Worker());
-                }
-
-                workers.next();
-                key.runnable.run();
-                synchronized (key) {
-                    key.lastFinish = System.currentTimeMillis();
-                }
-                key.running.incrementAndGet();
-                lastRun = System.currentTimeMillis();
             }
         }
     }
 
-    public QueueKey queue(Runnable runnable, int concurrentInstances) {
-        if (workers.getSize() == 0) {
-            workers.add(new Worker());
+    private static final class Worker extends Thread {
+
+        private final AtomicReference<QueueKey> currentWork = new AtomicReference<>(null);
+        private long lastFinish = System.currentTimeMillis();
+
+        public Worker(ThreadManager manager) {
+            setDaemon(true);
+            setName(manager.name + "-Worker-" + manager.workerThreadIds.getAndIncrement());
+            start();
         }
 
-        QueueKey queueKey = new QueueKey(runnable, concurrentInstances);
-        work.add(queueKey);
-        return queueKey;
-    }
+        public void setWork(QueueKey queueKey) {
+            if (!this.isAlive() || this.isInterrupted()) return;
+            // System.out.println(getName() + "=" + queueKey);
+            queueKey.running.decrementAndGet();
+            currentWork.set(queueKey);
+        }
 
-    public int getNumberOfThreads() {
-        return workers.getSize();
-    }
+        @Override
+        public void run() {
+            try {
+                while (!this.isInterrupted()) {
+                    QueueKey queueKey = currentWork.get();
+                    if (queueKey == null) {
+                        Thread.yield();
+                        continue;
+                    }
 
-    @Override
-    public String toString() {
-        return name + "{" +
-                "maxWorkIdleTime=" + maxWorkIdleTime +
-                ", maxThreadIdleTime=" + maxThreadIdleTime +
-                ", maxNumberOfThreads=" + maxNumberOfThreads +
-                '}';
+                    try {
+                        queueKey.runnable.run();
+                    } catch (Throwable t) {
+                        if (t instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                    queueKey.lastFinish = System.currentTimeMillis();
+                    this.lastFinish = System.currentTimeMillis();
+                    currentWork.set(null);
+                    queueKey.running.incrementAndGet();
+                }
+            } catch (Throwable t) {
+                // Ignore
+            }
+        }
     }
 }

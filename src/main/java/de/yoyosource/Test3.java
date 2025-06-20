@@ -63,12 +63,14 @@ public class Test3 {
                 }, random.nextInt(3) + 1));
             }
         }
+        /*
         System.out.println(": " + tm.getNumberOfThreads());
         keys.forEach(ThreadManager.QueueKey::dequeue);
 
         while (tm.getNumberOfThreads() > 0) {
             Thread.yield();
         }
+         */
 
         System.out.println(ORDER.size());
         Map<Integer, Long> counts = ORDER.stream().collect(Collectors.toMap(k -> k, k -> 1L, Long::sum));

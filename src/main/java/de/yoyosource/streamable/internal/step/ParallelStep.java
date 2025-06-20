@@ -1,10 +1,10 @@
 package de.yoyosource.streamable.internal.step;
 
 import de.yoyosource.streamable.StreamableGatherer;
+import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.Sequence;
-import de.yoyosource.streamable.ThreadManager;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;

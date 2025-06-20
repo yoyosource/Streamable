@@ -15,7 +15,7 @@ class MapMultiTest {
     @Test
     void testMapMultiSameSize() {
         List<Integer> list = Streamable.of(1, 2, 3)
-                .<Integer> mapMulti((integer, consumer) -> consumer.accept(integer))
+                .<Integer>mapMulti((integer, consumer) -> consumer.accept(integer))
                 .collect(Collectors.toList());
         Assertions.assertEquals(3, list.size());
         Assertions.assertEquals(1, list.get(0));
@@ -41,10 +41,8 @@ class MapMultiTest {
     }
 
     @Test
-    @Disabled("Currently infinite loops inside the ThreadManager create a deadlock!")
     void testMapMultiInfiniteElements() {
-        JavaStream<Integer> stream = Streamable.of(1, 2);
-        List<Integer> list = stream
+        List<Integer> list = Streamable.of(1, 2)
                 .<Integer>mapMulti((integer, consumer) -> {
                     while (true) {
                         consumer.accept(integer);
