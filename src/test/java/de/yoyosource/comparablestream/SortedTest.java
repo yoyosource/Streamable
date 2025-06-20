@@ -19,7 +19,7 @@ class SortedTest {
                 .toList();
         Assertions.assertEquals(3, result.size());
         Assertions.assertEquals(1, result.get(0));
-        Assertions.assertEquals(2, result.get(2));
-        Assertions.assertEquals(3, result.get(3));
+        Assertions.assertEquals(2, result.get(1));
+        Assertions.assertEquals(3, result.get(2));
     }
 }
