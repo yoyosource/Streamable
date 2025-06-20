@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,7 +33,7 @@ public class ThreadManager {
     @Getter
     private final String name;
     private List<Worker> workers = new ArrayList<>();
-    private List<QueueKey> work = new ArrayList<>();
+    private final List<QueueKey> work = new ArrayList<>();
 
     private final AtomicInteger workerThreadIds = new AtomicInteger();
 
@@ -65,7 +66,9 @@ public class ThreadManager {
 
     public QueueKey queue(Runnable runnable, int concurrentInstances) {
         QueueKey queueKey = new QueueKey(runnable, concurrentInstances);
-        work.add(queueKey);
+        synchronized (work) {
+            work.add(queueKey);
+        }
         return queueKey;
     }
 
@@ -104,11 +107,13 @@ public class ThreadManager {
 
             // Check if anything needs to be dequeued
             List<QueueKey> dequeuedQueueKeys = new ArrayList<>();
-            work.removeIf(queueKey -> {
-                if (!queueKey.dequeued) return false;
-                dequeuedQueueKeys.add(queueKey);
-                return true;
-            });
+            synchronized (work) {
+                work.removeIf(queueKey -> {
+                    if (!queueKey.dequeued) return false;
+                    dequeuedQueueKeys.add(queueKey);
+                    return true;
+                });
+            }
             // Interrupt all Threads that should be dequeued and remove them from the workers list
             dequeuedQueueKeys.forEach(queueKey -> {
                 List<Worker> toRemove = workers.stream()
@@ -121,11 +126,14 @@ public class ThreadManager {
             });
 
             // Retrieve all open work from most important to run next to least important
-            List<QueueKey> openWork = work.stream()
-                    .filter(queueKey -> queueKey.running.get() > 0)
-                    .sorted(Comparator.<QueueKey>comparingInt(value -> -value.running.get())
-                            .thenComparingLong(value -> value.lastFinish))
-                    .collect(Collectors.toList());
+            List<QueueKey> openWork;
+            synchronized (work) {
+                openWork = work.stream()
+                        .filter(queueKey -> queueKey.running.get() > 0)
+                        .sorted(Comparator.<QueueKey>comparingInt(value -> -value.running.get())
+                                .thenComparingLong(value -> value.lastFinish))
+                        .collect(Collectors.toList());
+            }
 
             // Retrieve all open workers without anything to do
             List<Worker> openWorkers = workers.stream()
