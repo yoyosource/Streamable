@@ -11,7 +11,7 @@ import java.util.List;
 class AllElementsTest {
 
     @Test
-    void allElementsTest() {
+    void testAllElements() {
         List<List<Integer>> list = Streamable.of(1, 2, 3)
                 .as(AdvancedStream.AdvancedStream())
                 .allElements()
@@ -25,7 +25,7 @@ class AllElementsTest {
     }
 
     @Test
-    void allElementsTestNoElements() {
+    void testAllElementsNoElements() {
         List<List<Integer>> list = Streamable.<Integer>of()
                 .as(AdvancedStream.AdvancedStream())
                 .allElements()
