@@ -3,6 +3,7 @@ package de.yoyosource.javastream;
 import de.yoyosource.streamable.Streamable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,7 +11,9 @@ import java.util.stream.Collectors;
 class SortedTest {
 
     @Test
+    @Timeout(5)
     void testSorted() {
+        // TODO: Infinite?
         List<Integer> list = Streamable.of(3, 2, 1)
                 .sorted(Integer::compareTo)
                 .collect(Collectors.toList());

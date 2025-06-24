@@ -24,9 +24,11 @@ public interface IterableStream<T> extends Streamable<IterableStream<T>, Iterabl
         return (Class<IterableStream<T>>) (Class) IterableStream.class;
     }
 
-    static <T> Streamable<?, T> toStreamable(Iterable<T> iterable) {
-        if (iterable instanceof Streamable<?, ?> streamable) {
-            return (Streamable<?, T>) streamable;
+    static <T> JavaStream<T> toStreamable(Iterable<T> iterable) {
+        if (iterable instanceof JavaStream<T> javaStream) {
+            return javaStream;
+        } else if (iterable instanceof Streamable<?, T> streamable) {
+            return streamable.as(JavaStream.JavaStream());
         } else {
             return Streamable.from(iterable);
         }
@@ -44,7 +46,7 @@ public interface IterableStream<T> extends Streamable<IterableStream<T>, Iterabl
         return gather(new StreamableGatherer.Simple<>() {
             @Override
             public boolean integrate(long index, Iterable<T> element, Consumer<? super Iterable<R>> next) {
-                next.accept(mapper.apply(toStreamable(element).as(JavaStream.JavaStream())));
+                next.accept(mapper.apply(toStreamable(element)));
                 return false;
             }
 
@@ -58,7 +60,7 @@ public interface IterableStream<T> extends Streamable<IterableStream<T>, Iterabl
         return gather(new StreamableGatherer.Simple<Iterable<T>, R>() {
             @Override
             public boolean integrate(long index, Iterable<T> element, Consumer<? super R> next) {
-                next.accept(mapper.apply(toStreamable(element).as(JavaStream.JavaStream())));
+                next.accept(mapper.apply(toStreamable(element)));
                 return false;
             }
 

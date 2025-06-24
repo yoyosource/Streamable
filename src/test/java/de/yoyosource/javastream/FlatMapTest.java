@@ -3,6 +3,7 @@ package de.yoyosource.javastream;
 import de.yoyosource.streamable.Streamable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,7 +11,9 @@ import java.util.stream.Collectors;
 class FlatMapTest {
 
     @Test
+    @Timeout(5)
     void testFlatMapSameSize() {
+        // TODO: infinite?
         List<Integer> list = Streamable.of(1, 2, 3)
                 .flatMap(List::of)
                 .collect(Collectors.toList());
@@ -22,6 +25,7 @@ class FlatMapTest {
 
     @Test
     void testFlatMapMultipleElements() {
+        // TODO: Flaky?
         List<Integer> list = Streamable.of(1, 2, 3)
                 .flatMap(i -> List.of(i, i))
                 .collect(Collectors.toList());
