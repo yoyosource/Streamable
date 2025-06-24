@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 class FilterTest {
 
     @Test
-    void filterNoneRemoved() {
+    void testFilterNoneRemoved() {
         List<Integer> list = Streamable.of(1, 2, 3)
                 .filter(integer -> integer > 0)
                 .collect(Collectors.toList());
@@ -21,7 +21,7 @@ class FilterTest {
     }
 
     @Test
-    void filterAllRemoved() {
+    void testFilterAllRemoved() {
         List<Integer> list = Streamable.of(1, 2, 3)
                 .filter(integer -> integer < 0)
                 .collect(Collectors.toList());
@@ -29,7 +29,7 @@ class FilterTest {
     }
 
     @Test
-    void filterSomeRemoved() {
+    void testFilterSomeRemoved() {
         List<Integer> list = Streamable.of(1, 2, 3)
                 .filter(integer -> integer > 1)
                 .collect(Collectors.toList());

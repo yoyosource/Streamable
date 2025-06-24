@@ -49,7 +49,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         });
     }
 
-    default <R> AdvancedStream<R> flapMapIndexed(BiFunction<? super T, Long, ? extends Iterable<? extends R>> mapper) {
+    default <R> AdvancedStream<R> flatMapIndexed(BiFunction<? super T, Long, ? extends Iterable<? extends R>> mapper) {
         return flatGather(new StreamableGatherer.Simple<>() {
             @Override
             public boolean integrate(long index, T input, Consumer<? super Iterable<R>> next) {
@@ -140,7 +140,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
-                if (predicate.test(element, index)) take = true;
+                if (!predicate.test(element, index)) take = true;
                 if (take) next.accept(element);
                 return false;
             }
