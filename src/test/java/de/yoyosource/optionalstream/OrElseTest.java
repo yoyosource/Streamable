@@ -1,7 +1,6 @@
 package de.yoyosource.optionalstream;
 
 import de.yoyosource.streamable.Streamable;
-import de.yoyosource.streamable.streams.JavaStream;
 import de.yoyosource.streamable.streams.OptionalStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

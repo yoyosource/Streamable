@@ -1,11 +1,8 @@
 package de.yoyosource.javastream;
 
 import de.yoyosource.streamable.Streamable;
-import de.yoyosource.streamable.streams.JavaStream;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
 import java.util.List;
 import java.util.stream.Collectors;

@@ -1,7 +1,6 @@
 package de.yoyosource.trystream;
 
 import de.yoyosource.streamable.Streamable;
-import de.yoyosource.streamable.Try;
 import de.yoyosource.streamable.streams.JavaStream;
 import de.yoyosource.streamable.streams.TryedStream;
 import de.yoyosource.streamable.streams.TryingStream;
