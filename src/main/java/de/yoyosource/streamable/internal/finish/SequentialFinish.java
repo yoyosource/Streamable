@@ -56,10 +56,11 @@ public class SequentialFinish extends Finish {
                 Object result = collector.finish(container);
                 collector.close();
                 this.result = new AtomicReference<>(result);
-                finished = true;
             } catch (Throwable e) {
                 root.setError(e);
                 this.result = new AtomicReference<>(null);
+            } finally {
+                finished = true;
             }
         }
     }

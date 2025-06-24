@@ -100,14 +100,27 @@ public class ThreadManager {
     }
 
     private void run() {
+        // long time = System.currentTimeMillis();
         while (true) {
             long now = System.currentTimeMillis();
+            // boolean debugOutput = now - time > 1000;
+            // if (debugOutput) {
+            //     time = now;
+            // }
+            // if (debugOutput) {
+            //     synchronized (work) {
+            //         System.out.println(work.size() + ": " + work);
+            //     }
+            // }
             // Remove all Dead Thread!
             workers.removeIf(worker -> !worker.isAlive());
 
             // Check if anything needs to be dequeued
             List<QueueKey> dequeuedQueueKeys = new ArrayList<>();
             synchronized (work) {
+                // if (debugOutput) {
+                //     System.out.println("Removing anything that is dequeued");
+                // }
                 work.removeIf(queueKey -> {
                     if (!queueKey.dequeued) return false;
                     dequeuedQueueKeys.add(queueKey);
@@ -122,12 +135,16 @@ public class ThreadManager {
                 for (Worker worker : toRemove) {
                     worker.interrupt();
                     workers.remove(worker);
+                    // System.out.println("Remove worker: " + worker);
                 }
             });
 
             // Retrieve all open work from most important to run next to least important
             List<QueueKey> openWork;
             synchronized (work) {
+                // if (debugOutput) {
+                //     System.out.println("Selecting anything that is currently not running");
+                // }
                 openWork = work.stream()
                         .filter(queueKey -> queueKey.running.get() > 0)
                         .sorted(Comparator.<QueueKey>comparingInt(value -> -value.running.get())
@@ -156,9 +173,9 @@ public class ThreadManager {
                         break;
                     }
                     Worker worker = new Worker(this);
-                    // System.out.println("Starting new Thread");
                     worker.setWork(queueKey);
                     workers.add(worker);
+                    // System.out.println("Add worker: " + worker);
                 } else {
                     break;
                 }
@@ -169,7 +186,7 @@ public class ThreadManager {
                 if (now - worker.lastFinish > maxThreadIdleTime) {
                     worker.interrupt();
                     workers.remove(worker);
-                    // System.out.println("Stopping worker!");
+                    // System.out.println("Remove worker: " + worker);
                 }
             }
         }
