@@ -29,7 +29,6 @@ class FilterRightTest {
 
     @Test
     void testFilterRightNoResult() {
-        // TODO: flaky? null?
         List<ZippedStream.Zip<Integer, Integer>> list = Streamable.of(1, 2, 3)
                 .as(AdvancedStream.AdvancedStream())
                 .zip(Streamable.of(4, 5, 6))

@@ -14,7 +14,6 @@ class FilterTest {
 
     @Test
     void testFilterA() {
-        // TODO Flaky? b sometimes is 6?
         List<ZippedStream.Zip<Integer, Integer>> list = Streamable.of(1, 2, 3)
                 .as(AdvancedStream.AdvancedStream())
                 .zip(Streamable.of(4, 5, 6))

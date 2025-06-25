@@ -5,7 +5,6 @@ import de.yoyosource.streamable.streams.AdvancedStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
 class ToSetTest {

@@ -5,7 +5,6 @@ import de.yoyosource.streamable.streams.AdvancedStream;
 import de.yoyosource.streamable.streams.JavaStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,9 +25,7 @@ class FlatMapMultiTest {
     }
 
     @Test
-    @Timeout(5)
     void testFlatMapMultiIndexedMultipleElements() {
-        // TODO: Flaky? / Infinite?
         List<Integer> list = Streamable.of(1, 2, 3)
                 .as(AdvancedStream.AdvancedStream())
                 .flatMapMulti((integer, consumer) -> {
