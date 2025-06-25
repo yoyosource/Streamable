@@ -44,7 +44,7 @@ class ConcatTest {
     void testConcatNoElementsInSecond() {
         List<Integer> list = Streamable.of(1, 2, 3)
                 .as(AdvancedStream.AdvancedStream())
-                .concat(Streamable.<Integer>of())
+                .concat(Streamable.of())
                 .as(JavaStream.JavaStream())
                 .collect(Collectors.toList());
         Assertions.assertEquals(3, list.size());

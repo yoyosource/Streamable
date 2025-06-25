@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 public class StreamableManager {
@@ -66,11 +67,13 @@ public class StreamableManager {
 
             // Methods of Iterable
             if (is(method, "iterator")) {
-                List<Object> data = new ArrayList<>();
+                final List<Object> data = new LinkedList<>();
                 streamData.supplier.setNext(1, new StreamableCollector.Simple<>() {
                     @Override
                     public boolean accumulate(long index, Object element) {
-                        data.add(element);
+                        synchronized (data) {
+                            data.add(element);
+                        }
                         return false;
                     }
 
@@ -115,15 +118,23 @@ public class StreamableManager {
 
                     @Override
                     public boolean hasNext() {
-                        while (data.isEmpty() && finish.getResult() == null) {
+                        while (true) {
+                            synchronized (data) {
+                                if (!data.isEmpty()) break;
+                                if (finish.getResult() != null) break;
+                            }
                             generateNext();
                         }
-                        return !data.isEmpty();
+                        synchronized (data) {
+                            return !data.isEmpty();
+                        }
                     }
 
                     @Override
                     public Object next() {
-                        return data.removeFirst();
+                        synchronized (data) {
+                            return data.removeFirst();
+                        }
                     }
                 };
             }
