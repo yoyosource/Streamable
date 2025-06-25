@@ -5,22 +5,9 @@ import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.data.SingleData;
-import de.yoyosource.streamable.internal.InternalStreamable;
-import de.yoyosource.streamable.internal.InternalStreamableCollector;
-import de.yoyosource.streamable.internal.finish.FindAnyFinish;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -500,14 +487,76 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> findFirst() {
-        return Optional.ofNullable(collect(new InternalStreamableCollector.First<>()));
+        return Optional.ofNullable(collect(new StreamableCollector.Simple<>() {
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
+
+            private T element = null;
+
+            @Override
+            public boolean accumulate(long index, T element) {
+                this.element = element;
+                return true;
+            }
+
+            @Override
+            public T finish() {
+                return element;
+            }
+        }));
     }
 
     default Optional<T> findAny() {
-        return Optional.ofNullable(((InternalStreamable) this).setNext(new FindAnyFinish()).evaluate());
+        return Optional.ofNullable(collect(new StreamableCollector.Simple<>() {
+            private T element = null;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.UNORDERED;
+            }
+
+            @Override
+            public boolean accumulate(long index, T element) {
+                this.element = element;
+                return true;
+            }
+
+            @Override
+            public T finish() {
+                return element;
+            }
+        }));
     }
 
     default Optional<T> findLast() {
-        return Optional.ofNullable(collect(new InternalStreamableCollector.Last<>()));
+        return Optional.ofNullable(collect(new StreamableCollector.Simple<>() {
+            private long index = -1;
+            private T element = null;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public boolean accumulate(long index, T element) {
+                if (index > this.index) {
+                    synchronized (this) {
+                        if (index > this.index) {
+                            this.index = index;
+                            this.element = element;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public T finish() {
+                return element;
+            }
+        }));
     }
 }

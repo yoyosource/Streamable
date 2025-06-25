@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.finish.Finish;
@@ -54,7 +55,25 @@ public abstract class StreamableSupplier {
             return setNext(new SequentialFinish(collector));
         } else {
             return setNext(new ParallelStep(collector.toGatherer(), maxParallelTasks))
-                    .setNext(new SequentialFinish(new InternalStreamableCollector.First()));
+                    .setNext(new SequentialFinish(new StreamableCollector.Simple<>() {
+                        @Override
+                        public Ordering ordering() {
+                            return Ordering.SEQUENTIAL;
+                        }
+
+                        private Object element = null;
+
+                        @Override
+                        public boolean accumulate(long index, Object element) {
+                            this.element = element;
+                            return true;
+                        }
+
+                        @Override
+                        public Object finish() {
+                            return element;
+                        }
+                    }));
         }
     }
 
