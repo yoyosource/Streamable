@@ -1,11 +1,17 @@
 package de.yoyosource.streamable.internal;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.data.SingleData;
 
 public class InternalStreamableCollector {
 
     public static class First<R> implements StreamableCollector<R, SingleData<R>, R> {
+        @Override
+        public Ordering ordering() {
+            return Ordering.SEQUENTIAL;
+        }
+
         @Override
         public SingleData<R> container() {
             return new SingleData<>(null);
@@ -29,6 +35,11 @@ public class InternalStreamableCollector {
     }
 
     public static class Last<R> implements StreamableCollector<R, SingleData<R>, R> {
+        @Override
+        public Ordering ordering() {
+            return Ordering.SEQUENTIAL;
+        }
+
         @Override
         public SingleData<R> container() {
             return new SingleData<>(null);

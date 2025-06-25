@@ -6,6 +6,7 @@ import de.yoyosource.streamable.internal.StreamableConsumer;
 import de.yoyosource.streamable.internal.StreamableSupplier;
 import de.yoyosource.streamable.internal.finish.Finish;
 import de.yoyosource.streamable.internal.root.Root;
+import de.yoyosource.streamable.internal.step.ParallelStep;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -70,6 +71,11 @@ public class StreamableManager {
                 final List<Object> data = new LinkedList<>();
                 streamData.supplier.setNext(1, new StreamableCollector.Simple<>() {
                     @Override
+                    public Ordering ordering() {
+                        return Ordering.ORDERED;
+                    }
+
+                    @Override
                     public boolean accumulate(long index, Object element) {
                         synchronized (data) {
                             data.add(element);
@@ -83,27 +89,9 @@ public class StreamableManager {
                     }
                 });
 
-                StreamableConsumer streamableConsumer = streamData.supplier.getNext();
-                while (!(streamableConsumer instanceof Finish finish)) {
-                    if (streamableConsumer instanceof StreamableSupplier supplier) {
-                        streamableConsumer = supplier.getNext();
-                    } else {
-                        throw new UnsupportedOperationException(method.getName() + "() cannot be called when no Finish Object is present!");
-                    }
-                }
-
-                List<Evaluator> evaluators = new ArrayList<>();
-                StreamableSupplier streamableSupplier = streamData.root;
-                while (streamableSupplier != null) {
-                    if (streamableSupplier instanceof Evaluator evaluator) {
-                        evaluators.add(evaluator);
-                    }
-                    if (streamableSupplier.getNext() instanceof StreamableSupplier supplier) {
-                        streamableSupplier = supplier;
-                    } else {
-                        streamableSupplier = null;
-                    }
-                }
+                Finish finish = checkIfAllowedToEvaluate(method, streamData);
+                List<Evaluator> evaluators = listEvaluators(streamData);
+                setOrderingOfParallelSteps(streamData);
 
                 int maxBacklogPerEvaluator = 100_000_000 / evaluators.size();
 
@@ -185,27 +173,9 @@ public class StreamableManager {
                 return proxy;
             }
             if (is(method, "evaluate")) {
-                StreamableConsumer streamableConsumer = streamData.supplier.getNext();
-                while (!(streamableConsumer instanceof Finish finish)) {
-                    if (streamableConsumer instanceof StreamableSupplier supplier) {
-                        streamableConsumer = supplier.getNext();
-                    } else {
-                        throw new UnsupportedOperationException(method.getName() + "() cannot be called when no Finish Object is present!");
-                    }
-                }
-
-                List<Evaluator> evaluators = new ArrayList<>();
-                StreamableSupplier streamableSupplier = streamData.root;
-                while (streamableSupplier != null) {
-                    if (streamableSupplier instanceof Evaluator evaluator) {
-                        evaluators.add(evaluator);
-                    }
-                    if (streamableSupplier.getNext() instanceof StreamableSupplier supplier) {
-                        streamableSupplier = supplier;
-                    } else {
-                        streamableSupplier = null;
-                    }
-                }
+                Finish finish = checkIfAllowedToEvaluate(method, streamData);
+                List<Evaluator> evaluators = listEvaluators(streamData);
+                setOrderingOfParallelSteps(streamData);
 
                 int maxBacklogPerEvaluator = 100_000_000 / evaluators.size();
 
@@ -246,5 +216,64 @@ public class StreamableManager {
             if (!classes[i].isAssignableFrom(args[i])) return false;
         }
         return true;
+    }
+
+    private static Finish checkIfAllowedToEvaluate(Method method, StreamData streamData) {
+        StreamableConsumer streamableConsumer = streamData.supplier.getNext();
+        while (!(streamableConsumer instanceof Finish finish)) {
+            if (streamableConsumer instanceof StreamableSupplier supplier) {
+                streamableConsumer = supplier.getNext();
+            } else {
+                throw new UnsupportedOperationException(method.getName() + "() cannot be called when no Finish Object is present!");
+            }
+        }
+        return finish;
+    }
+
+    private static List<Evaluator> listEvaluators(StreamData streamData) {
+        List<Evaluator> evaluators = new ArrayList<>();
+        StreamableSupplier streamableSupplier = streamData.root;
+        while (streamableSupplier != null) {
+            if (streamableSupplier instanceof Evaluator evaluator) {
+                evaluators.add(evaluator);
+            }
+            if (streamableSupplier.getNext() instanceof StreamableSupplier supplier) {
+                streamableSupplier = supplier;
+            } else {
+                streamableSupplier = null;
+            }
+        }
+        return evaluators;
+    }
+
+    private static void setOrderingOfParallelSteps(StreamData streamData) {
+        List<StreamableConsumer> consumers = new ArrayList<>();
+
+        StreamableSupplier streamableSupplier = streamData.root;
+        while (streamableSupplier != null) {
+            if (streamableSupplier instanceof StreamableConsumer consumer) {
+                consumers.addFirst(consumer);
+            }
+            if (streamableSupplier.getNext() instanceof StreamableSupplier supplier) {
+                streamableSupplier = supplier;
+            } else {
+                if (streamableSupplier.getNext() instanceof StreamableConsumer consumer) {
+                    consumers.addFirst(consumer);
+                }
+                streamableSupplier = null;
+            }
+        }
+
+        // System.out.println(consumers);
+
+        Ordering ordering = Ordering.UNORDERED;
+        for (StreamableConsumer consumer : consumers) {
+            // System.out.println(consumer + " " + ordering + " with " + consumer.ordering() + " -> " + ordering.or(consumer.ordering()));
+            if (consumer instanceof ParallelStep parallelStep) {
+                parallelStep.setSequenceType(ordering.ordered);
+                // System.out.println("Set " + consumer + " ordering to " + ordering.ordered);
+            }
+            ordering = ordering.or(consumer.ordering());
+        }
     }
 }

@@ -95,6 +95,11 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
     default void forEach(Consumer<? super T> action) {
         collect(new StreamableCollector.Simple<T, T>() {
             @Override
+            public Ordering ordering() {
+                return Ordering.ORDERED;
+            }
+
+            @Override
             public boolean accumulate(long index, T element) {
                 action.accept(element);
                 return false;

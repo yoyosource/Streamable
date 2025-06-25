@@ -7,6 +7,7 @@ import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.Sequence;
 import de.yoyosource.streamable.internal.OrderedSequence;
+import de.yoyosource.streamable.internal.UnorderedSequence;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,8 +30,7 @@ public class ParallelStep extends Step {
     private final Map<Long, Object> containers = new HashMap<>();
 
     private final AtomicLong index = new AtomicLong();
-    // TODO: Dont use result Sequence if next Element is a FindAnyFinish!
-    private final Sequence results = new OrderedSequence();
+    private Sequence results = null;
 
     public ParallelStep(StreamableGatherer streamableGatherer, int maxParallelTasks) {
         super(streamableGatherer);
@@ -53,7 +53,17 @@ public class ParallelStep extends Step {
 
     @Override
     public Ordering ordering() {
+        // This will never return sequential.
+        // Since otherwise the SequentialStep should have been used!
         return gatherer.ordering();
+    }
+
+    public void setSequenceType(boolean ordered) {
+        if (ordered) {
+            results = new OrderedSequence();
+        } else {
+            results = new UnorderedSequence();
+        }
     }
 
     @Override
