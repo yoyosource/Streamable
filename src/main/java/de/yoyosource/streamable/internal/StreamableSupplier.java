@@ -58,7 +58,7 @@ public abstract class StreamableSupplier {
                     .setNext(new SequentialFinish(new StreamableCollector.Simple<>() {
                         @Override
                         public Ordering ordering() {
-                            return Ordering.SEQUENTIAL;
+                            return collector.ordering();
                         }
 
                         private Object element = null;
