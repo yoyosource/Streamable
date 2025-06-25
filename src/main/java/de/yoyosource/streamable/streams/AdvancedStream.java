@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
@@ -118,6 +119,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     default AdvancedStream<T> takeWhileIndexed(BiPredicate<? super T, Long> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Ordering ordering() {
+                return Ordering.ORDERED;
+            }
+
+            @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 if (predicate.test(input, index)) {
                     next.accept(input);
@@ -135,8 +141,13 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default AdvancedStream<T> dropWhileIndexed(BiPredicate<? super T, Long> predicate) {
-        return gather(new StreamableGatherer.Sequential.Simple<T, T>() {
+        return gather(new StreamableGatherer.Simple<T, T>() {
             private boolean take = false;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
@@ -251,8 +262,13 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         if (windowSize < 1) {
             throw new IllegalArgumentException("Window size must be at least 1");
         }
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private List<T> elements = new ArrayList<>();
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super List<T>> next) {
@@ -282,9 +298,14 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         if (windowSize < 1) {
             throw new IllegalArgumentException("Window size must be at least 1");
         }
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private boolean hadOneResult = false;
             private List<T> elements = new ArrayList<>();
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super List<T>> next) {
@@ -382,9 +403,14 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default AdvancedStream<T> scan(BiFunction<T, T, T> accumulator) {
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private boolean first = true;
             private T current;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
@@ -411,10 +437,15 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default AdvancedStream<Map.Entry<T, Long>> consecutiveElementCountBy(BiPredicate<? super T, ? super T> equality) {
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private boolean first = true;
             private T element;
             private long count;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super Map.Entry<T, Long>> next) {

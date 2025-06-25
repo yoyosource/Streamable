@@ -25,7 +25,7 @@ public abstract class StreamableSupplier {
             throw new IllegalStateException("Cannot add more than one next steps");
         }
 
-        if (gatherer instanceof StreamableGatherer.Sequential<T,A,B>) {
+        if (gatherer != null && gatherer.ordering().sequential) {
             maxParallelTasks = 1;
         }
 
@@ -43,7 +43,7 @@ public abstract class StreamableSupplier {
             throw new IllegalStateException("Cannot add more than one next steps");
         }
 
-        if (collector instanceof StreamableCollector.Sequential<T,A,R>) {
+        if (collector != null && collector.ordering().sequential) {
             maxParallelTasks = 1;
         }
 

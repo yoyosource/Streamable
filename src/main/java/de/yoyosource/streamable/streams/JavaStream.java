@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
@@ -210,6 +211,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default JavaStream<T> takeWhile(Predicate<? super T> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Ordering ordering() {
+                return Ordering.ORDERED;
+            }
+
+            @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 if (predicate.test(input)) {
                     next.accept(input);
@@ -227,8 +233,13 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default JavaStream<T> dropWhile(Predicate<? super T> predicate) {
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private boolean take = false;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
@@ -428,8 +439,13 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default long count() {
-        return collect(new StreamableCollector.Sequential.Simple<>() {
+        return collect(new StreamableCollector.Simple<>() {
             private long count = 0;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean accumulate(long index, T element) {

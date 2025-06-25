@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.FinishException;
@@ -38,6 +39,11 @@ public class SequentialStep extends Step {
 
             processElement(index, value);
         }, 1);
+    }
+
+    @Override
+    public Ordering ordering() {
+        return gatherer.ordering();
     }
 
     @Override

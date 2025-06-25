@@ -1,6 +1,10 @@
 package de.yoyosource.streamable.internal;
 
+import de.yoyosource.streamable.Ordering;
+
 public interface StreamableConsumer {
+    Ordering ordering();
+
     default void consume(Element element) {
         throw new UnsupportedOperationException();
     }

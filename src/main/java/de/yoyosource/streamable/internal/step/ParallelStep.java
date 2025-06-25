@@ -1,10 +1,12 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.Sequence;
+import de.yoyosource.streamable.internal.OrderedSequence;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,7 +30,7 @@ public class ParallelStep extends Step {
 
     private final AtomicLong index = new AtomicLong();
     // TODO: Dont use result Sequence if next Element is a FindAnyFinish!
-    private final Sequence results = new Sequence();
+    private final Sequence results = new OrderedSequence();
 
     public ParallelStep(StreamableGatherer streamableGatherer, int maxParallelTasks) {
         super(streamableGatherer);
@@ -47,6 +49,11 @@ public class ParallelStep extends Step {
             value.value().accept(value.index());
             processing.getAndDecrement();
         }, maxParallelTasks);
+    }
+
+    @Override
+    public Ordering ordering() {
+        return gatherer.ordering();
     }
 
     @Override

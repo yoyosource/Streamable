@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.finish;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
 
@@ -11,6 +12,11 @@ public class FindAnyFinish extends Finish {
 
     public FindAnyFinish() {
         super(null);
+    }
+
+    @Override
+    public Ordering ordering() {
+        return Ordering.UNORDERED;
     }
 
     @Override

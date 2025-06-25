@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.Evaluator;
@@ -24,6 +25,11 @@ public class ZipStep extends Step implements Evaluator {
         super(null);
         iterator = streamable.iterator();
         this.ignoreNulls = ignoreNulls;
+    }
+
+    @Override
+    public Ordering ordering() {
+        return Ordering.SEQUENTIAL;
     }
 
     @Override

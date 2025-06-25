@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.Evaluator;
 import de.yoyosource.streamable.internal.FinishException;
@@ -17,6 +18,11 @@ public class FlattenStep extends Step implements Evaluator {
 
     public FlattenStep() {
         super(null);
+    }
+
+    @Override
+    public Ordering ordering() {
+        return Ordering.SEQUENTIAL;
     }
 
     @Override
