@@ -68,8 +68,12 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
     }
 
     static <T> JavaStream<T> from(Iterable<T> iterable) {
-        return StreamableManager.from(iterable.iterator())
-                .as(JavaStream());
+        return switch (iterable) {
+            case JavaStream<T> javaStream -> javaStream;
+            case Streamable<?, T> streamable -> streamable.as(JavaStream());
+            default -> StreamableManager.from(iterable.iterator())
+                    .as(JavaStream());
+        };
     }
 
     static <T> JavaStream<T> from(Iterator<T> iterator) {

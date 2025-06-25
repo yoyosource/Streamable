@@ -2,7 +2,6 @@ package de.yoyosource;
 
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.streams.AdvancedStream;
-import de.yoyosource.streamable.streams.IterableStream;
 
 import java.util.*;
 
@@ -70,13 +69,13 @@ public class Test4 {
     }
 
     private static void test_4() {
-        Streamable.of(1, 2, 3, 4)
-                .map(integer -> List.of(integer, integer, integer, integer))
-                .as(IterableStream.IterableStream())
-                .map(integer -> integer * 2)
-                .distinct()
-                .flatten()
-                .forEach(System.out::println);
+        // Streamable.of(1, 2, 3, 4)
+        //         .map(integer -> List.of(integer, integer, integer, integer))
+        //         .as(IterableStream.IterableStream())
+        //         .map(integer -> integer * 2)
+        //         .distinct()
+        //         .flatten()
+        //         .forEach(System.out::println);
     }
 
     private static void test_5() {

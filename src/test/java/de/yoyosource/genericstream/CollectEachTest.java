@@ -1,7 +1,7 @@
-package de.yoyosource.iterablestream;
+package de.yoyosource.genericstream;
 
 import de.yoyosource.streamable.Streamable;
-import de.yoyosource.streamable.streams.IterableStream;
+import de.yoyosource.streamable.streams.GenericStream;
 import de.yoyosource.streamable.streams.JavaStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,8 @@ class CollectEachTest {
     @Test
     void testCollectEach() {
         List<Long> list = Streamable.of(List.of(1, 2, 3), Streamable.of(4, 5, 6))
-                .as(IterableStream.IterableStream())
+                .map(Streamable::from)
+                .as(GenericStream.GenericStream())
                 .collectEach(JavaStream::count)
                 .collect(Collectors.toList());
         Assertions.assertEquals(2, list.size());
