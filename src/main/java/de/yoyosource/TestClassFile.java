@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -39,19 +40,24 @@ public class TestClassFile {
                             Label loopStart = codeBuilder.newLabel();
                             Label loopEnd = codeBuilder.newLabel();
                             codeBuilder.getstatic(ClassDesc.of("java.lang", "System"), "out", ClassDesc.of("java.io", "PrintStream"))
+                                    .dup()
+                                    .ldc(codeBuilder.constantPool().stringEntry("Started"))
+                                    .invokevirtual(ClassDesc.of("java.io", "PrintStream"), "println", MethodTypeDesc.of(CD_void, ClassDesc.of("java.lang", "Object")))
                                     .aload(0)
                                     .invokeinterface(ClassDesc.of("java.lang", "Iterable"), "iterator", MethodTypeDesc.of(ClassDesc.of("java.util", "Iterator")))
                                     .labelBinding(loopStart)
                                     .dup()
                                     .invokeinterface(ClassDesc.of("java.util", "Iterator"), "hasNext", MethodTypeDesc.of(CD_boolean))
                                     .ifeq(loopEnd)
-                                    .dup2()
+                                    .dup()
                                     .invokeinterface(ClassDesc.of("java.util", "Iterator"), "next", MethodTypeDesc.of(CD_Object))
                                     // .invokevirtual(ClassDesc.of("java.io", "PrintStream"), "println", MethodTypeDesc.of(CD_void, ClassDesc.of("java.lang", "Object")))
                                     .pop()
-                                    .pop()
                                     .goto_(loopStart)
                                     .labelBinding(loopEnd)
+                                    .pop()
+                                    .ldc(codeBuilder.constantPool().stringEntry("Finished"))
+                                    .invokevirtual(ClassDesc.of("java.io", "PrintStream"), "println", MethodTypeDesc.of(CD_void, ClassDesc.of("java.lang", "Object")))
                                     .return_();
                         });
                     });
