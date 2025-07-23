@@ -1,9 +1,9 @@
 package de.yoyosource.streamable.streams;
 
 import de.yoyosource.streamable.FunctionWithException;
-import de.yoyosource.streamable.Try;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableGatherer;
+import de.yoyosource.streamable.Try;
 
 import java.util.function.Consumer;
 
@@ -22,6 +22,9 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
     abstract class Option<T, E extends Throwable, R> {
         protected abstract boolean check(Try<T, E> toCheck);
         protected abstract R unwrap(Try<T, E> toUnwrap);
+
+        private Option() {
+        }
 
         private static final Option<?, ?, ?> SUCCESSFUL = new Option<>() {
             @Override
@@ -106,6 +109,10 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
     }
 
     default <R> TryedStream<R, E> tryIt(FunctionWithException<T, R, E> functionWithException) {
+        return tryIt(functionWithException, false);
+    }
+
+    default <R> TryedStream<R, E> tryIt(FunctionWithException<T, R, E> functionWithException, boolean endOnException) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
             public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<R, E>> next) {
@@ -113,9 +120,16 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
                     try {
                         next.accept(Try.Success(functionWithException.apply(element.getSuccess())));
                     } catch (Throwable e) {
-                        next.accept(Try.Failure((E) e));
+                        if (endOnException) {
+                            return true;
+                        } else {
+                            next.accept(Try.Failure((E) e));
+                        }
                     }
                 } else {
+                    if (endOnException) {
+                        return true;
+                    }
                     next.accept(Try.Failure(element.getFailure()));
                 }
                 return false;

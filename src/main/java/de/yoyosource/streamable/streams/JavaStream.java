@@ -1,23 +1,13 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.data.SingleData;
-import de.yoyosource.streamable.internal.InternalStreamableCollector;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -146,35 +136,72 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default JavaStream<T> limit(long maxSize) {
-        return gather(new StreamableGatherer.Simple<>() {
-            @Override
-            public boolean integrate(long index, T input, Consumer<? super T> next) {
-                next.accept(input);
-                return index == maxSize - 1;
-            }
+        if (maxSize < 0) {
+            throw new IllegalArgumentException("Size cannot be negative!");
+        }
+        if (maxSize == 0) {
+            return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public boolean integrate(long index, T element, Consumer<? super T> next) {
+                    return true;
+                }
 
-            @Override
-            public void finish(Consumer<? super T> next) {
-            }
-        });
+                @Override
+                public void finish(Consumer<? super T> next) {
+                }
+            });
+        } else {
+            return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public boolean integrate(long index, T input, Consumer<? super T> next) {
+                    next.accept(input);
+                    return index == maxSize - 1;
+                }
+
+                @Override
+                public void finish(Consumer<? super T> next) {
+                }
+            });
+        }
     }
 
     default JavaStream<T> skip(long skip) {
-        return gather(new StreamableGatherer.Simple<>() {
-            @Override
-            public boolean integrate(long index, T input, Consumer<? super T> next) {
-                if (index >= skip) next.accept(input);
-                return false;
-            }
+        if (skip < 0) {
+            throw new IllegalArgumentException("Skip cannot be negative!");
+        } else if (skip == 0) {
+            return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public boolean integrate(long index, T element, Consumer<? super T> next) {
+                    next.accept(element);
+                    return false;
+                }
 
-            @Override
-            public void finish(Consumer<? super T> next) {
-            }
-        });
+                @Override
+                public void finish(Consumer<? super T> next) {
+                }
+            });
+        } else {
+            return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public boolean integrate(long index, T input, Consumer<? super T> next) {
+                    if (index >= skip) next.accept(input);
+                    return false;
+                }
+
+                @Override
+                public void finish(Consumer<? super T> next) {
+                }
+            });
+        }
     }
 
     default JavaStream<T> takeWhile(Predicate<? super T> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Ordering ordering() {
+                return Ordering.ORDERED;
+            }
+
             @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 if (predicate.test(input)) {
@@ -193,12 +220,17 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default JavaStream<T> dropWhile(Predicate<? super T> predicate) {
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private boolean take = false;
 
             @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
+
+            @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
-                if (predicate.test(input)) take = true;
+                if (!predicate.test(input)) take = true;
                 if (take) next.accept(input);
                 return false;
             }
@@ -394,8 +426,13 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default long count() {
-        return collect(new StreamableCollector.Sequential.Simple<>() {
+        return collect(new StreamableCollector.Simple<>() {
             private long count = 0;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean accumulate(long index, T element) {
@@ -450,15 +487,76 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     }
 
     default Optional<T> findFirst() {
-        return Optional.ofNullable(collect(new InternalStreamableCollector.First<>()));
+        return Optional.ofNullable(collect(new StreamableCollector.Simple<>() {
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
+
+            private T element = null;
+
+            @Override
+            public boolean accumulate(long index, T element) {
+                this.element = element;
+                return true;
+            }
+
+            @Override
+            public T finish() {
+                return element;
+            }
+        }));
     }
 
     default Optional<T> findAny() {
-        // TODO: Optimize this for multithreading element before!
-        return findFirst();
+        return Optional.ofNullable(collect(new StreamableCollector.Simple<>() {
+            private T element = null;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.UNORDERED;
+            }
+
+            @Override
+            public boolean accumulate(long index, T element) {
+                this.element = element;
+                return true;
+            }
+
+            @Override
+            public T finish() {
+                return element;
+            }
+        }));
     }
 
     default Optional<T> findLast() {
-        return Optional.ofNullable(collect(new InternalStreamableCollector.Last<>()));
+        return Optional.ofNullable(collect(new StreamableCollector.Simple<>() {
+            private long index = -1;
+            private T element = null;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public boolean accumulate(long index, T element) {
+                if (index > this.index) {
+                    synchronized (this) {
+                        if (index > this.index) {
+                            this.index = index;
+                            this.element = element;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public T finish() {
+                return element;
+            }
+        }));
     }
 }

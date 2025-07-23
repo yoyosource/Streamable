@@ -1,9 +1,13 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableGatherer;
+import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.Sequence;
+import de.yoyosource.streamable.internal.OrderedSequence;
+import de.yoyosource.streamable.internal.UnorderedSequence;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,6 +17,7 @@ import java.util.stream.Collectors;
 
 public class ParallelStep extends Step {
 
+    private final ThreadManager.QueueKey queueKey;
     private AtomicLong processing = new AtomicLong();
 
     private final AtomicBoolean processingIntermediateResults = new AtomicBoolean();
@@ -25,15 +30,39 @@ public class ParallelStep extends Step {
     private final Map<Long, Object> containers = new HashMap<>();
 
     private final AtomicLong index = new AtomicLong();
-    private final Sequence results = new Sequence();
+    private Sequence results = null;
 
     public ParallelStep(StreamableGatherer streamableGatherer, int maxParallelTasks) {
         super(streamableGatherer);
         if (maxParallelTasks == 0) {
             throw new IllegalArgumentException("maxParallelTasks must be greater than 0");
         }
-        for (int i = 0; i < maxParallelTasks; i++) {
-            new WorkerThread();
+        queueKey = ThreadManager.queueToCurrent(() -> {
+            Element.Value<Consumer<Long>> value;
+            synchronized (queue) {
+                if (queue.isEmpty()) return;
+                value = queue.poll();
+            }
+
+            if (value.index() > finish) return;
+            processing.getAndIncrement();
+            value.value().accept(value.index());
+            processing.getAndDecrement();
+        }, maxParallelTasks);
+    }
+
+    @Override
+    public Ordering ordering() {
+        // This will never return sequential.
+        // Since otherwise the SequentialStep should have been used!
+        return gatherer.ordering();
+    }
+
+    public void setSequenceType(boolean ordered) {
+        if (ordered) {
+            results = new OrderedSequence();
+        } else {
+            results = new UnorderedSequence();
         }
     }
 
@@ -52,30 +81,6 @@ public class ParallelStep extends Step {
         synchronized (queue) {
             finish = Math.min(finish, counter);
             queue.add(new Element.Value<>(counter++, this::processFinish));
-        }
-    }
-
-    private class WorkerThread extends Thread {
-
-        public WorkerThread() {
-            setDaemon(true);
-            start();
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                Element.Value<Consumer<Long>> value;
-                synchronized (queue) {
-                    if (queue.isEmpty()) continue;
-                    value = queue.poll();
-                }
-
-                if (value.index() > finish) continue;
-                processing.getAndIncrement();
-                value.value().accept(value.index());
-                processing.getAndDecrement();
-            }
         }
     }
 
@@ -126,7 +131,12 @@ public class ParallelStep extends Step {
 
         for (Object o : results) {
             if (this.index.get() > finish) continue;
-            next.consume(this.index.getAndIncrement(), o);
+            try {
+                next.consume(this.index.getAndIncrement(), o);
+            } catch (FinishException e) {
+                finish = Math.min(finish, this.index.get());
+                break;
+            }
         }
 
         synchronized (containers) {
@@ -152,6 +162,7 @@ public class ParallelStep extends Step {
     }
 
     private void processFinish(long finishIndex) {
+        queueKey.dequeue();
         while (processing.get() > 1) {
             if (finishIndex > finish) return;
             Thread.yield();

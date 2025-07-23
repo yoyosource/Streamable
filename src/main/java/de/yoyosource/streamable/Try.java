@@ -152,4 +152,13 @@ public class Try<V, E extends Throwable> {
     public interface TryFunction<V, E extends Throwable> {
         V f() throws E;
     }
+
+    @Override
+    public String toString() {
+        if (successful()) {
+            return "Try.Success(" + success + ")";
+        } else {
+            return "Try.Failure(" + failure + ")";
+        }
+    }
 }

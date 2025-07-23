@@ -1,23 +1,14 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.InternalStreamable;
+import de.yoyosource.streamable.internal.step.ZipStep;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.*;
+import java.util.function.*;
 
 public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
@@ -59,7 +50,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         });
     }
 
-    default <R> AdvancedStream<R> flapMapIndexed(BiFunction<? super T, Long, ? extends Iterable<? extends R>> mapper) {
+    default <R> AdvancedStream<R> flatMapIndexed(BiFunction<? super T, Long, ? extends Iterable<? extends R>> mapper) {
         return flatGather(new StreamableGatherer.Simple<>() {
             @Override
             public boolean integrate(long index, T input, Consumer<? super Iterable<R>> next) {
@@ -128,6 +119,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     default AdvancedStream<T> takeWhileIndexed(BiPredicate<? super T, Long> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Ordering ordering() {
+                return Ordering.ORDERED;
+            }
+
+            @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 if (predicate.test(input, index)) {
                     next.accept(input);
@@ -145,12 +141,17 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default AdvancedStream<T> dropWhileIndexed(BiPredicate<? super T, Long> predicate) {
-        return gather(new StreamableGatherer.Sequential.Simple<T, T>() {
+        return gather(new StreamableGatherer.Simple<T, T>() {
             private boolean take = false;
 
             @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
+
+            @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
-                if (predicate.test(element, index)) take = true;
+                if (!predicate.test(element, index)) take = true;
                 if (take) next.accept(element);
                 return false;
             }
@@ -261,8 +262,13 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         if (windowSize < 1) {
             throw new IllegalArgumentException("Window size must be at least 1");
         }
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private List<T> elements = new ArrayList<>();
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super List<T>> next) {
@@ -292,9 +298,14 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         if (windowSize < 1) {
             throw new IllegalArgumentException("Window size must be at least 1");
         }
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private boolean hadOneResult = false;
             private List<T> elements = new ArrayList<>();
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super List<T>> next) {
@@ -392,9 +403,14 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default AdvancedStream<T> scan(BiFunction<T, T, T> accumulator) {
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private boolean first = true;
             private T current;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
@@ -421,10 +437,15 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     @SuppressWarnings("unchecked")
     default AdvancedStream<Map.Entry<T, Long>> consecutiveElementCountBy(BiPredicate<? super T, ? super T> equality) {
-        return gather(new StreamableGatherer.Sequential.Simple<>() {
+        return gather(new StreamableGatherer.Simple<>() {
             private boolean first = true;
             private T element;
             private long count;
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super Map.Entry<T, Long>> next) {
@@ -482,28 +503,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         });
     }
 
-    /*
-    default <B> ZippedStream<T, B> zip(de.yoyosource.streamable.Streamable<B> streamable) {
-        return gather(new de.yoyosource.streamable.StreamableGatherer<>() {
-            private Iterator<B> iterator = streamable.iterator();
-
-            @Override
-            public boolean apply(T input, Consumer<ZippedStream.Zip<T, B>> next) {
-                if (iterator.hasNext()) {
-                    next.accept(new ZippedStream.Zip<>(input, iterator.next()));
-                } else {
-                    next.accept(new ZippedStream.Zip<>(input, null));
-                }
-                return false;
-            }
-
-            @Override
-            public void finish(Consumer<ZippedStream.Zip<T, B>> next) {
-                iterator.forEachRemaining(b -> {
-                    next.accept(new ZippedStream.Zip<>(null, b));
-                });
-            }
-        });
+    default <B> ZippedStream<T, B> zip(Streamable<?, B> streamable) {
+        return ((Streamable<?, ZippedStream.Zip<?, ?>>) ((InternalStreamable) this).setNext(new ZipStep(streamable, false))).as(ZippedStream.class);
     }
-     */
+
+    default <B> ZippedStream<T, B> zip(Streamable<?, B> streamable, boolean ignoreNulls) {
+        return ((Streamable<?, ZippedStream.Zip<?, ?>>) ((InternalStreamable) this).setNext(new ZipStep(streamable, ignoreNulls))).as(ZippedStream.class);
+    }
 }

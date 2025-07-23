@@ -41,6 +41,7 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
 
             @Override
             public void finish(List<T> container, Consumer<? super Iterable<T>> next) {
+                container.sort(null);
                 next.accept(container);
             }
         });
@@ -78,7 +79,7 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
 
             @Override
             public Optional<T> finish(SingleData<T> container) {
-                return Optional.of(container.first);
+                return Optional.ofNullable(container.first);
             }
         });
     }
@@ -115,7 +116,7 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
 
             @Override
             public Optional<T> finish(SingleData<T> container) {
-                return Optional.of(container.first);
+                return Optional.ofNullable(container.first);
             }
         });
     }

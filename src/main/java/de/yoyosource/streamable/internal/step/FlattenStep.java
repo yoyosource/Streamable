@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.Evaluator;
 import de.yoyosource.streamable.internal.FinishException;
@@ -11,7 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class FlattenStep extends Step implements Evaluator {
 
-    private volatile Thread thread = null;
     private volatile boolean finished = false;
     private final AtomicLong index = new AtomicLong();
     private Queue<Element<?>> elements = new LinkedList<>();
@@ -21,39 +21,20 @@ public class FlattenStep extends Step implements Evaluator {
     }
 
     @Override
+    public Ordering ordering() {
+        return Ordering.SEQUENTIAL;
+    }
+
+    @Override
     public void consume(long index, Object value) {
+        if (finished) throw new FinishException();
         elements.add(new Element.Value<>(index, ((Iterable) value).iterator()));
     }
 
     @Override
     public void finish() {
+        if (finished) throw new FinishException();
         elements.add(new Element.Finish());
-    }
-
-    private void processElement(Element element) {
-        if (element instanceof Element.Value<?> value) {
-            try {
-                ((Iterator<Object>) value.value()).forEachRemaining(o -> {
-                    next.consume(index.getAndIncrement(), o);
-                });
-            } catch (FinishException e) {
-                finished = true;
-            } catch (Throwable e) {
-                finished = true;
-                try {
-                    next.finish();
-                } catch (FinishException ex) {
-                    // Ignore
-                }
-                root.setError(e);
-            }
-        } else {
-            try {
-                next.finish();
-            } catch (FinishException e) {
-                // Ignore
-            }
-        }
     }
 
     @Override

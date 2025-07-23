@@ -23,17 +23,6 @@ public class Root extends StreamableSupplier implements Evaluator {
         this.root = this;
     }
 
-    public void evaluate() {
-        try {
-            iterator.forEachRemaining(o -> {
-                next.consume(index++, o);
-            });
-            next.finish();
-        } catch (FinishException e) {
-            // Ignore
-        }
-    }
-
     @Override
     public boolean evaluateNext() {
         if (finished) return false;

@@ -11,10 +11,6 @@ import java.util.function.Supplier;
 
 public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> extends Streamable<N, Optional<T>> {
 
-    private static <T> Class<OptionalPresentStream<T>> presentType() {
-        return (Class<OptionalPresentStream<T>>) (Class) OptionalPresentStream.class;
-    }
-
     @SuppressWarnings({"unchecked"})
     default OptionalPresentStream<T> isPresent() {
         return gather(new StreamableGatherer.Simple<Optional<T>, Optional<T>>() {

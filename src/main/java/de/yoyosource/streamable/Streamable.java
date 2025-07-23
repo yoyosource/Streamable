@@ -68,8 +68,12 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
     }
 
     static <T> JavaStream<T> from(Iterable<T> iterable) {
-        return StreamableManager.from(iterable.iterator())
-                .as(JavaStream());
+        return switch (iterable) {
+            case JavaStream<T> javaStream -> javaStream;
+            case Streamable<?, T> streamable -> streamable.as(JavaStream());
+            default -> StreamableManager.from(iterable.iterator())
+                    .as(JavaStream());
+        };
     }
 
     static <T> JavaStream<T> from(Iterator<T> iterator) {
@@ -90,6 +94,11 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
     @Override
     default void forEach(Consumer<? super T> action) {
         collect(new StreamableCollector.Simple<T, T>() {
+            @Override
+            public Ordering ordering() {
+                return Ordering.ORDERED;
+            }
+
             @Override
             public boolean accumulate(long index, T element) {
                 action.accept(element);
