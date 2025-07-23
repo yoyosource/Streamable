@@ -38,10 +38,7 @@ public abstract class PipelineStep {
                 capturedArgumentTypes.add(classDescs[i]);
             }
 
-            MethodTypeDesc methodTypeDesc = methodModel.methodTypeSymbol();
-            ClassDesc[] parameters = methodTypeDesc.parameterArray();
-            this.methodTypeDesc = methodTypeDesc.changeParameterType(0, parameters[parameters.length - 1])
-                    .changeParameterType(parameters.length - 1, parameters[0]);
+            this.methodTypeDesc = methodModel.methodTypeSymbol();
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -59,11 +56,23 @@ public abstract class PipelineStep {
             continuation.run();
         }
 
-        public void generateSlotData(PipelineStep pipelineStep) {
+        public void generateSlotData(PipelineStep pipelineStep, boolean dupIfPossible) {
+            if (dupIfPossible) {
+                if (pipelineStep.capturedArgumentTypes.isEmpty()) {
+                    codeBuilder.dup();
+                } else {
+                    codeBuilder.astore(localIndex);
+                }
+            } else {
+                codeBuilder.astore(localIndex);
+            }
             for (ClassDesc classDesc : pipelineStep.capturedArgumentTypes) {
                 TypeKind typeKind = TypeKind.from(classDesc);
                 codeBuilder.loadLocal(typeKind, localIndex);
                 localIndex += typeKind.slotSize();
+            }
+            if (!dupIfPossible || !pipelineStep.capturedArgumentTypes.isEmpty()) {
+                codeBuilder.aload(localIndex);
             }
         }
     }

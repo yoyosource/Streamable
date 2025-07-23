@@ -58,7 +58,7 @@ public class Streamable<T> {
                 }
             });
 
-            File file = new File("/Users/jojo/IdeaProjects/Streamable/TestClass.class");
+            File file = new File("C:/Dev/Projekte/Git - Schule/Streamable/TestClass.class");
             file.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             fileOutputStream.write(bytes);
@@ -72,7 +72,7 @@ public class Streamable<T> {
         return add(new PipelineStep(mapper) {
             @Override
             public void generateRun(GenerateRunData runData) {
-                runData.generateSlotData(this);
+                runData.generateSlotData(this, false);
                 runData.codeBuilder.invokestatic(runData.clazz, methodModel.methodName().stringValue(), methodTypeDesc);
                 if (!methodTypeDesc.returnType().equals(methodTypeDesc.parameterType(0))) {
                     runData.codeBuilder.checkcast(methodTypeDesc.returnType());
@@ -85,8 +85,7 @@ public class Streamable<T> {
         return add(new PipelineStep(predicate) {
             @Override
             public void generateRun(GenerateRunData runData) {
-                runData.codeBuilder.dup();
-                runData.generateSlotData(this);
+                runData.generateSlotData(this, true);
                 runData.codeBuilder.invokestatic(runData.clazz, methodModel.methodName().stringValue(), methodTypeDesc)
                         .ifeq(runData.end);
             }
@@ -97,8 +96,7 @@ public class Streamable<T> {
         return add(new PipelineStep(consumer) {
             @Override
             public void generateRun(GenerateRunData runData) {
-                runData.codeBuilder.dup();
-                runData.generateSlotData(this);
+                runData.generateSlotData(this, true);
                 runData.codeBuilder.invokestatic(runData.clazz, methodModel.methodName().stringValue(), methodTypeDesc);
             }
         });
@@ -108,7 +106,7 @@ public class Streamable<T> {
         return add(new PipelineStep(mapper) {
             @Override
             public void generateRun(GenerateRunData runData) {
-                runData.generateSlotData(this);
+                runData.generateSlotData(this, false);
                 runData.codeBuilder.invokestatic(runData.clazz, methodModel.methodName().stringValue(), methodTypeDesc);
                 Label startLoop = runData.codeBuilder.newLabel();
                 Label endLoop = runData.codeBuilder.newLabel();
