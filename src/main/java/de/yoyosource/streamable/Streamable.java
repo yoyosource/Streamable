@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Gatherer;
+import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
 import static de.yoyosource.streamable.streams.JavaStream.JavaStream;
@@ -256,8 +258,70 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
         return ((InternalStreamable) this).getMaxParallelTasks() > 0;
     }
 
+    /**
+     * Returns a stream consisting of the results of applying the given
+     * {@link StreamableGatherer} to the elements of this stream.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">stateful
+     * intermediate operation</a> that is an
+     * <a href="package-summary.html#Extensibility">extension point</a>.
+     *
+     * <p>Gatherers are highly flexible and can describe a vast array of
+     * possibly stateful operations, with support for short-circuiting, and
+     * parallelization.
+     *
+     * <p>When executed in parallel, multiple intermediate results may be
+     * instantiated, populated, and merged so as to maintain isolation of
+     * mutable data structures.  Therefore, even when executed in parallel
+     * with non-thread-safe data structures (such as {@code ArrayList}), no
+     * additional synchronization is needed for a parallel reduction.
+     *
+     * <p>Implementations are allowed, but not required, to detect consecutive
+     * invocations and compose them into a single, fused, operation. This would
+     * make the first expression below behave like the second:
+     *
+     * <pre>{@code
+     *     var stream1 = Streamable.of(...).gather(gatherer1).gather(gatherer2);
+     * }</pre>
+     *
+     * @see StreamableGatherer
+     * @param <R> The element type of the new stream
+     * @param gatherer a gatherer
+     * @return the new stream
+     */
     <R, C, N extends Streamable<N, R>> N gather(StreamableGatherer<? super T, C, R> gatherer);
 
+    /**
+     * Returns a stream consisting of the results of applying the given
+     * {@link StreamableGatherer} to the elements of this stream.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">stateful
+     * intermediate operation</a> that is an
+     * <a href="package-summary.html#Extensibility">extension point</a>.
+     *
+     * <p>Gatherers are highly flexible and can describe a vast array of
+     * possibly stateful operations, with support for short-circuiting, and
+     * parallelization.
+     *
+     * <p>When executed in parallel, multiple intermediate results may be
+     * instantiated, populated, and merged so as to maintain isolation of
+     * mutable data structures.  Therefore, even when executed in parallel
+     * with non-thread-safe data structures (such as {@code ArrayList}), no
+     * additional synchronization is needed for a parallel reduction.
+     *
+     * <p>Implementations are allowed, but not required, to detect consecutive
+     * invocations and compose them into a single, fused, operation. This would
+     * make the first expression below behave like the second:
+     *
+     * <pre>{@code
+     *     var stream1 = Streamable.of(...).flatGather(gatherer1).flatGather(gatherer2);
+     * }</pre>
+     *
+     * @see StreamableGatherer
+     * @param <R> The element type of the new stream
+     * @param gatherer a gatherer
+     * @return the new stream
+     */
     <R, C, N extends Streamable<N, R>> N flatGather(StreamableGatherer<? super T, C, Iterable<R>> gatherer);
 
     /**
