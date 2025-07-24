@@ -5,7 +5,7 @@ import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
-import de.yoyosource.streamable.internal.OrderedSequence;
+import de.yoyosource.streamable.internal.sequence.OrderedSequence;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,7 +35,7 @@ public class SequentialFinish extends Finish {
 
     @Override
     public void consume(Element element) {
-        if (finished) throw new FinishException();
+        if (finished) throw FinishException.INSTANCE;
         sequence.inserter().add(element).release();
     }
 
@@ -49,7 +49,7 @@ public class SequentialFinish extends Finish {
             try {
                 if (collector.accumulate(container, value.index(), value.value())) {
                     finished = true;
-                    processElement(new Element.Finish());
+                    processElement(Element.Finish.getInstance());
                 }
             } catch (Throwable e) {
                 queueKey.dequeue();

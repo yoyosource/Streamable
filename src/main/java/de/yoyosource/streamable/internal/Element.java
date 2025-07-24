@@ -1,8 +1,18 @@
 package de.yoyosource.streamable.internal;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 public interface Element<T> {
 
-    record Finish<T>() implements Element<T> {
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    class Finish<T> implements Element<T> {
+
+        private static final Finish INSTANCE = new Finish();
+
+        public static <T> Finish<T> getInstance() {
+            return INSTANCE;
+        }
 
         @Override
         public String toString() {

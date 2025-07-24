@@ -48,7 +48,7 @@ public class SequentialStep extends Step {
 
     @Override
     public void consume(long index, Object value) {
-        if (finished) throw new FinishException();
+        if (finished) throw FinishException.INSTANCE;
         synchronized (elementIndex) {
             elementIndex.add(index);
             elementValue.add(value);
@@ -57,7 +57,7 @@ public class SequentialStep extends Step {
 
     @Override
     public void finish() {
-        if (finished) throw new FinishException();
+        if (finished) throw FinishException.INSTANCE;
         synchronized (elementIndex) {
             elementIndex.add(null);
             elementValue.add(null);

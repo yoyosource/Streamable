@@ -1,5 +1,6 @@
 package de.yoyosource.streamable;
 
+import de.yoyosource.streamable.internal.InternalStreamable;
 import de.yoyosource.streamable.streams.JavaStream;
 
 import java.util.Arrays;
@@ -83,9 +84,22 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T> {
 
     <N extends Streamable<N, ? super T>> N as(Class<N> clazz);
 
-    S sequential();
-    S parallel(int maxParallelism);
-    boolean isParallel();
+    default S sequential() {
+        ((InternalStreamable) this).setMaxParallelTasks(1);
+        return (S) this;
+    }
+
+    default S parallel(int maxParallelism) {
+        if (maxParallelism < 2) {
+            throw new IllegalArgumentException("maxParallelism must be greater than or equal to 2");
+        }
+        ((InternalStreamable) this).setMaxParallelTasks(maxParallelism);
+        return (S) this;
+    }
+
+    default boolean isParallel() {
+        return ((InternalStreamable) this).getMaxParallelTasks() > 0;
+    }
 
     <R, C, N extends Streamable<N, R>> N gather(StreamableGatherer<? super T, C, R> gatherer);
     <R, C, N extends Streamable<N, R>> N flatGather(StreamableGatherer<? super T, C, Iterable<R>> gatherer);

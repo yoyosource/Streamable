@@ -134,22 +134,6 @@ public class StreamableManager {
                 return from(streamData, type);
             }
 
-            if (is(method, "sequential")) {
-                streamData.maxParallelTasks = 1;
-                return proxy;
-            }
-            if (is(method, "parallel", int.class)) {
-                int maxParallelTasks = (int) args[0];
-                if (maxParallelTasks < 2) {
-                    throw new IllegalArgumentException("maxParallelism must be greater than or equal to 2");
-                }
-                streamData.maxParallelTasks = maxParallelTasks;
-                return proxy;
-            }
-            if (is(method, "isParallel")) {
-                return streamData.maxParallelTasks > 1;
-            }
-
             if (is(method, "gather", StreamableGatherer.class)) {
                 streamData.supplier = streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableGatherer) args[0]);
                 return proxy;

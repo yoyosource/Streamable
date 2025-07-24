@@ -34,14 +34,14 @@ public class ZipStep extends Step implements Evaluator {
 
     @Override
     public void consume(long index, Object value) {
-        if (finished) throw new FinishException();
+        if (finished) throw FinishException.INSTANCE;
         elements.add(new Element.Value<>(index, value));
     }
 
     @Override
     public void finish() {
-        if (finished) throw new FinishException();
-        elements.add(new Element.Finish());
+        if (finished) throw FinishException.INSTANCE;
+        elements.add(Element.Finish.getInstance());
     }
 
     @Override

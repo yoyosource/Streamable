@@ -5,9 +5,9 @@ import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
-import de.yoyosource.streamable.internal.Sequence;
-import de.yoyosource.streamable.internal.OrderedSequence;
-import de.yoyosource.streamable.internal.UnorderedSequence;
+import de.yoyosource.streamable.internal.sequence.Sequence;
+import de.yoyosource.streamable.internal.sequence.OrderedSequence;
+import de.yoyosource.streamable.internal.sequence.UnorderedSequence;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,7 +68,7 @@ public class ParallelStep extends Step {
 
     @Override
     public void consume(long index, Object value) {
-        if (counter > finish) throw new FinishException();
+        if (counter > finish) throw FinishException.INSTANCE;
         Sequence.Inserter result = results.inserter();
         synchronized (queue) {
             queue.add(new Element.Value<>(counter++, __ -> processValue(index, value, result)));
@@ -77,7 +77,7 @@ public class ParallelStep extends Step {
 
     @Override
     public void finish() {
-        if (counter > finish) throw new FinishException();
+        if (counter > finish) throw FinishException.INSTANCE;
         synchronized (queue) {
             finish = Math.min(finish, counter);
             queue.add(new Element.Value<>(counter++, this::processFinish));

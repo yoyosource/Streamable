@@ -1,9 +1,9 @@
 package de.yoyosource.streamable.streams;
 
-import de.yoyosource.streamable.data.SingleData;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
+import de.yoyosource.streamable.internal.SingleData;
 
 import java.util.ArrayList;
 import java.util.List;

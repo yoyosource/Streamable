@@ -13,6 +13,6 @@ public interface StreamableConsumer {
         consume(new Element.Value(index, value));
     }
     default void finish() {
-        consume(new Element.Finish());
+        consume(Element.Finish.getInstance());
     }
 }

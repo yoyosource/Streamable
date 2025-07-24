@@ -4,7 +4,7 @@ import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
-import de.yoyosource.streamable.data.SingleData;
+import de.yoyosource.streamable.internal.SingleData;
 
 import java.util.*;
 import java.util.function.*;
@@ -62,7 +62,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             }
         });
     }
-    
+
     default <R> JavaStream<R> mapMulti(BiConsumer<? super T, ? super Consumer<? super R>> mapper) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override

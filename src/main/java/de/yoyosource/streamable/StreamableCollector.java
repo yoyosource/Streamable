@@ -1,7 +1,5 @@
 package de.yoyosource.streamable;
 
-import java.util.function.Consumer;
-
 public interface StreamableCollector<T, A, R> {
     default Ordering ordering() {
         return Ordering.UNORDERED;
@@ -39,42 +37,5 @@ public interface StreamableCollector<T, A, R> {
     }
 
     default void close() {
-    }
-
-    // Special internal API methods or classes
-
-    default StreamableGatherer<T, A, R> toGatherer() {
-        StreamableCollector<T, A, R> collector = this;
-        return new StreamableGatherer<>() {
-            @Override
-            public Ordering ordering() {
-                return collector.ordering();
-            }
-
-            @Override
-            public A container() {
-                return collector.container();
-            }
-
-            @Override
-            public boolean integrate(A container, long index, T element, Consumer<? super R> next) {
-                return collector.accumulate(container, index, element);
-            }
-
-            @Override
-            public A combine(A firstContainer, A secondContainer) {
-                return collector.combine(firstContainer, secondContainer);
-            }
-
-            @Override
-            public void finish(A container, Consumer<? super R> next) {
-                next.accept(collector.finish(container));
-            }
-
-            @Override
-            public void close() {
-                collector.close();
-            }
-        };
     }
 }

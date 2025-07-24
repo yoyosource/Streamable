@@ -1,4 +1,4 @@
-package de.yoyosource.streamable.internal;
+package de.yoyosource.streamable.internal.sequence;
 
 import java.util.Iterator;
 

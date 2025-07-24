@@ -13,6 +13,7 @@ import de.yoyosource.streamable.internal.step.Step;
 import lombok.Getter;
 
 import java.lang.reflect.Field;
+import java.util.function.Consumer;
 
 public abstract class StreamableSupplier {
 
@@ -54,26 +55,55 @@ public abstract class StreamableSupplier {
         if (maxParallelTasks == 1) {
             return setNext(new SequentialFinish(collector));
         } else {
-            return setNext(new ParallelStep(collector.toGatherer(), maxParallelTasks))
-                    .setNext(new SequentialFinish(new StreamableCollector.Simple<>() {
-                        @Override
-                        public Ordering ordering() {
-                            return collector.ordering();
-                        }
+            return setNext(new ParallelStep(new StreamableGatherer<T, A, R>() {
+                @Override
+                public Ordering ordering() {
+                    return collector.ordering();
+                }
 
-                        private Object element = null;
+                @Override
+                public A container() {
+                    return collector.container();
+                }
 
-                        @Override
-                        public boolean accumulate(long index, Object element) {
-                            this.element = element;
-                            return true;
-                        }
+                @Override
+                public boolean integrate(A container, long index, T element, Consumer<? super R> next) {
+                    return collector.accumulate(container, index, element);
+                }
 
-                        @Override
-                        public Object finish() {
-                            return element;
-                        }
-                    }));
+                @Override
+                public A combine(A firstContainer, A secondContainer) {
+                    return collector.combine(firstContainer, secondContainer);
+                }
+
+                @Override
+                public void finish(A container, Consumer<? super R> next) {
+                    next.accept(collector.finish(container));
+                }
+
+                @Override
+                public void close() {
+                    collector.close();
+                }
+            }, maxParallelTasks)).setNext(new SequentialFinish(new StreamableCollector.Simple<>() {
+                @Override
+                public Ordering ordering() {
+                    return collector.ordering();
+                }
+
+                private Object element = null;
+
+                @Override
+                public boolean accumulate(long index, Object element) {
+                    this.element = element;
+                    return true;
+                }
+
+                @Override
+                public Object finish() {
+                    return element;
+                }
+            }));
         }
     }
 
