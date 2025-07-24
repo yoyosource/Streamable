@@ -5,16 +5,16 @@ plugins {
 group = 'de.yoyosource'
 version = '1.0-SNAPSHOT'
 
-sourceCompatibility = 21
-targetCompatibility = 21
+sourceCompatibility = 24
+targetCompatibility = 24
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compileOnly 'org.projectlombok:lombok:1.18.34'
-    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+    compileOnly 'org.projectlombok:lombok:1.18.38'
+    annotationProcessor 'org.projectlombok:lombok:1.18.38'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.11.0'
 
