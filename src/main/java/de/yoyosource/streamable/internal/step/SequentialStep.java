@@ -91,12 +91,13 @@ public class SequentialStep extends Step {
                 gatherer.finish(container, o -> {
                     next.consume(this.index++, o);
                 });
-                gatherer.close();
                 next.finish();
             } catch (FinishException e) {
                 // Ignore
             } catch (Throwable e) {
                 root.setError(e);
+            } finally {
+                gatherer.close();
             }
         }
     }

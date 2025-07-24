@@ -1,5 +1,6 @@
 package de.yoyosource.streamable;
 
+import de.yoyosource.streamable.internal.CloseException;
 import de.yoyosource.streamable.internal.Evaluator;
 import de.yoyosource.streamable.internal.InternalStreamable;
 import de.yoyosource.streamable.internal.StreamableConsumer;
@@ -42,6 +43,7 @@ public class StreamableManager {
         private StreamableSupplier supplier;
         private final Root root;
         private int maxParallelTasks = 1;
+        private List<Runnable> closeHandlers = new ArrayList<>();
 
         public StreamData(Root root) {
             this.root = root;
@@ -96,6 +98,8 @@ public class StreamableManager {
                 int maxBacklogPerEvaluator = 100_000_000 / evaluators.size();
 
                 return new Iterator<>() {
+                    private boolean closed = false;
+
                     private void generateNext() {
                         for (int i = evaluators.size() - 1; i >= 0; i--) {
                             Evaluator evaluator = evaluators.get(i);
@@ -106,12 +110,24 @@ public class StreamableManager {
 
                     @Override
                     public boolean hasNext() {
+                        if (closed) {
+                            closed = true;
+                            return false;
+                        }
                         while (true) {
                             synchronized (data) {
                                 if (!data.isEmpty()) break;
                                 if (finish.getResult() != null) break;
                             }
                             generateNext();
+                            if (streamData.root.getError() != null) {
+                                if (closed || streamData.root.getError() instanceof CloseException) {
+                                    closed = true;
+                                    return false;
+                                } else {
+                                    unsafe.throwException(streamData.root.getError());
+                                }
+                            }
                         }
                         synchronized (data) {
                             return !data.isEmpty();
@@ -120,6 +136,9 @@ public class StreamableManager {
 
                     @Override
                     public Object next() {
+                        if (closed) {
+                            throw new IllegalStateException("No next Element present!");
+                        }
                         synchronized (data) {
                             return data.removeFirst();
                         }
@@ -147,6 +166,10 @@ public class StreamableManager {
                 streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableCollector) args[0]);
                 return ((InternalStreamable) proxy).evaluate();
             }
+            if (is(method, "close")) {
+                streamData.root.setError(CloseException.INSTANCE);
+                return null;
+            }
 
             // Methods of InternalStreamable
             if (is(method, "setNext", StreamableConsumer.class)) {
@@ -165,7 +188,11 @@ public class StreamableManager {
 
                 while (finish.getResult() == null) {
                     if (streamData.root.getError() != null) {
-                        unsafe.throwException(streamData.root.getError());
+                        if (streamData.root.getError() instanceof CloseException) {
+                            return null;
+                        } else {
+                            unsafe.throwException(streamData.root.getError());
+                        }
                     }
                     for (int i = evaluators.size() - 1; i >= 0; i--) {
                         Evaluator evaluator = evaluators.get(i);

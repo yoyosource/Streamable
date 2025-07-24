@@ -197,10 +197,11 @@ public class ParallelStep extends Step {
             gatherer.finish(container, o -> {
                 next.consume(index.getAndIncrement(), o);
             });
-            gatherer.close();
             next.finish();
         } catch (FinishException e) {
             // Ignore
+        } finally {
+            gatherer.close();
         }
     }
 }
