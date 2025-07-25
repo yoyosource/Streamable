@@ -11,7 +11,7 @@ import java.util.List;
 class SortedTest {
 
     @Test
-    void testModus() {
+    void testSorted() {
         List<Integer> result = Streamable.of(3, 2, 1)
                 .as(NumberStream.NumberStream())
                 .sorted()
@@ -24,7 +24,7 @@ class SortedTest {
     }
 
     @Test
-    void testModusNoResult() {
+    void testSortedNoResult() {
         List<Integer> result = Streamable.<Integer>of()
                 .as(NumberStream.NumberStream())
                 .sorted()

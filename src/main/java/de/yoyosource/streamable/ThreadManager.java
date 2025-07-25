@@ -4,14 +4,13 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-public class ThreadManager {
+public class ThreadManager implements AutoCloseable {
 
     private static final AtomicInteger THREAD_MANAGER_ID = new AtomicInteger();
 
@@ -29,6 +28,8 @@ public class ThreadManager {
     public static QueueKey queueToCurrent(Runnable runnable, int concurrentInstances) {
         return LOCAL.get().queue(runnable, concurrentInstances);
     }
+
+    private final Thread manager;
 
     @Getter
     private final String name;
@@ -58,27 +59,49 @@ public class ThreadManager {
             name = "ThreadManager" + num;
         }
 
-        Thread manager = new Thread(this::run);
+        manager = new Thread(this::run);
         manager.setDaemon(true);
         manager.setName(name + "-Manager");
         manager.start();
     }
 
     public QueueKey queue(Runnable runnable, int concurrentInstances) {
-        QueueKey queueKey = new QueueKey(runnable, concurrentInstances);
+        StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+        QueueKey queueKey = new QueueKey(runnable, concurrentInstances, elements);
         synchronized (work) {
             work.add(queueKey);
         }
         return queueKey;
     }
 
+    @Override
+    public void close() {
+        if (this == GLOBAL) return;
+        if (LOCAL.get() == this) {
+            LOCAL.remove();
+        }
+        synchronized (work) {
+            work.clear();
+        }
+        synchronized (workers) {
+            workers.forEach(worker -> {
+                worker.setWork(null);
+                worker.interrupt();
+            });
+            workers.clear();
+        }
+        manager.interrupt();
+    }
+
     public static final class QueueKey {
         private final Runnable runnable;
         private AtomicInteger running = new AtomicInteger();
+        private final StackTraceElement[] elements;
 
-        public QueueKey(Runnable runnable, int concurrentInstances) {
+        public QueueKey(Runnable runnable, int concurrentInstances, StackTraceElement[] elements) {
             this.runnable = runnable;
             running.set(concurrentInstances);
+            this.elements = elements;
         }
 
         private boolean dequeued = false;

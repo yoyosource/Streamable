@@ -40,8 +40,8 @@ public class FlattenStep extends Step implements Evaluator {
     @Override
     public boolean evaluateNext() {
         if (finished) return false;
+        if (elements.isEmpty()) return false;
         Element element = elements.peek();
-        if (element == null) return false;
 
         if (element instanceof Element.Value<?> value) {
             Iterator<Object> iterator = ((Iterator<Object>) value.value());
