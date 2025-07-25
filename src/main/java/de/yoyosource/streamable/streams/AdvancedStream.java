@@ -505,8 +505,9 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     default <B> ZippedStream<T, B> zip(Streamable<?, B> streamable, boolean ignoreNulls) {
         InternalStreamable thisStreamable = (InternalStreamable) this;
-        thisStreamable.addCloseHandler(((InternalStreamable) streamable).getCloseHandlers());
-        thisStreamable.getCloseHandlers().clear();
+        InternalStreamable otherStreamable = (InternalStreamable) streamable;
+        thisStreamable.addCloseHandler(otherStreamable.getCloseHandlers());
+        otherStreamable.getCloseHandlers().clear();
         return ((Streamable<?, ZippedStream.Zip<?, ?>>) thisStreamable.setNext(new ZipStep(streamable, ignoreNulls)))
                 .as(ZippedStream.class);
     }
