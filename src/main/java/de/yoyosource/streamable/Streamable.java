@@ -1,7 +1,6 @@
 package de.yoyosource.streamable;
 
 import de.yoyosource.streamable.internal.InternalStreamable;
-import de.yoyosource.streamable.internal.step.OnCloseStep;
 import de.yoyosource.streamable.streams.JavaStream;
 
 import java.util.Arrays;
@@ -12,8 +11,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import java.util.stream.Gatherer;
-import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
 import static de.yoyosource.streamable.streams.JavaStream.JavaStream;
@@ -353,8 +350,13 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
      * Returns an equivalent stream with an additional close handler. Close
      * handlers are run when the {@link #close()} method
      * is called on the stream, and are executed in the order they were
-     * added. If any close handler throws an exception, the first
-     * exception thrown will be relayed to the caller of {@code close()}.
+     * added. All close handlers are run, even if earlier close handlers throw
+     * exceptions. If any close handler throws an exception, the first
+     * exception thrown will be relayed to the caller of {@code close()}, with
+     * any remaining exceptions added to that exception as suppressed exceptions
+     * (unless one of the remaining exceptions is the same exception as the
+     * first exception, since an exception cannot suppress itself.) May
+     * return itself.
      *
      * <p>This is an <a href="package-summary.html#StreamOps">intermediate
      * operation</a>.
@@ -362,9 +364,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
      * @param closeHandler A task to execute when the stream is closed
      * @return a stream with a handler that is run if the stream is closed
      */
-    default S onClose(Runnable closeHandler) {
-        return (S)(((InternalStreamable) this).setNext(new OnCloseStep(closeHandler)));
-    }
+    S onClose(Runnable closeHandler);
 
     /**
      * Closes this stream, causing all close handlers for this stream pipeline
@@ -372,7 +372,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
      *
      * @see AutoCloseable#close()
      */
-    // TODO: Better implement both close as well as onClose in conjunction with .zip from ZipStream
+    @Override
     void close();
 
     /**

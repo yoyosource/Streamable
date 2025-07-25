@@ -1,5 +1,7 @@
 package de.yoyosource.streamable.internal;
 
+import java.util.List;
+
 public interface InternalStreamable {
 
     InternalStreamable setNext(StreamableConsumer streamableConsumer);
@@ -7,4 +9,7 @@ public interface InternalStreamable {
 
     int getMaxParallelTasks();
     void setMaxParallelTasks(int maxParallelTasks);
+
+    List<Runnable> getCloseHandlers();
+    void addCloseHandler(List<Runnable> closeHandlers);
 }

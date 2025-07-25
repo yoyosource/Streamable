@@ -200,8 +200,6 @@ public class ParallelStep extends Step {
             next.finish();
         } catch (FinishException e) {
             // Ignore
-        } finally {
-            gatherer.close();
         }
     }
 }

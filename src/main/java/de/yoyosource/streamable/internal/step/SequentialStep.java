@@ -96,8 +96,6 @@ public class SequentialStep extends Step {
                 // Ignore
             } catch (Throwable e) {
                 root.setError(e);
-            } finally {
-                gatherer.close();
             }
         }
     }

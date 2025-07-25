@@ -1,23 +1,29 @@
 package de.yoyosource.streamable.internal.step;
 
 import de.yoyosource.streamable.Ordering;
+import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.Evaluator;
 import de.yoyosource.streamable.internal.FinishException;
+import de.yoyosource.streamable.internal.InternalStreamable;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 public class FlattenStep extends Step implements Evaluator {
 
     private volatile boolean finished = false;
+    private final Consumer<List<Runnable>> closeHandlers;
     private final AtomicLong index = new AtomicLong();
     private Queue<Element<?>> elements = new LinkedList<>();
 
-    public FlattenStep() {
+    public FlattenStep(Consumer<List<Runnable>> closeHandlers) {
         super(null);
+        this.closeHandlers = closeHandlers;
     }
 
     @Override
@@ -28,6 +34,9 @@ public class FlattenStep extends Step implements Evaluator {
     @Override
     public void consume(long index, Object value) {
         if (finished) throw FinishException.INSTANCE;
+        if (value instanceof Streamable) {
+            closeHandlers.accept(((InternalStreamable) value).getCloseHandlers());
+        }
         elements.add(new Element.Value<>(index, ((Iterable) value).iterator()));
     }
 

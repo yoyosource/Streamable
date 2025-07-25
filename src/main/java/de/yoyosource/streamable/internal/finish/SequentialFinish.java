@@ -65,7 +65,6 @@ public class SequentialFinish extends Finish {
                 root.setError(e);
                 this.result = new AtomicReference<>(null);
             } finally {
-                collector.close();
                 finished = true;
             }
         }

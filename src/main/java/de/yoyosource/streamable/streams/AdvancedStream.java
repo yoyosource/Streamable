@@ -212,10 +212,6 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public void finish(Consumer<? super T> next) {
-            }
-
-            @Override
-            public void close() {
                 consumer.accept(count);
             }
         });
@@ -504,10 +500,14 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     }
 
     default <B> ZippedStream<T, B> zip(Streamable<?, B> streamable) {
-        return ((Streamable<?, ZippedStream.Zip<?, ?>>) ((InternalStreamable) this).setNext(new ZipStep(streamable, false))).as(ZippedStream.class);
+        return zip(streamable, false);
     }
 
     default <B> ZippedStream<T, B> zip(Streamable<?, B> streamable, boolean ignoreNulls) {
-        return ((Streamable<?, ZippedStream.Zip<?, ?>>) ((InternalStreamable) this).setNext(new ZipStep(streamable, ignoreNulls))).as(ZippedStream.class);
+        InternalStreamable thisStreamable = (InternalStreamable) this;
+        thisStreamable.addCloseHandler(((InternalStreamable) streamable).getCloseHandlers());
+        thisStreamable.getCloseHandlers().clear();
+        return ((Streamable<?, ZippedStream.Zip<?, ?>>) thisStreamable.setNext(new ZipStep(streamable, ignoreNulls)))
+                .as(ZippedStream.class);
     }
 }

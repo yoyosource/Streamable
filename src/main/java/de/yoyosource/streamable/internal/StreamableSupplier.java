@@ -6,7 +6,6 @@ import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.finish.Finish;
 import de.yoyosource.streamable.internal.finish.SequentialFinish;
 import de.yoyosource.streamable.internal.root.Root;
-import de.yoyosource.streamable.internal.step.FlattenStep;
 import de.yoyosource.streamable.internal.step.ParallelStep;
 import de.yoyosource.streamable.internal.step.SequentialStep;
 import de.yoyosource.streamable.internal.step.Step;
@@ -31,9 +30,7 @@ public abstract class StreamableSupplier {
             maxParallelTasks = 1;
         }
 
-        if (gatherer == null) {
-            return setNext(new FlattenStep());
-        } else if (maxParallelTasks == 1) {
+        if (maxParallelTasks == 1) {
             return setNext(new SequentialStep(gatherer));
         } else {
             return setNext(new ParallelStep(gatherer, maxParallelTasks));
@@ -79,11 +76,6 @@ public abstract class StreamableSupplier {
                 @Override
                 public void finish(A container, Consumer<? super R> next) {
                     next.accept(collector.finish(container));
-                }
-
-                @Override
-                public void close() {
-                    collector.close();
                 }
             }, maxParallelTasks)).setNext(new SequentialFinish(new StreamableCollector.Simple<>() {
                 @Override

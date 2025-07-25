@@ -35,7 +35,4 @@ public interface StreamableCollector<T, A, R> {
 
         public abstract R finish();
     }
-
-    default void close() {
-    }
 }

@@ -37,7 +37,4 @@ public interface StreamableGatherer<T, A, R> {
 
         public abstract void finish(Consumer<? super R> next);
     }
-
-    default void close() {
-    }
 }

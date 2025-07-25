@@ -2,11 +2,13 @@ package de.yoyosource.streamable;
 
 import de.yoyosource.streamable.internal.CloseException;
 import de.yoyosource.streamable.internal.Evaluator;
+import de.yoyosource.streamable.internal.GroupException;
 import de.yoyosource.streamable.internal.InternalStreamable;
 import de.yoyosource.streamable.internal.StreamableConsumer;
 import de.yoyosource.streamable.internal.StreamableSupplier;
 import de.yoyosource.streamable.internal.finish.Finish;
 import de.yoyosource.streamable.internal.root.Root;
+import de.yoyosource.streamable.internal.step.FlattenStep;
 import de.yoyosource.streamable.internal.step.ParallelStep;
 import sun.misc.Unsafe;
 
@@ -117,7 +119,10 @@ public class StreamableManager {
                         while (true) {
                             synchronized (data) {
                                 if (!data.isEmpty()) break;
-                                if (finish.getResult() != null) break;
+                                if (finish.getResult() != null) {
+                                    close(streamData);
+                                    break;
+                                }
                             }
                             generateNext();
                             if (streamData.root.getError() != null) {
@@ -159,15 +164,22 @@ public class StreamableManager {
             }
             if (is(method, "flatGather", StreamableGatherer.class)) {
                 streamData.supplier = streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableGatherer) args[0])
-                        .setNext(0, (StreamableGatherer) null);
+                        .setNext(new FlattenStep(runnables -> {
+                            streamData.closeHandlers.addAll(runnables);
+                            runnables.clear();
+                        }));
                 return proxy;
             }
             if (is(method, "collect", StreamableCollector.class)) {
                 streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableCollector) args[0]);
                 return ((InternalStreamable) proxy).evaluate();
             }
+            if (is(method, "onClose", Runnable.class)) {
+                streamData.closeHandlers.add((Runnable)  args[0]);
+                return proxy;
+            }
             if (is(method, "close")) {
-                streamData.root.setError(CloseException.INSTANCE);
+                close(streamData);
                 return null;
             }
 
@@ -200,6 +212,7 @@ public class StreamableManager {
                         if (evaluator.backlogSize() > maxBacklogPerEvaluator) break;
                     }
                 }
+                close(streamData);
                 return finish.getResult().get();
             }
             if (is(method, "getMaxParallelTasks")) {
@@ -207,6 +220,13 @@ public class StreamableManager {
             }
             if (is(method, "setMaxParallelTasks", int.class)) {
                 streamData.maxParallelTasks = (int) args[0];
+                return null;
+            }
+            if (is(method, "getCloseHandlers")) {
+                return streamData.closeHandlers;
+            }
+            if (is(method, "addCloseHandler", List.class)) {
+                streamData.closeHandlers.addAll((List<Runnable>) args[0]);
                 return null;
             }
 
@@ -285,6 +305,22 @@ public class StreamableManager {
                 // System.out.println("Set " + consumer + " ordering to " + ordering.ordered);
             }
             ordering = ordering.or(consumer.ordering());
+        }
+    }
+
+    private static void close(StreamData streamData) {
+        List<Throwable> throwables = new ArrayList<>();
+        streamData.closeHandlers.forEach(runnable -> {
+            try {
+                runnable.run();
+            } catch (Throwable throwable) {
+                throwables.add(throwable);
+            }
+        });
+        if (throwables.isEmpty()) {
+            streamData.root.setError(CloseException.INSTANCE);
+        } else {
+            streamData.root.setError(new GroupException(throwables));
         }
     }
 }
