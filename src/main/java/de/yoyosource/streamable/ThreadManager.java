@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-public class ThreadManager implements AutoCloseable {
+public class ThreadManager {
 
     private static final AtomicInteger THREAD_MANAGER_ID = new AtomicInteger();
 
@@ -74,7 +74,6 @@ public class ThreadManager implements AutoCloseable {
         return queueKey;
     }
 
-    @Override
     public void close() {
         if (this == GLOBAL) return;
         if (LOCAL.get() == this) {
@@ -84,10 +83,7 @@ public class ThreadManager implements AutoCloseable {
             work.clear();
         }
         synchronized (workers) {
-            workers.forEach(worker -> {
-                worker.setWork(null);
-                worker.interrupt();
-            });
+            workers.forEach(Thread::interrupt);
             workers.clear();
         }
         manager.interrupt();
