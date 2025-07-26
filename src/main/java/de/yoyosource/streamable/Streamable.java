@@ -220,6 +220,32 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
     <N extends Streamable<N, ? super T>> N as(Class<N> clazz);
 
     /**
+     * Sets the all operations done before this to be at least evaluated as the supplied parameter.
+     * <p>This is an intermediate operation.</p>
+     *
+     * @param ordering the ordering the stream should have at least until this operation
+     * @return the new Stream
+     */
+    default S ordering(Ordering ordering) {
+        return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Ordering ordering() {
+                return ordering;
+            }
+
+            @Override
+            public boolean integrate(long index, T element, Consumer<? super T> next) {
+                next.accept(element);
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<? super T> next) {
+            }
+        });
+    }
+
+    /**
      * Sets the {@param maxParallelism} to 1 number. The next stream step will be executed sequentially.
      * <p>This is an intermediate operation.</p>
      *
@@ -252,7 +278,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
      * @return {@code true} if the last stream step would execute in parallel if executed
      */
     default boolean isParallel() {
-        return ((InternalStreamable) this).getMaxParallelTasks() > 0;
+        return ((InternalStreamable) this).getMaxParallelTasks() > 1;
     }
 
     /**
@@ -376,7 +402,21 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
     void close();
 
     /**
-     * {@inheritDoc}
+     * Performs an action for each element of this stream.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal
+     * operation</a>.
+     *
+     * <p>The behavior of this operation is explicitly nondeterministic.
+     * For parallel stream pipelines, this operation does <em>not</em>
+     * guarantee to respect the encounter order of the stream, as doing so
+     * would sacrifice the benefit of parallelism.  For any given element, the
+     * action may be performed at whatever time and in whatever thread the
+     * library chooses.  If the action accesses shared state, it is
+     * responsible for providing the required synchronization.
+     *
+     * @param action a <a href="package-summary.html#NonInterference">
+     *               non-interfering</a> action to perform on the elements
      */
     @Override
     default void forEach(Consumer<? super T> action) {
