@@ -11,10 +11,23 @@ import static de.yoyosource.streamable.streams.TryedStream.TryedStream;
 
 public interface TryingStream<T> extends Streamable<TryingStream<T>, T> {
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code TryingStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code TryingStream}
+     * @return the type for {@link #as(Class)}
+     */
     static <T> Class<TryingStream<T>> TryingStream() {
         return (Class<TryingStream<T>>) (Class) TryingStream.class;
     }
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code TryingStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code TryingStream}
+     * @param clazz the type {@code T} should be
+     * @return the type for {@link #as(Class)}
+     */
     static <T> Class<TryingStream<T>> TryingStream(Class<T> clazz) {
         return (Class<TryingStream<T>>) (Class) TryingStream.class;
     }

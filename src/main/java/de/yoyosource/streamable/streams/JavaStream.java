@@ -13,10 +13,23 @@ import java.util.stream.Collectors;
 
 public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code JavaStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code JavaStream}
+     * @return the type for {@link #as(Class)}
+     */
     static <T> Class<JavaStream<T>> JavaStream() {
         return (Class<JavaStream<T>>) (Class) JavaStream.class;
     }
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code JavaStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code JavaStream}
+     * @param clazz the type {@code T} should be
+     * @return the type for {@link #as(Class)}
+     */
     static <T> Class<JavaStream<T>> JavaStream(Class<T> clazz) {
         return (Class<JavaStream<T>>) (Class) JavaStream.class;
     }

@@ -10,10 +10,26 @@ import java.util.function.Predicate;
 
 public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, ZippedStream.Zip<A, B>> {
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code ZippedStream} for {@link #as(Class)} method.
+     *
+     * @param <A> the first type of elements inside the {@code ZippedStream}
+     * @param <B> the second type of elements inside the {@code ZippedStream}
+     * @return the type for {@link #as(Class)}
+     */
     static <A, B> Class<ZippedStream<A, B>> ZippedStream() {
         return (Class<ZippedStream<A, B>>) (Class) ZippedStream.class;
     }
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code ZippedStream} for {@link #as(Class)} method.
+     *
+     * @param <A> the first type of elements inside the {@code ZippedStream}
+     * @param <B> the second type of elements inside the {@code ZippedStream}
+     * @param first the type {@code A} should be
+     * @param second the type {@code B} should be
+     * @return the type for {@link #as(Class)}
+     */
     static <A, B> Class<ZippedStream<A, B>> ZippedStream(Class<A> first, Class<B> second) {
         return (Class<ZippedStream<A, B>>) (Class) ZippedStream.class;
     }

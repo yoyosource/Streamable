@@ -17,10 +17,23 @@ import java.util.function.Consumer;
 
 public interface NumberStream<T extends Number & Comparable<T>> extends Streamable<NumberStream<T>, T> {
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code NumberStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code NumberStream}
+     * @return the type for {@link #as(Class)}
+     */
     static <T extends Number & Comparable<T>> Class<NumberStream<T>> NumberStream() {
         return (Class<NumberStream<T>>) (Class) NumberStream.class;
     }
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code NumberStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code NumberStream}
+     * @param clazz the type {@code T} should be
+     * @return the type for {@link #as(Class)}
+     */
     static <T extends Number & Comparable<T>> Class<NumberStream<T>> NumberStream(Class<T> clazz) {
         return (Class<NumberStream<T>>) (Class) NumberStream.class;
     }

@@ -12,10 +12,23 @@ import java.util.function.*;
 
 public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code AdvancedStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code AdvancedStream}
+     * @return the type for {@link #as(Class)}
+     */
     static <T> Class<AdvancedStream<T>> AdvancedStream() {
         return (Class<AdvancedStream<T>>) (Class) AdvancedStream.class;
     }
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code AdvancedStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code AdvancedStream}
+     * @param clazz the type {@code T} should be
+     * @return the type for {@link #as(Class)}
+     */
     static <T> Class<AdvancedStream<T>> AdvancedStream(Class<T> clazz) {
         return (Class<AdvancedStream<T>>) (Class) AdvancedStream.class;
     }

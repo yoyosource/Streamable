@@ -12,10 +12,23 @@ import java.util.function.Consumer;
 
 public interface ComparableStream<T extends Comparable<T>> extends Streamable<ComparableStream<T>, T> {
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code ComparableStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code ComparableStream}
+     * @return the type for {@link #as(Class)}
+     */
     static <T extends Comparable<T>> Class<ComparableStream<T>> ComparableStream() {
         return (Class<ComparableStream<T>>) (Class) ComparableStream.class;
     }
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code ComparableStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code ComparableStream}
+     * @param clazz the type {@code T} should be
+     * @return the type for {@link #as(Class)}
+     */
     static <T extends Comparable<T>> Class<ComparableStream<T>> ComparableStream(Class<T> clazz) {
         return (Class<ComparableStream<T>>) (Class) ComparableStream.class;
     }

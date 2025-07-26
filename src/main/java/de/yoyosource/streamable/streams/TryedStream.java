@@ -11,11 +11,27 @@ import static de.yoyosource.streamable.streams.JavaStream.JavaStream;
 
 public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStream<T, E>, Try<T, E>> {
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code TryedStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code TryedStream}
+     * @param <E> the type of exception inside the {@code TryedStream}
+     * @return the type for {@link #as(Class)}
+     */
     static <T, E extends Throwable> Class<TryedStream<T, E>> TryedStream() {
         return (Class<TryedStream<T, E>>) (Class) TryedStream.class;
     }
 
-    static <T, E extends Throwable> Class<TryedStream<T, E>> TryedStream(Class<T> clazz1, Class<E> clazz2) {
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code TryedStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code TryedStream}
+     * @param <E> the type of exception inside the {@code TryedStream}
+     * @param element the type {@code T} should be
+     * @param exception the type {@code E} should be
+     * @return the type for {@link #as(Class)}
+     */
+    static <T, E extends Throwable> Class<TryedStream<T, E>> TryedStream(Class<T> element, Class<E> exception) {
         return (Class<TryedStream<T, E>>) (Class) TryedStream.class;
     }
 

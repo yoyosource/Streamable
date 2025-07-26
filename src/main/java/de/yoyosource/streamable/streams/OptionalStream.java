@@ -7,10 +7,23 @@ import java.util.function.Supplier;
 
 public interface OptionalStream<T> extends OptionalBaseStream<OptionalStream<T>, T> {
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code OptionalStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code OptionalStream}
+     * @return the type for {@link #as(Class)}
+     */
     static <T> Class<OptionalStream<T>> OptionalStream() {
         return (Class<OptionalStream<T>>) (Class) OptionalStream.class;
     }
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code OptionalStream} for {@link #as(Class)} method.
+     *
+     * @param <T> the type of elements inside the {@code OptionalStream}
+     * @param clazz the type {@code T} should be
+     * @return the type for {@link #as(Class)}
+     */
     static <T> Class<OptionalStream<T>> OptionalStream(Class<T> clazz) {
         return (Class<OptionalStream<T>>) (Class) OptionalStream.class;
     }

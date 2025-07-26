@@ -8,11 +8,27 @@ import java.util.function.Function;
 
 public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable<GenericStream<S, T>, S> {
 
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code GenericStream} for {@link #as(Class)} method.
+     *
+     * @param <S> the {@code Streamable} type to be
+     * @param <T> the type of the elements in the {@code Streamable}
+     * @return the type for {@link #as(Class)}
+     */
     static <S extends Streamable<S, T>, T> Class<GenericStream<S, T>> GenericStream() {
         return (Class<GenericStream<S, T>>) (Class) GenericStream.class;
     }
 
-    static <S extends Streamable<S, T>, T> Class<GenericStream<S, T>> GenericStream(Class<S> clazz1, Class<T> clazz2) {
+    /**
+     * Returns a {@code Class} instance with the generic type of {@code GenericStream} for {@link #as(Class)} method.
+     *
+     * @param <S> the {@code Streamable} type to be
+     * @param <T> the type of the elements in the {@code Streamable}
+     * @param streamable the type {@code S} should be
+     * @param element the type {@code T} should be
+     * @return the type for {@link #as(Class)}
+     */
+    static <S extends Streamable<S, T>, T> Class<GenericStream<S, T>> GenericStream(Class<S> streamable, Class<T> element) {
         return (Class<GenericStream<S, T>>) (Class) GenericStream.class;
     }
 
