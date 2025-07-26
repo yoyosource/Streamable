@@ -37,7 +37,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     /**
      * Returns a {@code Class} instance with the generic type of {@code JavaStream} for {@link #as(Class)} method.
      *
-     * @param <T> the type of elements inside the {@code JavaStream}
+     * @param <T>   the type of elements inside the {@code JavaStream}
      * @param clazz the type {@code T} should be
      * @return the type for {@link #as(Class)}
      */
@@ -79,7 +79,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is an <a href="package-summary.html#StreamOps">intermediate
      * operation</a>.
      *
-     * @param <R> The element type of the new stream
+     * @param <R>    The element type of the new stream
      * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
      *               <a href="package-summary.html#Statelessness">stateless</a>
      *               function to apply to each element
@@ -110,8 +110,13 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is an <a href="package-summary.html#StreamOps">intermediate
      * operation</a>.
      *
-     * @apiNote
-     * The {@code flatMap()} operation has the effect of applying a one-to-many
+     * @param <R>    The element type of the new stream
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element which produces an iterable
+     *               of new values
+     * @return the new stream
+     * @apiNote The {@code flatMap()} operation has the effect of applying a one-to-many
      * transformation to the elements of the stream, and then flattening the
      * resulting elements into a new stream.
      *
@@ -133,13 +138,6 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * The {@code mapper} function passed to {@code flatMap} splits a line,
      * using a simple regular expression, into an array of words, and then
      * creates a stream of words from that array.
-     *
-     * @param <R> The element type of the new stream
-     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
-     *               <a href="package-summary.html#Statelessness">stateless</a>
-     *               function to apply to each element which produces an iterable
-     *               of new values
-     * @return the new stream
      * @see #mapMulti
      */
     default <R> JavaStream<R> flatMap(Function<? super T, ? extends Iterable<? extends R>> mapper) {
@@ -172,8 +170,12 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>If the {@linkplain Consumer consumer} argument is used outside the scope of
      * its application to the mapping function, the results are undefined.
      *
-     * @apiNote
-     * This method is similar to {@link #flatMap flatMap} in that it applies a one-to-many
+     * @param <R>    The element type of the new stream
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function that generates replacement elements
+     * @return the new stream
+     * @apiNote This method is similar to {@link #flatMap flatMap} in that it applies a one-to-many
      * transformation to the elements of the stream and flattens the result elements
      * into a new stream. This method is preferable to {@code flatMap} in the following
      * circumstances:
@@ -223,14 +225,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      *     }
      * }
      * }</pre>
-     *
-     * @param <R> The element type of the new stream
-     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
-     *               <a href="package-summary.html#Statelessness">stateless</a>
-     *               function that generates replacement elements
-     * @return the new stream
      * @see #flatMap flatMap
-     * @since 16
      */
     default <R> JavaStream<R> mapMulti(BiConsumer<? super T, ? super Consumer<? super R>> mapper) {
         return gather(new StreamableGatherer.Simple<>() {
@@ -258,20 +253,14 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">stateful
      * intermediate operation</a>.
      *
-     * @apiNote
-     * Preserving stability for {@code distinct()} in parallel pipelines is
+     * @return the new stream
+     * @apiNote Preserving stability for {@code distinct()} in parallel pipelines is
      * relatively expensive (requires that the operation act as a full barrier,
      * with substantial buffering overhead), and stability is often not needed.
-     * Using an unordered stream source (such as {@link #generate(Supplier)})
-     * or removing the ordering constraint with {@link #unordered()} may result
-     * in significantly more efficient execution for {@code distinct()} in parallel
-     * pipelines, if the semantics of your situation permit.  If consistency
-     * with encounter order is required, and you are experiencing poor performance
-     * or memory utilization with {@code distinct()} in parallel pipelines,
-     * switching to sequential execution with {@link #sequential()} may improve
-     * performance.
-     *
-     * @return the new stream
+     * If consistency with encounter order is required, and you are experiencing
+     * poor performance or memory utilization with {@code distinct()} in parallel
+     * pipelines, switching to sequential execution with {@link #sequential()}
+     * may improve performance.
      */
     default JavaStream<T> distinct() {
         return gather(new StreamableGatherer.Simple<>() {
@@ -344,6 +333,10 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * upstream operation.  If the action modifies shared state,
      * it is responsible for providing the required synchronization.
      *
+     * @param action a <a href="package-summary.html#NonInterference">
+     *               non-interfering</a> action to perform on the elements as
+     *               they are consumed from the stream
+     * @return the new stream
      * @apiNote This method exists mainly to support debugging, where you want
      * to see the elements as they flow past a certain point in a pipeline:
      * <pre>{@code
@@ -359,11 +352,6 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * production of some or all the elements (such as with short-circuiting
      * operations like {@code findFirst}, or in the example described in
      * {@link #count}), the action will not be invoked for those elements.
-     *
-     * @param action a <a href="package-summary.html#NonInterference">
-     *                 non-interfering</a> action to perform on the elements as
-     *                 they are consumed from the stream
-     * @return the new stream
      */
     default JavaStream<T> peek(Consumer<? super T> action) {
         return gather(new StreamableGatherer.Simple<>() {
@@ -387,23 +375,18 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
      * stateful intermediate operation</a>.
      *
-     * @apiNote
-     * While {@code limit()} is generally a cheap operation on sequential
-     * stream pipelines, it can be quite expensive on ordered parallel pipelines,
-     * especially for large values of {@code maxSize}, since {@code limit(n)}
-     * is constrained to return not just any <em>n</em> elements, but the
-     * <em>first n</em> elements in the encounter order.  Using an unordered
-     * stream source (such as {@link #generate(Supplier)}) or removing the
-     * ordering constraint with {@link #unordered()} may result in significant
-     * speedups of {@code limit()} in parallel pipelines, if the semantics of
-     * your situation permit.  If consistency with encounter order is required,
-     * and you are experiencing poor performance or memory utilization with
-     * {@code limit()} in parallel pipelines, switching to sequential execution
-     * with {@link #sequential()} may improve performance.
-     *
      * @param maxSize the number of elements the stream should be limited to
      * @return the new stream
      * @throws IllegalArgumentException if {@code maxSize} is negative
+     * @apiNote While {@code limit()} is generally a cheap operation on sequential
+     * stream pipelines, it can be quite expensive on ordered parallel pipelines,
+     * especially for large values of {@code maxSize}, since {@code limit(n)}
+     * is constrained to return not just any <em>n</em> elements, but the
+     * <em>first n</em> elements in the encounter order. If consistency with
+     * encounter order is required, and you are experiencing poor performance
+     * or memory utilization with {@code limit()} in parallel pipelines,
+     * switching to sequential execution with {@link #sequential()} may
+     * improve performance.
      */
     default JavaStream<T> limit(long maxSize) {
         if (maxSize < 0) {
@@ -444,23 +427,18 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">stateful
      * intermediate operation</a>.
      *
-     * @apiNote
-     * While {@code skip()} is generally a cheap operation on sequential
-     * stream pipelines, it can be quite expensive on ordered parallel pipelines,
-     * especially for large values of {@code n}, since {@code skip(n)}
-     * is constrained to skip not just any <em>n</em> elements, but the
-     * <em>first n</em> elements in the encounter order.  Using an unordered
-     * stream source (such as {@link #generate(Supplier)}) or removing the
-     * ordering constraint with {@link #unordered()} may result in significant
-     * speedups of {@code skip()} in parallel pipelines, if the semantics of
-     * your situation permit.  If consistency with encounter order is required,
-     * and you are experiencing poor performance or memory utilization with
-     * {@code skip()} in parallel pipelines, switching to sequential execution
-     * with {@link #sequential()} may improve performance.
-     *
      * @param skip the number of leading elements to skip
      * @return the new stream
      * @throws IllegalArgumentException if {@code n} is negative
+     * @apiNote While {@code skip()} is generally a cheap operation on sequential
+     * stream pipelines, it can be quite expensive on ordered parallel pipelines,
+     * especially for large values of {@code n}, since {@code skip(n)}
+     * is constrained to skip not just any <em>n</em> elements, but the
+     * <em>first n</em> elements in the encounter order. If consistency
+     * with encounter order is required, and you are experiencing poor
+     * performance or memory utilization with {@code skip()} in parallel
+     * pipelines, switching to sequential execution with
+     * {@link #sequential()} may improve performance.
      */
     default JavaStream<T> skip(long skip) {
         if (skip < 0) {
@@ -508,8 +486,12 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
      * stateful intermediate operation</a>.
      *
-     * @implSpec
-     * The default implementation obtains the {@link #spliterator() spliterator}
+     * @param predicate a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *                  <a href="package-summary.html#Statelessness">stateless</a>
+     *                  predicate to apply to elements to determine the longest
+     *                  prefix of elements.
+     * @return the new stream
+     * @implSpec The default implementation obtains the {@link #spliterator() spliterator}
      * of this stream, wraps that spliterator so as to support the semantics
      * of this operation on traversal, and returns a new stream associated with
      * the wrapped spliterator.  The returned stream preserves the execution
@@ -517,26 +499,14 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * as per {@link #isParallel()}) but the wrapped spliterator may choose to
      * not support splitting.  When the returned stream is closed, the close
      * handlers for both the returned and this stream are invoked.
-     *
-     * @apiNote
-     * While {@code takeWhile()} is generally a cheap operation on sequential
+     * @apiNote While {@code takeWhile()} is generally a cheap operation on sequential
      * stream pipelines, it can be quite expensive on ordered parallel
      * pipelines, since the operation is constrained to return not just any
      * valid prefix, but the longest prefix of elements in the encounter order.
-     * Using an unordered stream source (such as {@link #generate(Supplier)}) or
-     * removing the ordering constraint with {@link #unordered()} may result in
-     * significant speedups of {@code takeWhile()} in parallel pipelines, if the
-     * semantics of your situation permit.  If consistency with encounter order
-     * is required, and you are experiencing poor performance or memory
-     * utilization with {@code takeWhile()} in parallel pipelines, switching to
-     * sequential execution with {@link #sequential()} may improve performance.
-     *
-     * @param predicate a <a href="package-summary.html#NonInterference">non-interfering</a>,
-     *                  <a href="package-summary.html#Statelessness">stateless</a>
-     *                  predicate to apply to elements to determine the longest
-     *                  prefix of elements.
-     * @return the new stream
-     * @since 9
+     * If consistency with encounter order is required, and you are experiencing
+     * poor performance or memory utilization with {@code takeWhile()} in
+     * parallel pipelines, switching to sequential execution with
+     * {@link #sequential()} may improve performance.
      */
     default JavaStream<T> takeWhile(Predicate<? super T> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
@@ -588,8 +558,12 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">stateful
      * intermediate operation</a>.
      *
-     * @implSpec
-     * The default implementation obtains the {@link #spliterator() spliterator}
+     * @param predicate a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *                  <a href="package-summary.html#Statelessness">stateless</a>
+     *                  predicate to apply to elements to determine the longest
+     *                  prefix of elements.
+     * @return the new stream
+     * @implSpec The default implementation obtains the {@link #spliterator() spliterator}
      * of this stream, wraps that spliterator so as to support the semantics
      * of this operation on traversal, and returns a new stream associated with
      * the wrapped spliterator.  The returned stream preserves the execution
@@ -597,26 +571,14 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * as per {@link #isParallel()}) but the wrapped spliterator may choose to
      * not support splitting.  When the returned stream is closed, the close
      * handlers for both the returned and this stream are invoked.
-     *
-     * @apiNote
-     * While {@code dropWhile()} is generally a cheap operation on sequential
+     * @apiNote While {@code dropWhile()} is generally a cheap operation on sequential
      * stream pipelines, it can be quite expensive on ordered parallel
      * pipelines, since the operation is constrained to return not just any
      * valid prefix, but the longest prefix of elements in the encounter order.
-     * Using an unordered stream source (such as {@link #generate(Supplier)}) or
-     * removing the ordering constraint with {@link #unordered()} may result in
-     * significant speedups of {@code dropWhile()} in parallel pipelines, if the
-     * semantics of your situation permit.  If consistency with encounter order
-     * is required, and you are experiencing poor performance or memory
-     * utilization with {@code dropWhile()} in parallel pipelines, switching to
-     * sequential execution with {@link #sequential()} may improve performance.
-     *
-     * @param predicate a <a href="package-summary.html#NonInterference">non-interfering</a>,
-     *                  <a href="package-summary.html#Statelessness">stateless</a>
-     *                  predicate to apply to elements to determine the longest
-     *                  prefix of elements.
-     * @return the new stream
-     * @since 9
+     * If consistency with encounter order is required, and you are experiencing
+     * poor performance or memory utilization with {@code dropWhile()} in
+     * parallel pipelines, switching to sequential execution with
+     * {@link #sequential()} may improve performance.
      */
     @SuppressWarnings("unchecked")
     default JavaStream<T> dropWhile(Predicate<? super T> predicate) {
@@ -663,8 +625,14 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
-     * @apiNote
-     * The generator function takes an integer, which is the size of the
+     * @param <A>       the component type of the resulting array
+     * @param generator a function which produces a new array of the desired
+     *                  type and the provided length
+     * @return an array containing the elements in this stream
+     * @throws ArrayStoreException if the runtime type of any element of this
+     *                             stream is not assignable to the {@linkplain Class#getComponentType
+     *                             runtime component type} of the generated array
+     * @apiNote The generator function takes an integer, which is the size of the
      * desired array, and produces an array of the desired size.  This can be
      * concisely expressed with an array constructor reference:
      * <pre>{@code
@@ -672,14 +640,6 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      *                          .filter(p -> p.getGender() == MALE)
      *                          .toArray(Person[]::new);
      * }</pre>
-     *
-     * @param <A> the component type of the resulting array
-     * @param generator a function which produces a new array of the desired
-     *                  type and the provided length
-     * @return an array containing the elements in this stream
-     * @throws ArrayStoreException if the runtime type of any element of this
-     *         stream is not assignable to the {@linkplain Class#getComponentType
-     *         runtime component type} of the generated array
      */
     default <A> A[] toArray(IntFunction<A[]> generator) {
         return collect(new StreamableCollector.Simple<>() {
@@ -710,7 +670,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      *         result = accumulator.apply(result, element)
      *     return result;
      * }</pre>
-     *
+     * <p>
      * but is not constrained to execute sequentially.
      *
      * <p>The {@code identity} value must be an identity for the accumulator
@@ -722,13 +682,19 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
+     * @param identity    the identity value for the accumulating function
+     * @param accumulator an <a href="package-summary.html#Associativity">associative</a>,
+     *                    <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *                    <a href="package-summary.html#Statelessness">stateless</a>
+     *                    function for combining two values
+     * @return the result of the reduction
      * @apiNote Sum, min, max, average, and string concatenation are all special
      * cases of reduction. Summing a stream of numbers can be expressed as:
      *
      * <pre>{@code
      *     Integer sum = integers.reduce(0, (a, b) -> a+b);
      * }</pre>
-     *
+     * <p>
      * or:
      *
      * <pre>{@code
@@ -739,13 +705,6 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * compared to simply mutating a running total in a loop, reduction
      * operations parallelize more gracefully, without needing additional
      * synchronization and with greatly reduced risk of data races.
-     *
-     * @param identity the identity value for the accumulating function
-     * @param accumulator an <a href="package-summary.html#Associativity">associative</a>,
-     *                    <a href="package-summary.html#NonInterference">non-interfering</a>,
-     *                    <a href="package-summary.html#Statelessness">stateless</a>
-     *                    function for combining two values
-     * @return the result of the reduction
      */
     default T reduce(T identity, BinaryOperator<T> accumulator) {
         return collect(new StreamableCollector<T, SingleData<T>, T>() {
@@ -804,7 +763,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      *     }
      *     return foundAny ? Optional.of(result) : Optional.empty();
      * }</pre>
-     *
+     * <p>
      * but is not constrained to execute sequentially.
      *
      * <p>The {@code accumulator} function must be an
@@ -862,7 +821,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * reduction</a> operation on the elements of this stream using a
      * {@code Collector}.  A {@code Collector}
      * encapsulates the functions used as arguments to
-     * {@link #collect(Supplier, BiConsumer, BiConsumer)}, allowing for reuse of
+     * {@link java.util.stream.Stream#collect(Supplier, BiConsumer, BiConsumer)}, allowing for reuse of
      * collection strategies and composition of collect operations such as
      * multiple-level grouping or partitioning.
      *
@@ -882,8 +841,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * with non-thread-safe data structures (such as {@code ArrayList}), no
      * additional synchronization is needed for a parallel reduction.
      *
-     * @apiNote
-     * The following will accumulate strings into a List:
+     * @param <R>       the type of the result
+     * @param <A>       the intermediate accumulation type of the {@code Collector}
+     * @param collector the {@code Collector} describing the reduction
+     * @return the result of the reduction
+     * @apiNote The following will accumulate strings into a List:
      * <pre>{@code
      *     List<String> asList = stringStream.collect(Collectors.toList());
      * }</pre>
@@ -901,11 +863,6 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      *         = personStream.collect(Collectors.groupingBy(Person::getState,
      *                                                      Collectors.groupingBy(Person::getCity)));
      * }</pre>
-     *
-     * @param <R> the type of the result
-     * @param <A> the intermediate accumulation type of the {@code Collector}
-     * @param collector the {@code Collector} describing the reduction
-     * @return the result of the reduction
      * @see Collectors
      */
     default <R, A> R collect(Collector<? super T, A, R> collector) {
@@ -947,15 +904,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      *
      * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
      *
+     * @return a List containing the stream elements
      * @apiNote If more control over the returned object is required, use
      * {@link Collectors#toCollection(Supplier)}.
-     *
      * @implNote Most instances of Stream will override this method and provide an implementation
      * that is highly optimized compared to the implementation in this interface.
-     *
-     * @return a List containing the stream elements
-     *
-     * @since 16
      */
     default List<T> toList() {
         return collect(Collectors.toList());
@@ -1091,15 +1044,13 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
      * terminal operation</a>.
      *
-     * @apiNote
-     * This method evaluates the <em>existential quantification</em> of the
-     * predicate over the elements of the stream (for some x P(x)).
-     *
      * @param predicate a <a href="package-summary.html#NonInterference">non-interfering</a>,
      *                  <a href="package-summary.html#Statelessness">stateless</a>
      *                  predicate to apply to elements of this stream
      * @return {@code true} if any elements of the stream match the provided
      * predicate, otherwise {@code false}
+     * @apiNote This method evaluates the <em>existential quantification</em> of the
+     * predicate over the elements of the stream (for some x P(x)).
      */
     default boolean anyMatch(Predicate<? super T> predicate) {
         return collect(new StreamableCollector<T, SingleData<Boolean>, Boolean>() {
@@ -1141,17 +1092,15 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
      * terminal operation</a>.
      *
-     * @apiNote
-     * This method evaluates the <em>universal quantification</em> of the
-     * predicate over the elements of the stream (for all x P(x)).  If the
-     * stream is empty, the quantification is said to be <em>vacuously
-     * satisfied</em> and is always {@code true} (regardless of P(x)).
-     *
      * @param predicate a <a href="package-summary.html#NonInterference">non-interfering</a>,
      *                  <a href="package-summary.html#Statelessness">stateless</a>
      *                  predicate to apply to elements of this stream
      * @return {@code true} if either all elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
+     * @apiNote This method evaluates the <em>universal quantification</em> of the
+     * predicate over the elements of the stream (for all x P(x)).  If the
+     * stream is empty, the quantification is said to be <em>vacuously
+     * satisfied</em> and is always {@code true} (regardless of P(x)).
      */
     default boolean allMatch(Predicate<? super T> predicate) {
         return !anyMatch(predicate.negate());
@@ -1166,17 +1115,15 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
      * terminal operation</a>.
      *
-     * @apiNote
-     * This method evaluates the <em>universal quantification</em> of the
-     * negated predicate over the elements of the stream (for all x ~P(x)).  If
-     * the stream is empty, the quantification is said to be vacuously satisfied
-     * and is always {@code true}, regardless of P(x).
-     *
      * @param predicate a <a href="package-summary.html#NonInterference">non-interfering</a>,
      *                  <a href="package-summary.html#Statelessness">stateless</a>
      *                  predicate to apply to elements of this stream
      * @return {@code true} if either no elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
+     * @apiNote This method evaluates the <em>universal quantification</em> of the
+     * negated predicate over the elements of the stream (for all x ~P(x)).  If
+     * the stream is empty, the quantification is said to be vacuously satisfied
+     * and is always {@code true}, regardless of P(x).
      */
     default boolean noneMatch(Predicate<? super T> predicate) {
         return !anyMatch(predicate);
