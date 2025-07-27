@@ -892,9 +892,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
     /**
      * Accumulates the elements of this stream into a {@code List}. The elements in
-     * the list will be in this stream's encounter order, if one exists. The returned List
-     * is unmodifiable; calls to any mutator method will always cause
-     * {@code UnsupportedOperationException} to be thrown. There are no
+     * the list will be in this stream's encounter order, if one exists. There are no
      * guarantees on the implementation type or serializability of the returned List.
      *
      * <p>The returned instance may be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -907,8 +905,6 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * @return a List containing the stream elements
      * @apiNote If more control over the returned object is required, use
      * {@link Collectors#toCollection(Supplier)}.
-     * @implNote Most instances of Stream will override this method and provide an implementation
-     * that is highly optimized compared to the implementation in this interface.
      */
     default List<T> toList() {
         return collect(Collectors.toList());

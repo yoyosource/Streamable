@@ -146,7 +146,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
                     if (endOnException) {
                         return true;
                     }
-                    next.accept(Try.Failure(element.getFailure()));
+                    next.accept((Try<R, E>) element);
                 }
                 return false;
             }
