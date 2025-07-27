@@ -1,7 +1,5 @@
 package de.yoyosource.streamable.internal.sequence;
 
-import java.util.Iterator;
-
 public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
 
     private Node<T> head;
@@ -31,11 +29,6 @@ public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
     @Override
     public synchronized boolean isEmpty() {
         return head == null;
-    }
-
-    @Override
-    public Iterator<T> iterator() {
-        return this;
     }
 
     @Override

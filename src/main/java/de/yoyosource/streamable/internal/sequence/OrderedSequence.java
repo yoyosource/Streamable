@@ -40,12 +40,6 @@ public class OrderedSequence<T> implements Sequence<T> {
         return elementNode;
     }
 
-    @Override
-    @SuppressWarnings("java:S4348")
-    public Iterator<T> iterator() {
-        return this;
-    }
-
     private ElementNode<T> current = null;
 
     @Override

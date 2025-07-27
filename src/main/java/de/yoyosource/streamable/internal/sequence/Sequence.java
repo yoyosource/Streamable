@@ -8,6 +8,10 @@ public interface Sequence<T> extends Iterable<T>, Iterator<T> {
 
     boolean isEmpty();
 
+    default Iterator<T> iterator() {
+        return this;
+    }
+
     interface Inserter<T> {
 
         Inserter<T> add(T value);
