@@ -4,6 +4,7 @@ public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
 
     private Node<T> head;
     private Node<T> tail;
+    private int size = 0;
 
     @Override
     public Inserter<T> inserter() {
@@ -19,6 +20,7 @@ public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
             tail.next = node;
             tail = node;
         }
+        size++;
         return this;
     }
 
@@ -41,7 +43,27 @@ public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
         T value = head.value;
         head = head.next;
         if (head == null) tail = null;
+        size--;
         return value;
+    }
+
+    @Override
+    public synchronized T peek() {
+        if (head == null) return null;
+        return head.value;
+    }
+
+    @Override
+    public synchronized void remove() {
+        if (head == null) return;
+        head = head.next;
+        if (head == null) tail = null;
+        size--;
+    }
+
+    @Override
+    public int size() {
+        return size;
     }
 
     private static class Node<T> {

@@ -1,7 +1,5 @@
 package de.yoyosource.streamable.internal.sequence;
 
-import java.util.Iterator;
-
 public class OrderedSequence<T> implements Sequence<T> {
 
     private Node<T> head;
@@ -56,6 +54,31 @@ public class OrderedSequence<T> implements Sequence<T> {
         T value = current.value;
         current = null;
         return value;
+    }
+
+    @Override
+    public synchronized T peek() {
+        if (current == null) {
+            current = _getNext();
+        }
+        if (current == null) {
+            return null;
+        }
+        return current.value;
+    }
+
+    @Override
+    public synchronized void remove() {
+        if (current == null) {
+            _getNext();
+        } else {
+            current = null;
+        }
+    }
+
+    @Override
+    public int size() {
+        throw new UnsupportedOperationException();
     }
 
     private abstract static class Node<T> {

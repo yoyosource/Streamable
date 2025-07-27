@@ -12,6 +12,18 @@ public interface Sequence<T> extends Iterable<T>, Iterator<T> {
         return this;
     }
 
+    T peek();
+
+    default T poll() {
+        if (hasNext()) {
+            return next();
+        } else {
+            return null;
+        }
+    }
+
+    int size();
+
     interface Inserter<T> {
 
         Inserter<T> add(T value);

@@ -5,11 +5,11 @@ import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.Evaluator;
 import de.yoyosource.streamable.internal.FinishException;
+import de.yoyosource.streamable.internal.sequence.Sequence;
+import de.yoyosource.streamable.internal.sequence.UnorderedSequence;
 import de.yoyosource.streamable.streams.ZippedStream;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ZipStep extends Step implements Evaluator {
@@ -19,7 +19,7 @@ public class ZipStep extends Step implements Evaluator {
 
     private volatile boolean finished = false;
     private final AtomicLong index = new AtomicLong();
-    private Queue<Element<?>> elements = new LinkedList<>();
+    private Sequence<Element<?>> elements = new UnorderedSequence<>();
 
     public ZipStep(Streamable streamable, boolean ignoreNulls) {
         super(null);
@@ -35,13 +35,13 @@ public class ZipStep extends Step implements Evaluator {
     @Override
     public void consume(long index, Object value) {
         if (finished) throw FinishException.INSTANCE;
-        elements.add(new Element.Value<>(index, value));
+        elements.inserter().add(new Element.Value<>(index, value));
     }
 
     @Override
     public void finish() {
         if (finished) throw FinishException.INSTANCE;
-        elements.add(Element.Finish.getInstance());
+        elements.inserter().add(Element.Finish.getInstance());
     }
 
     @Override
