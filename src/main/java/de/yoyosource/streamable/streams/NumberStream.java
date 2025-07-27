@@ -98,8 +98,9 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
 
         if (list.isEmpty()) {
             return Optional.empty();
-        } else if (count.get() % 2 == 0) {
-            T first = list.get(0);
+        }
+        T first = list.getFirst();
+        if (count.get() % 2 == 0) {
             T second = list.get(1);
 
             return Optional.of((T) switch (first) {
@@ -111,12 +112,10 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
                 case Double v -> (v + (Double) second) / 2;
                 case BigDecimal bigDecimal -> bigDecimal.add((BigDecimal) second).divide(BigDecimal.TWO);
                 case BigInteger bigInteger -> bigInteger.add((BigInteger) second).divide(BigInteger.TWO);
-                default -> {
-                    throw new IllegalStateException("Unknown Number Type");
-                }
+                default -> throw new IllegalStateException("Unknown Number Type");
             });
         } else {
-            return Optional.of(list.get(0));
+            return Optional.of(first);
         }
     }
 

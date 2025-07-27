@@ -13,6 +13,7 @@ class FlatMapIndexedTest {
 
     @Test
     void testFlatMapIndexedSameSize() {
+        // TODO: Very rarely only 1 element is returned!
         List<Integer> list = Streamable.of(1, 2, 3)
                 .as(AdvancedStream.AdvancedStream())
                 .flatMapIndexed((i, index) -> List.of(i))
