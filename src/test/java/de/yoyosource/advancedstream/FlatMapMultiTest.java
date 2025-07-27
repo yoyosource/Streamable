@@ -15,7 +15,7 @@ class FlatMapMultiTest {
     void testFlatMapMultiIndexedSameSize() {
         List<Integer> list = Streamable.of(1, 2, 3)
                 .as(AdvancedStream.AdvancedStream())
-                .flatMapMulti((integer, consumer) -> consumer.accept(List.of(integer)))
+                .<Integer>flatMapMulti((integer, consumer) -> consumer.accept(List.of(integer)))
                 .as(JavaStream.JavaStream())
                 .collect(Collectors.toList());
         Assertions.assertEquals(3, list.size());
@@ -28,7 +28,7 @@ class FlatMapMultiTest {
     void testFlatMapMultiIndexedMultipleElements() {
         List<Integer> list = Streamable.of(1, 2, 3)
                 .as(AdvancedStream.AdvancedStream())
-                .flatMapMulti((integer, consumer) -> {
+                .<Integer>flatMapMulti((integer, consumer) -> {
                     consumer.accept(List.of(integer, integer));
                 })
                 .as(JavaStream.JavaStream())
@@ -46,7 +46,7 @@ class FlatMapMultiTest {
     void testFlatMapMultiIndexedInfiniteElements() {
         List<Integer> list = Streamable.of(1, 2)
                 .as(AdvancedStream.AdvancedStream())
-                .flatMapMulti((integer, consumer) -> {
+                .<Integer>flatMapMulti((integer, consumer) -> {
                     consumer.accept(Streamable.generate(() -> integer));
                 })
                 .as(JavaStream.JavaStream())
@@ -69,7 +69,7 @@ class FlatMapMultiTest {
     void testFlatMapMultiIndexedInfiniteLoop() {
         List<Integer> list = Streamable.of(1, 2)
                 .as(AdvancedStream.AdvancedStream())
-                .flatMapMulti((integer, consumer) -> {
+                .<Integer>flatMapMulti((integer, consumer) -> {
                     while (true) {
                         consumer.accept(List.of(integer));
                     }
