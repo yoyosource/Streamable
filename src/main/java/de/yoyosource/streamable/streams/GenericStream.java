@@ -34,6 +34,18 @@ public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable
         return (Class<GenericStream<S, T>>) (Class) GenericStream.class;
     }
 
+    /**
+     * Returns a stream consisting of the results of applying the given
+     * {@link Function} to the elements of this stream.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">stateful
+     * intermediate operation</a>.
+     *
+     * @param <N> The Streamable type to return
+     * @param <R> The element type of the new stream
+     * @param mapper The function apply to all streams
+     * @return the new stream
+     */
     default <R, N extends Streamable<N, R>> GenericStream<N, R> gatherEach(Function<S, N> mapper) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
@@ -48,6 +60,17 @@ public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable
         });
     }
 
+    /**
+     * Returns a stream consisting of the results of applying the given
+     * {@link Function} to the elements of this stream.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">stateful
+     * intermediate operation</a>.
+     *
+     * @param <R> The element type of the new stream
+     * @param mapper The function apply to all streams
+     * @return the new {@code JavaStream}
+     */
     default <R> JavaStream<R> collectEach(Function<S, R> mapper) {
         return gather(new StreamableGatherer.Simple<S, R>() {
             @Override
@@ -62,6 +85,14 @@ public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable
         }).as(JavaStream.JavaStream());
     }
 
+    /**
+     * Returns a stream consisting of all the elements of all the streams.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">stateful
+     * intermediate operation</a>.
+     *
+     * @return the new {@code JavaStream}
+     */
     default JavaStream<T> flatten() {
         return (JavaStream<T>) ((GenericStream)((InternalStreamable) this).setNext(new FlattenStep())).as(JavaStream.JavaStream());
     }
