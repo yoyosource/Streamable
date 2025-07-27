@@ -1,13 +1,58 @@
 package de.yoyosource.streamable;
 
 public interface StreamableCollector<T, A, R> {
+
+    /**
+     * The {@link Ordering} this {@link StreamableCollector}
+     * needs to work properly.
+     *
+     * @implSpec The default implementation will return {@link Ordering#UNORDERED}.
+     *
+     * @return The needed Ordering
+     */
     default Ordering ordering() {
         return Ordering.UNORDERED;
     }
 
+    /**
+     * Produces an instance of the intermediate state used for this
+     * gathering operation.
+     *
+     * @return An instance of the intermediate state
+     * used for this gathering operation
+     */
     A container();
+
+    /**
+     * Performs an action given: the current state, the next element;
+     * potentially inspecting and/or updating the state -- and then
+     * returns whether more elements are to be consumed or not.
+     *
+     * @param container The state to integrate into
+     * @param index The index of the current Element
+     * @param element The element to integrate
+     * @return {@code true} if subsequent integration is desired,
+     *         {@code false} if not
+     */
     boolean accumulate(A container, long index, T element);
+
+    /**
+     * Accepts two intermediate states and combines them into one.
+     *
+     * @param firstContainer The first state to combine
+     * @param secondContainer The second state to combine
+     * @return Accepts two intermediate states and combines
+     *         them into one
+     */
     A combine(A firstContainer, A secondContainer);
+
+    /**
+     * Accepts the final intermediate state allowing to perform a final
+     * action at the end of input elements.
+     *
+     * @param container The state to finish
+     * @return The result of the {@link Streamable} call
+     */
     R finish(A container);
 
     abstract class Simple<T, R> implements StreamableCollector<T, Object, R> {
@@ -21,6 +66,16 @@ public interface StreamableCollector<T, A, R> {
             return accumulate(index, element);
         }
 
+        /**
+         * Performs an action given: the next element;
+         * -- and then returns whether more elements are
+         * to be consumed or not.
+         *
+         * @param index The index of the current Element
+         * @param element The element to integrate
+         * @return {@code true} if subsequent integration is desired,
+         *         {@code false} if not
+         */
         public abstract boolean accumulate(long index, T element);
 
         @Override
@@ -33,6 +88,11 @@ public interface StreamableCollector<T, A, R> {
             return finish();
         }
 
+        /**
+         * Allows to perform a final action at the end of input elements.
+         *
+         * @return The result of the {@link Streamable} call
+         */
         public abstract R finish();
     }
 }

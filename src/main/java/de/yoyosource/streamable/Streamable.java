@@ -6,7 +6,6 @@ import de.yoyosource.streamable.streams.JavaStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -350,11 +349,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
     /**
      * Performs a <a href="package-summary.html#MutableReduction">mutable
      * reduction</a> operation on the elements of this stream using a
-     * {@code StreamableCollector}.  A {@code StreamableCollector}
-     * encapsulates the functions used as arguments to
-     * {@link #collect(Supplier, BiConsumer, BiConsumer)}, allowing for reuse of
-     * collection strategies and composition of collect operations such as
-     * multiple-level grouping or partitioning.
+     * {@code StreamableCollector}.
      *
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.

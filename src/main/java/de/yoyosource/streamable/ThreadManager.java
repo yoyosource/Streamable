@@ -42,14 +42,8 @@ public class ThreadManager {
     private long maxWorkIdleTime = 50;
     @Setter
     private long maxThreadIdleTime = 1000;
+    @Setter
     private int maxNumberOfThreads = 5_000;
-
-    public void setMaxNumberOfThreads(int maxNumberOfThreads) {
-        if (this == GLOBAL && maxNumberOfThreads > 5_000) {
-            maxNumberOfThreads = 5_000;
-        }
-        this.maxNumberOfThreads = maxNumberOfThreads;
-    }
 
     public ThreadManager() {
         int num = THREAD_MANAGER_ID.getAndIncrement();
