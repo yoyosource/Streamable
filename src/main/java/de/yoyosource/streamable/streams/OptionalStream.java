@@ -2,7 +2,6 @@ package de.yoyosource.streamable.streams;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface OptionalStream<T> extends OptionalBaseStream<OptionalStream<T>, T> {
@@ -28,18 +27,45 @@ public interface OptionalStream<T> extends OptionalBaseStream<OptionalStream<T>,
         return (Class<OptionalStream<T>>) (Class) OptionalStream.class;
     }
 
-    default <U> OptionalStream<U> map(Function<? super T, ? extends U> mapper) {
-        return OptionalBaseStream.super._map(mapper);
-    }
-
+    /**
+     * Returns a {@code TryedStream<T, NoSuchElementException>} with
+     * {@code Try#Success(T)} for any {@link Optional#isPresent()} and with
+     * {@code Try#Failure(NoSuchElementException)} for any {@link Optional#isEmpty()}.
+     *
+     * @apiNote
+     * The preferred alternative to this method is {@link #orElseThrow()}.
+     *
+     * @return the {@code TryedStream} containing either {@code T} or {@code NoSuchElementException}
+     */
     default TryedStream<T, NoSuchElementException> get() {
         return as(TryingStream.TryingStream()).tryIt(Optional::get);
     }
 
+    /**
+     * Returns a {@code TryedStream<T, NoSuchElementException>} with
+     * {@code Try#Success(T)} for any {@link Optional#isPresent()} and with
+     * {@code Try#Failure(NoSuchElementException)} for any {@link Optional#isEmpty()}.
+     *
+     * @apiNote
+     * The preferred alternative to this method is {@link #orElseThrow()}.
+     *
+     * @return the {@code TryedStream} containing either {@code T} or {@code NoSuchElementException}
+     */
     default TryedStream<T, NoSuchElementException> orElseThrow() {
         return get();
     }
 
+    /**
+     * Returns a {@code TryedStream<T, E>} with
+     * {@code Try#Success(T)} for any {@link Optional#isPresent()} and with
+     * {@code Try#Failure(E)} for any {@link Optional#isEmpty()}.
+     *
+     * @apiNote
+     * The preferred alternative to this method is {@link #orElseThrow()}.
+     *
+     * @param <E> The Exception type.
+     * @return the {@code TryedStream} containing either {@code T} or {@code E}
+     */
     default <E extends Throwable> TryedStream<T, E> orElseThrow(Supplier<? extends E> exceptionSupplier) {
         return as(TryingStream.TryingStream()).tryIt(optional -> optional.orElseThrow(exceptionSupplier));
     }

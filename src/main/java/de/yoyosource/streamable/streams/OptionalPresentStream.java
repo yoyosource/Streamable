@@ -4,15 +4,19 @@ import de.yoyosource.streamable.StreamableGatherer;
 
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface OptionalPresentStream<T> extends OptionalBaseStream<OptionalPresentStream<T>, T> {
 
-    default <U> OptionalPresentStream<U> map(Function<? super T, ? extends U> mapper) {
-        return OptionalBaseStream.super._map(mapper);
-    }
-
+    /**
+     * Returns a {@code JavaStream<T>} by applying {@link Optional#get()} on
+     * all elements of the Stream.
+     *
+     * @apiNote
+     * The preferred alternative to this method is {@link #orElseThrow()}.
+     *
+     * @return the {@code JavaStream} containing {@code T}
+     */
     default JavaStream<T> get() {
         return gather(new StreamableGatherer.Simple<Optional<T>, T>() {
             @Override
@@ -28,10 +32,29 @@ public interface OptionalPresentStream<T> extends OptionalBaseStream<OptionalPre
         }).as(JavaStream.JavaStream());
     }
 
+    /**
+     * Returns a {@code JavaStream<T>} by applying {@link Optional#get()} on
+     * all elements of the Stream.
+     *
+     * @apiNote
+     * The preferred alternative to this method is {@link #orElseThrow()}.
+     *
+     * @return the {@code JavaStream} containing {@code T}
+     */
     default JavaStream<T> orElseThrow() {
         return get();
     }
 
+    /**
+     * Returns a {@code JavaStream<T>} by applying {@link Optional#get()} on
+     * all elements of the Stream.
+     *
+     * @apiNote
+     * The preferred alternative to this method is {@link #orElseThrow()}.
+     *
+     * @param <E> the Exception type.
+     * @return the {@code JavaStream} containing {@code T}
+     */
     default <E extends Throwable> JavaStream<T> orElseThrow(Supplier<? extends E> exceptionSupplier) {
         return get();
     }

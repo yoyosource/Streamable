@@ -41,8 +41,8 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
         });
     }
 
-    default <S extends OptionalBaseStream<S, U>, U> S _map(Function<? super T, ? extends U> mapper) {
-        return gather(new StreamableGatherer.Simple<>() {
+    default <U> OptionalStream<U> map(Function<? super T, ? extends U> mapper) {
+        return gather(new StreamableGatherer.Simple<Optional<T>, Optional<U>>() {
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super Optional<U>> next) {
                 next.accept(input.map(mapper));
@@ -52,7 +52,7 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
             @Override
             public void finish(Consumer<? super Optional<U>> next) {
             }
-        });
+        }).as(OptionalStream.OptionalStream());
     }
 
     @SuppressWarnings("unchecked")
