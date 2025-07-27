@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public interface NumberStream<T extends Number & Comparable<T>> extends Streamable<NumberStream<T>, T> {
@@ -30,7 +31,7 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
     /**
      * Returns a {@code Class} instance with the generic type of {@code NumberStream} for {@link #as(Class)} method.
      *
-     * @param <T> the type of elements inside the {@code NumberStream}
+     * @param <T>   the type of elements inside the {@code NumberStream}
      * @param clazz the type {@code T} should be
      * @return the type for {@link #as(Class)}
      */
@@ -86,28 +87,36 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
      * @return the median of elements in this stream
      */
     default Optional<T> median() {
-        // TODO: Improve the perfomance of this to not create a huge List on near infinite Streams
-        List<T> list = as(JavaStream.JavaStream()).toList();
-        if (list.isEmpty()) return Optional.empty();
-        T value = list.get(list.size() / 2);
-        if (list.size() % 2 == 0) {
-            T otherValue = list.get(list.size() / 2 - 1);
+        List<T> list = new ArrayList<>();
+        AtomicInteger count = new AtomicInteger();
+        forEach(t -> {
+            if (count.getAndIncrement() % 2 == 0 && !list.isEmpty()) {
+                list.removeFirst();
+            }
+            list.add(t);
+        });
 
-            return Optional.of((T) switch (value) {
-                case Byte b -> (b + (Byte) otherValue) / 2;
-                case Short i -> (i + (Short) otherValue) / 2;
-                case Integer i -> (i + (Integer) otherValue) / 2;
-                case Long l -> (l + (Long) otherValue) / 2;
-                case Float v -> (v + (Float) otherValue) / 2;
-                case Double v -> (v + (Double) otherValue) / 2;
-                case BigDecimal bigDecimal -> bigDecimal.add((BigDecimal) otherValue).divide(BigDecimal.TWO);
-                case BigInteger bigInteger -> bigInteger.add((BigInteger) otherValue).divide(BigInteger.TWO);
+        if (list.isEmpty()) {
+            return Optional.empty();
+        } else if (count.get() % 2 == 0) {
+            T first = list.get(0);
+            T second = list.get(1);
+
+            return Optional.of((T) switch (first) {
+                case Byte b -> (b + (Byte) second) / 2;
+                case Short i -> (i + (Short) second) / 2;
+                case Integer i -> (i + (Integer) second) / 2;
+                case Long l -> (l + (Long) second) / 2;
+                case Float v -> (v + (Float) second) / 2;
+                case Double v -> (v + (Double) second) / 2;
+                case BigDecimal bigDecimal -> bigDecimal.add((BigDecimal) second).divide(BigDecimal.TWO);
+                case BigInteger bigInteger -> bigInteger.add((BigInteger) second).divide(BigInteger.TWO);
                 default -> {
                     throw new IllegalStateException("Unknown Number Type");
                 }
             });
         } else {
-            return Optional.of(value);
+            return Optional.of(list.get(0));
         }
     }
 
@@ -277,8 +286,10 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
                     case Long l -> container.min = l > (Long) element ? element : container.min;
                     case Float v -> container.min = v > (Float) element ? element : container.min;
                     case Double v -> container.min = v > (Double) element ? element : container.min;
-                    case BigDecimal bigDecimal -> container.min = bigDecimal.compareTo((BigDecimal) element) > 0 ? element : container.min;
-                    case BigInteger bigInteger -> container.min = bigInteger.compareTo((BigInteger) element) > 0 ? element : container.min;
+                    case BigDecimal bigDecimal ->
+                            container.min = bigDecimal.compareTo((BigDecimal) element) > 0 ? element : container.min;
+                    case BigInteger bigInteger ->
+                            container.min = bigInteger.compareTo((BigInteger) element) > 0 ? element : container.min;
                     default -> container.min = element;
                 }
             }
@@ -292,8 +303,10 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
                     case Long l -> container.max = l < (Long) element ? element : container.max;
                     case Float v -> container.max = v < (Float) element ? element : container.max;
                     case Double v -> container.max = v < (Double) element ? element : container.max;
-                    case BigDecimal bigDecimal -> container.max = bigDecimal.compareTo((BigDecimal) element) < 0 ? element : container.max;
-                    case BigInteger bigInteger -> container.max = bigInteger.compareTo((BigInteger) element) < 0 ? element : container.max;
+                    case BigDecimal bigDecimal ->
+                            container.max = bigDecimal.compareTo((BigDecimal) element) < 0 ? element : container.max;
+                    case BigInteger bigInteger ->
+                            container.max = bigInteger.compareTo((BigInteger) element) < 0 ? element : container.max;
                     default -> container.max = element;
                 }
             }
