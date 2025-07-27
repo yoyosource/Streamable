@@ -2,6 +2,9 @@ package de.yoyosource.streamable;
 
 import lombok.AllArgsConstructor;
 
+/**
+ * This enum holds the ordering values for how the {@link Streamable} should be ordered.
+ */
 @AllArgsConstructor
 public enum Ordering {
     /**

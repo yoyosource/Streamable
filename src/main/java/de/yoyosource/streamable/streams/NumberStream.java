@@ -38,6 +38,18 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
         return (Class<NumberStream<T>>) (Class) NumberStream.class;
     }
 
+    /**
+     * Returns a stream consisting of the elements of this stream, sorted
+     * according to the natural ordering.
+     *
+     * <p>For ordered streams, the sort is stable.  For unordered streams, no
+     * stability guarantees are made.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">stateful
+     * intermediate operation</a>.
+     *
+     * @return the new stream
+     */
     default NumberStream<T> sorted() {
         return flatGather(new StreamableGatherer<T, List<T>, Iterable<T>>() {
             @Override
@@ -65,7 +77,16 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
         });
     }
 
+    /**
+     * Returns the median of elements in this stream.  This is a special case of
+     * a <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
+     *
+     * @return the median of elements in this stream
+     */
     default Optional<T> median() {
+        // TODO: Improve the perfomance of this to not create a huge List on near infinite Streams
         List<T> list = as(JavaStream.JavaStream()).toList();
         if (list.isEmpty()) return Optional.empty();
         T value = list.get(list.size() / 2);
@@ -90,6 +111,14 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
         }
     }
 
+    /**
+     * Returns the modus of elements in this stream.  This is a special case of
+     * a <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
+     *
+     * @return the modus of elements in this stream
+     */
     default Optional<T> modus() {
         return collect(new StreamableCollector<T, Map<T, Long>, Optional<T>>() {
             @Override
@@ -121,26 +150,84 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
         });
     }
 
+    /**
+     * Returns the count of elements in this stream.  This is a special case of
+     * a <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
+     *
+     * @return the count of elements in this stream
+     */
     default long count() {
         return summaryStatistics().getCount();
     }
 
+    /**
+     * Returns the sum of elements in this stream.  This is a special case of
+     * a <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
+     *
+     * @return the sum of elements in this stream
+     */
     default Optional<T> sum() {
         return summaryStatistics().getSum();
     }
 
+    /**
+     * Returns the average of elements in this stream.  This is a special case of
+     * a <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
+     *
+     * @return the average of elements in this stream
+     */
     default Optional<T> average() {
         return summaryStatistics().getAverage();
     }
 
+    /**
+     * Returns the minimum element of this stream according to the natural
+     * order of the elements.  This is a special case of a
+     * <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
+     *
+     * @return an {@code Optional} describing the minimum element of this stream,
+     * or an empty {@code Optional} if the stream is empty
+     * @throws NullPointerException if the minimum element is null
+     */
     default Optional<T> min() {
         return summaryStatistics().getMin();
     }
 
+    /**
+     * Returns the maximum element of this stream according to the natural
+     * order of the elements.  This is a special case of a
+     * <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal
+     * operation</a>.
+     *
+     * @return an {@code Optional} describing the maximum element of this stream,
+     * or an empty {@code Optional} if the stream is empty
+     * @throws NullPointerException if the maximum element is null
+     */
     default Optional<T> max() {
         return summaryStatistics().getMax();
     }
 
+    /**
+     * Returns an {@code SummaryStatistics} describing various
+     * summary data about the elements of this stream.  This is a special
+     * case of a <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal
+     * operation</a>.
+     *
+     * @return an {@code SummaryStatistics} describing various summary data
+     * about the elements of this stream
+     */
     default SummaryStatistics<T> summaryStatistics() {
         return collect(new StreamableCollector<T, SummaryStatistics<T>, SummaryStatistics<T>>() {
             @Override
@@ -234,6 +321,14 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
         });
     }
 
+    /**
+     * A state object for collecting statistics such as count, min, max, sum, and
+     * average.
+     *
+     * @implNote This implementation is not thread safe.
+     *
+     * <p>This implementation does not check for overflow of the count or the sum.
+     */
     @AllArgsConstructor
     class SummaryStatistics<T extends Number> {
         @Getter
@@ -244,18 +339,42 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
         private T min;
         private T max;
 
+        /**
+         * Returns the sum of values recorded, or zero if no values have been
+         * recorded.
+         *
+         * @return the sum of values, or {@link Optional#empty()} if none
+         */
         public Optional<T> getSum() {
             return Optional.ofNullable(sum);
         }
 
+        /**
+         * Returns the average value recorded, or zero if no values have
+         * been recorded.
+         *
+         * @return the average value, or {@link Optional#empty()} if none
+         */
         public Optional<T> getAverage() {
             return Optional.ofNullable(average);
         }
 
+        /**
+         * Returns the min value recorded, or zero if no values have been
+         * recorded.
+         *
+         * @return the min value, or {@link Optional#empty()} if none
+         */
         public Optional<T> getMin() {
             return Optional.ofNullable(min);
         }
 
+        /**
+         * Returns the max value recorded, or zero if no values have been
+         * recorded.
+         *
+         * @return the max value, or {@link Optional#empty()} if none
+         */
         public Optional<T> getMax() {
             return Optional.ofNullable(max);
         }

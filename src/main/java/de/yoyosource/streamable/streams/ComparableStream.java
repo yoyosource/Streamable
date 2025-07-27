@@ -33,6 +33,18 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
         return (Class<ComparableStream<T>>) (Class) ComparableStream.class;
     }
 
+    /**
+     * Returns a stream consisting of the elements of this stream, sorted
+     * according to the natural ordering.
+     *
+     * <p>For ordered streams, the sort is stable.  For unordered streams, no
+     * stability guarantees are made.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">stateful
+     * intermediate operation</a>.
+     *
+     * @return the new stream
+     */
     default ComparableStream<T> sorted() {
         return flatGather(new StreamableGatherer<T, List<T>, Iterable<T>>() {
             @Override
@@ -60,6 +72,17 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
         });
     }
 
+    /**
+     * Returns the minimum element of this stream according to the natural
+     * order of the elements.  This is a special case of a
+     * <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
+     *
+     * @return an {@code Optional} describing the minimum element of this stream,
+     * or an empty {@code Optional} if the stream is empty
+     * @throws NullPointerException if the minimum element is null
+     */
     default Optional<T> min() {
         return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
             @Override
@@ -97,6 +120,18 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
         });
     }
 
+    /**
+     * Returns the maximum element of this stream according to the natural
+     * order of the elements.  This is a special case of a
+     * <a href="package-summary.html#Reduction">reduction</a>.
+     *
+     * <p>This is a <a href="package-summary.html#StreamOps">terminal
+     * operation</a>.
+     *
+     * @return an {@code Optional} describing the maximum element of this stream,
+     * or an empty {@code Optional} if the stream is empty
+     * @throws NullPointerException if the maximum element is null
+     */
     default Optional<T> max() {
         return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
             @Override
