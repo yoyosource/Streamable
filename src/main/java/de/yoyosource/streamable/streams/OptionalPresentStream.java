@@ -58,4 +58,26 @@ public interface OptionalPresentStream<T> extends OptionalBaseStream<OptionalPre
     default <E extends Throwable> JavaStream<T> orElseThrow(Supplier<? extends E> exceptionSupplier) {
         return get();
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param other the alternate value to use for {@code Optional.empty()}.
+     * @return the {@code JavaStream} with the elements
+     */
+    @Override
+    default JavaStream<T> orElse(T other) {
+        return get();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param supplier the supplier to be called for {@code Optional.empty()} values.
+     * @return the {@code JavaStream} with the elements
+     */
+    @Override
+    default JavaStream<T> orElseGet(Supplier<? extends T> supplier) {
+        return get();
+    }
 }
