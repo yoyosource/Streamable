@@ -17,13 +17,11 @@ import java.util.function.Consumer;
 public class FlattenStep extends Step implements Evaluator {
 
     private volatile boolean finished = false;
-    private final Consumer<List<Runnable>> closeHandlers;
     private final AtomicLong index = new AtomicLong();
     private Queue<Element<?>> elements = new LinkedList<>();
 
-    public FlattenStep(Consumer<List<Runnable>> closeHandlers) {
+    public FlattenStep() {
         super(null);
-        this.closeHandlers = closeHandlers;
     }
 
     @Override
@@ -34,9 +32,6 @@ public class FlattenStep extends Step implements Evaluator {
     @Override
     public void consume(long index, Object value) {
         if (finished) throw FinishException.INSTANCE;
-        if (value instanceof Streamable) {
-            closeHandlers.accept(((InternalStreamable) value).getCloseHandlers());
-        }
         elements.add(new Element.Value<>(index, ((Iterable) value).iterator()));
     }
 

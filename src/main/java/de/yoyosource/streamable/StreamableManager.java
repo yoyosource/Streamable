@@ -164,10 +164,7 @@ public class StreamableManager {
             }
             if (is(method, "flatGather", StreamableGatherer.class)) {
                 streamData.supplier = streamData.supplier.setNext(streamData.maxParallelTasks, (StreamableGatherer) args[0])
-                        .setNext(new FlattenStep(runnables -> {
-                            streamData.closeHandlers.addAll(runnables);
-                            runnables.clear();
-                        }));
+                        .setNext(new FlattenStep());
                 return proxy;
             }
             if (is(method, "collect", StreamableCollector.class)) {

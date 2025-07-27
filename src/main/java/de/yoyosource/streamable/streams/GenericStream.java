@@ -2,6 +2,8 @@ package de.yoyosource.streamable.streams;
 
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableGatherer;
+import de.yoyosource.streamable.internal.InternalStreamable;
+import de.yoyosource.streamable.internal.step.FlattenStep;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -61,16 +63,6 @@ public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable
     }
 
     default JavaStream<T> flatten() {
-        return flatGather(new StreamableGatherer.Simple<Iterable<T>, Iterable<T>>() {
-            @Override
-            public boolean integrate(long index, Iterable<T> element, Consumer<? super Iterable<T>> next) {
-                next.accept(element);
-                return false;
-            }
-
-            @Override
-            public void finish(Consumer<? super Iterable<T>> next) {
-            }
-        }).as(JavaStream.JavaStream());
+        return (JavaStream<T>) ((GenericStream)((InternalStreamable) this).setNext(new FlattenStep())).as(JavaStream.JavaStream());
     }
 }

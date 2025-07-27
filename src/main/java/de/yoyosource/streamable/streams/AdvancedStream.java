@@ -5,10 +5,22 @@ import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.InternalStreamable;
+import de.yoyosource.streamable.internal.step.FlattenStep;
 import de.yoyosource.streamable.internal.step.ZipStep;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
@@ -133,7 +145,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
             public Ordering ordering() {
-                return Ordering.ORDERED;
+                return Ordering.SEQUENTIAL;
             }
 
             @Override
@@ -339,7 +351,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     }
 
     default AdvancedStream<T> concat(Streamable<?, T>... others) {
-        AdvancedStream<T> advancedStream = Streamable.from(new Iterator<Streamable<?, T>>() {
+        AdvancedStream<T> advancedStream = (AdvancedStream<T>) Streamable.from(new Iterator<Streamable<?, T>>() {
             private int index = -1;
 
             @Override
@@ -355,17 +367,8 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                 }
                 return others[index++];
             }
-        }).flatGather(new StreamableGatherer.Simple<Streamable<?, T>, Iterable<T>>() {
-            @Override
-            public boolean integrate(long index, Streamable<?, T> element, Consumer<? super Iterable<T>> next) {
-                next.accept(element);
-                return false;
-            }
-
-            @Override
-            public void finish(Consumer<? super Iterable<T>> next) {
-            }
         }).as(AdvancedStream());
+        advancedStream = (AdvancedStream<T>) ((InternalStreamable) advancedStream).setNext(new FlattenStep());
         ((InternalStreamable) advancedStream).setMaxParallelTasks(((InternalStreamable) this).getMaxParallelTasks());
         return advancedStream;
     }
@@ -517,11 +520,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     }
 
     default <B> ZippedStream<T, B> zip(Streamable<?, B> streamable, boolean ignoreNulls) {
-        InternalStreamable thisStreamable = (InternalStreamable) this;
-        InternalStreamable otherStreamable = (InternalStreamable) streamable;
-        thisStreamable.addCloseHandler(otherStreamable.getCloseHandlers());
-        otherStreamable.getCloseHandlers().clear();
-        return ((Streamable<?, ZippedStream.Zip<?, ?>>) thisStreamable.setNext(new ZipStep(streamable, ignoreNulls)))
+        return ((Streamable<?, ZippedStream.Zip<?, ?>>) ((InternalStreamable) this).setNext(new ZipStep(streamable, ignoreNulls)))
                 .as(ZippedStream.class);
     }
 }

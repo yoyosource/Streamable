@@ -37,9 +37,10 @@ class CloseTest {
                 .onClose(() -> closed.incrementAndGet())
                 .as(AdvancedStream.AdvancedStream())
                 .concat(Streamable.of(4, 5, 6).onClose(() -> closed.incrementAndGet()))
-                .iterator()
-                .forEachRemaining((i) -> {
-                    if (closed.get() > 0) Assertions.fail("Streamable.close() should not be called before last Element");
+                .forEach(i -> {
+                    if (i == 1 && closed.get() != 0) Assertions.fail("Streamable.close() should not be called before first Element");
+                    if (i != 1 && closed.get() != 2) Assertions.fail("Streamable.close() should be called before last Element");
+                    System.out.println(i + " " + closed.get());
                 });
         Assertions.assertEquals(2, closed.get());
     }
