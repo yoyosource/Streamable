@@ -94,9 +94,7 @@ public class ParallelStep extends Step {
         }
 
         try {
-            if (gatherer.integrate(container, index, value, o -> {
-                resultInserter.add(o);
-            })) {
+            if (gatherer.integrate(container, index, value, resultInserter::add)) {
                 if (index < finish) {
                     finish = Math.min(finish, index);
                     synchronized (queue) {

@@ -7,6 +7,7 @@ import de.yoyosource.streamable.internal.FinishException;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.function.Consumer;
 
 public class SequentialStep extends Step {
 
@@ -64,6 +65,10 @@ public class SequentialStep extends Step {
         }
     }
 
+    private final Consumer<Object> nextSink = o -> {
+        next.consume(this.index++, o);
+    };
+
     private void processElement(Long index, Object value) {
         if (!containerInitialized) {
             container = gatherer.container();
@@ -72,9 +77,7 @@ public class SequentialStep extends Step {
 
         if (index != null) {
             try {
-                if (gatherer.integrate(container, index, value, o -> {
-                    next.consume(this.index++, o);
-                })) {
+                if (gatherer.integrate(container, index, value, nextSink)) {
                     finished = true;
                 }
             } catch (FinishException e) {
