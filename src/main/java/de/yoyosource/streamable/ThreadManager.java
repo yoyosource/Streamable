@@ -60,8 +60,7 @@ public class ThreadManager {
     }
 
     public QueueKey queue(Runnable runnable, int concurrentInstances) {
-        StackTraceElement[] elements = Thread.currentThread().getStackTrace();
-        QueueKey queueKey = new QueueKey(runnable, concurrentInstances, elements);
+        QueueKey queueKey = new QueueKey(runnable, concurrentInstances);
         synchronized (work) {
             work.add(queueKey);
         }
@@ -86,12 +85,10 @@ public class ThreadManager {
     public static final class QueueKey {
         private final Runnable runnable;
         private AtomicInteger running = new AtomicInteger();
-        private final StackTraceElement[] elements;
 
-        public QueueKey(Runnable runnable, int concurrentInstances, StackTraceElement[] elements) {
+        public QueueKey(Runnable runnable, int concurrentInstances) {
             this.runnable = runnable;
             running.set(concurrentInstances);
-            this.elements = elements;
         }
 
         private boolean dequeued = false;
