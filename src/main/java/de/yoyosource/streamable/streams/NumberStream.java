@@ -150,9 +150,11 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
 
             @Override
             public Optional<T> finish(Map<T, Long> container) {
-                return container.entrySet()
-                        .stream()
-                        .max(Map.Entry.comparingByValue())
+                Map.Entry<T, Long> max = null;
+                for (Map.Entry<T, Long> entry : container.entrySet()) {
+                    if (max == null || max.getValue() < entry.getValue()) max = entry;
+                }
+                return Optional.ofNullable(max)
                         .map(Map.Entry::getKey);
             }
         });

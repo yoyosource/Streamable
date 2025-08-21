@@ -139,33 +139,36 @@ public class ThreadManager {
             }
             // Interrupt all Threads that should be dequeued and remove them from the workers list
             dequeuedQueueKeys.forEach(queueKey -> {
-                List<Worker> toRemove = workers.stream()
-                        .filter(worker -> worker.currentWork.get() == queueKey)
-                        .toList();
-                for (Worker worker : toRemove) {
+                for (int i = workers.size() - 1; i >= 0; i--) {
+                    Worker worker = workers.get(i);
+                    if (worker.currentWork.get() != queueKey) continue;
                     worker.interrupt();
-                    workers.remove(worker);
+                    workers.remove(i);
                     // System.out.println("Remove worker: " + worker);
                 }
             });
 
             // Retrieve all open work from most important to run next to least important
-            List<QueueKey> openWork;
+            List<QueueKey> openWork = new ArrayList<>(work.size());
             synchronized (work) {
                 // if (debugOutput) {
                 //     System.out.println("Selecting anything that is currently not running");
                 // }
-                openWork = work.stream()
-                        .filter(queueKey -> queueKey.running.get() > 0)
-                        .sorted(Comparator.<QueueKey>comparingInt(value -> -value.running.get())
-                                .thenComparingLong(value -> value.lastFinish))
-                        .collect(Collectors.toList());
+                for (QueueKey queueKey : work) {
+                    if (queueKey.running.get() == 0) continue;
+                    openWork.add(queueKey);
+                }
+                openWork.sort(Comparator.<QueueKey>comparingInt(value -> -value.running.get())
+                        .thenComparingLong(value -> value.lastFinish));
             }
 
             // Retrieve all open workers without anything to do
-            List<Worker> openWorkers = workers.stream()
-                    .filter(worker -> worker.currentWork.get() == null)
-                    .collect(Collectors.toList());
+            List<Worker> openWorkers = new ArrayList<>(workers.size());
+            for (Worker worker : workers) {
+                if (worker.currentWork.get() == null) {
+                    openWorkers.add(worker);
+                }
+            }
 
             // System.out.println(openWork + " " + openWorkers);
 

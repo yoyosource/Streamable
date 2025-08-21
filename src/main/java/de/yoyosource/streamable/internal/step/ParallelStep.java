@@ -138,11 +138,11 @@ public class ParallelStep extends Step {
         }
 
         synchronized (containers) {
-            List<Long> indices = containers.keySet()
-                    .stream()
-                    .sorted()
-                    .filter(l -> l < index)
-                    .collect(Collectors.toList());
+            List<Long> indices = new ArrayList<>(containers.size());
+            for (long key : containers.keySet()) {
+                if (key < index) indices.add(key);
+            }
+            indices.sort(Long::compareTo);
 
             for (int i = 0; i < indices.size() - 1; i++) {
                 long i1 = indices.get(i);
