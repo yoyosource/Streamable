@@ -33,6 +33,7 @@ public class Root extends StreamableSupplier implements Evaluator {
                 return true;
             } else {
                 next.finish();
+                finished = true;
                 return false;
             }
         } catch (FinishException e) {
