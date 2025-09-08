@@ -190,7 +190,12 @@ public class ParallelStep extends Step {
         }
 
         // Finishing the gatherer
-        Object container = priorityQueue.poll().value();
+        Object container;
+        if (priorityQueue.isEmpty()) {
+            container = gatherer.container();
+        } else {
+            container = priorityQueue.poll().value();
+        }
         try {
             gatherer.finish(container, o -> {
                 next.consume(index.getAndIncrement(), o);
