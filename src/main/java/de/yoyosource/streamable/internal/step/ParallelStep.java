@@ -128,7 +128,7 @@ public class ParallelStep extends Step {
         }
 
         for (Object o : results) {
-            if (this.index.get() > finish) continue;
+            if (this.index.get() > finish) continue; // TODO: This is wrong I need to check the index of the result
             try {
                 next.consume(this.index.getAndIncrement(), o);
             } catch (FinishException e) {
@@ -169,7 +169,7 @@ public class ParallelStep extends Step {
         // Finish everything left in results!
         processingIntermediateResults.set(true);
         for (Object o : results) {
-            if (index.get() > finish) continue;
+            if (index.get() > finish) continue; // TODO: This is wrong I need to check the index of the result
             next.consume(index.getAndIncrement(), o);
         }
 

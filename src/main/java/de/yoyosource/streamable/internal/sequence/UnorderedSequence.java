@@ -68,7 +68,7 @@ public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
 
     private static class Node<T> {
 
-        private T value;
+        private final T value;
         protected Node<T> next = null;
 
         public Node(T value) {
