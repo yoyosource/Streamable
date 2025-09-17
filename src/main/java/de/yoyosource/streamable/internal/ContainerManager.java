@@ -9,6 +9,13 @@ public abstract class ContainerManager {
 
     public static ContainerManager get(StreamableGatherer streamableGatherer) {
         Set<Evaluation> evaluation = streamableGatherer.evaluation();
+        // TODO: This is not completely correct.
+        //       The GREEDY Option can only be used
+        //       when all subsequent StreamableGatherer
+        //       and StreamableCollector are also Greedy
+        //       otherwise this optimization will fail
+        //       on a FinishException being thrown by
+        //       subsequent steps!
         if (evaluation.contains(Evaluation.GREEDY)) {
             if (evaluation.contains(Evaluation.CONCURRENT)) {
                 return new GreedyConcurrent(streamableGatherer);

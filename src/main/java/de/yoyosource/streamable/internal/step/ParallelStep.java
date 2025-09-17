@@ -107,6 +107,7 @@ public class ParallelStep extends Step {
         }
 
         try {
+            // TODO: Greedy optimization of this if -> remove it if evaluation is greedy!
             if (gatherer.integrate(container, index, value, resultInserter::add)) {
                 insertLock.lock();
                 insertFinish = Math.min(insertFinish, index);
@@ -119,7 +120,6 @@ public class ParallelStep extends Step {
         }
 
         resultInserter.release();
-
         containers.set(index, container);
 
         if (!processingLock.tryLock()) {

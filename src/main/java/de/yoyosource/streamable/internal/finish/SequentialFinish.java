@@ -47,6 +47,7 @@ public class SequentialFinish extends Finish {
 
         if (element instanceof Element.Value<?> value) {
             try {
+                // TODO: Greedy optimization of this if -> remove it if evaluation is greedy!
                 if (collector.accumulate(container, value.index(), value.value())) {
                     finished = true;
                     processElement(Element.Finish.getInstance());

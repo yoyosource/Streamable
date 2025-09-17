@@ -77,6 +77,7 @@ public class SequentialStep extends Step {
 
         if (index != null) {
             try {
+                // TODO: Greedy optimization of this if -> remove it if evaluation is greedy!
                 if (gatherer.integrate(container, index, value, nextSink)) {
                     finished = true;
                 }
