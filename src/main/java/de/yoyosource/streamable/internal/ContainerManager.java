@@ -178,27 +178,27 @@ public abstract class ContainerManager {
         }
 
         @Override
-        public synchronized Object get(long index) {
+        public Object get(long index) {
             return container;
         }
 
         @Override
-        public synchronized void set(long index, Object value) {
+        public void set(long index, Object value) {
             // Ignore this should always be called with the same container the get method returns!
         }
 
         @Override
-        public synchronized Object remove(long index) {
+        public Object remove(long index) {
             return container;
         }
 
         @Override
-        public synchronized void combine(long index) {
+        public void combine(long index) {
             // Do nothing there are no containers to combine!
         }
 
         @Override
-        public synchronized int size() {
+        public int size() {
             return 1;
         }
 
