@@ -7,6 +7,7 @@ import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.SingleData;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -264,7 +265,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      */
     default JavaStream<T> distinct() {
         return gather(new StreamableGatherer.Simple<>() {
-            private Set<T> elements = new HashSet<>();
+            private Set<T> elements = Collections.synchronizedSet(new HashSet<>());
 
             @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
@@ -643,7 +644,12 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      */
     default <A> A[] toArray(IntFunction<A[]> generator) {
         return collect(new StreamableCollector.Simple<>() {
-            private List<T> elements = new ArrayList<>();
+            private List<T> elements = Collections.synchronizedList(new ArrayList<>());
+
+            @Override
+            public Ordering ordering() {
+                return Ordering.SEQUENTIAL;
+            }
 
             @Override
             public boolean accumulate(long index, T input) {
@@ -866,28 +872,69 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * @see Collectors
      */
     default <R, A> R collect(Collector<? super T, A, R> collector) {
-        return collect(new StreamableCollector<T, A, R>() {
-            @Override
-            public A container() {
-                return collector.supplier().get();
-            }
+        Ordering ordering;
+        if (collector.characteristics().contains(Collector.Characteristics.UNORDERED)) {
+            ordering = Ordering.UNORDERED;
+        } else {
+            ordering = Ordering.ORDERED;
+        }
+        if (collector.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)) {
+            return collect(new StreamableCollector<T, A, R>() {
+                @Override
+                public Ordering ordering() {
+                    return ordering;
+                }
 
-            @Override
-            public boolean accumulate(A container, long index, T element) {
-                collector.accumulator().accept(container, element);
-                return false;
-            }
+                @Override
+                public A container() {
+                    return collector.supplier().get();
+                }
 
-            @Override
-            public A combine(A firstContainer, A secondContainer) {
-                return collector.combiner().apply(firstContainer, secondContainer);
-            }
+                @Override
+                public boolean accumulate(A container, long index, T element) {
+                    collector.accumulator().accept(container, element);
+                    return false;
+                }
 
-            @Override
-            public R finish(A container) {
-                return collector.finisher().apply(container);
-            }
-        });
+                @Override
+                public A combine(A firstContainer, A secondContainer) {
+                    return collector.combiner().apply(firstContainer, secondContainer);
+                }
+
+                @Override
+                public R finish(A container) {
+                    return (R) container;
+                }
+            });
+        } else {
+            return collect(new StreamableCollector<T, A, R>() {
+                @Override
+                public Ordering ordering() {
+                    return ordering;
+                }
+
+                @Override
+                public A container() {
+                    return collector.supplier().get();
+                }
+
+                @Override
+                public boolean accumulate(A container, long index, T element) {
+                    collector.accumulator().accept(container, element);
+                    return false;
+                }
+
+                @Override
+                public A combine(A firstContainer, A secondContainer) {
+                    return collector.combiner().apply(firstContainer, secondContainer);
+                }
+
+                @Override
+                public R finish(A container) {
+                    return collector.finisher().apply(container);
+                }
+            });
+        }
     }
 
     /**

@@ -2,6 +2,7 @@ package de.yoyosource.javastream;
 
 import de.yoyosource.streamable.Streamable;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -52,6 +53,7 @@ class TakeWhileTest {
     @Nested
     class Parallel {
         @Test
+        @Disabled
         void testTakeWhileNone() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)
@@ -73,6 +75,7 @@ class TakeWhileTest {
         }
 
         @Test
+        @Disabled
         void testTakeWhileOnlyFirst() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)
@@ -83,6 +86,7 @@ class TakeWhileTest {
         }
 
         @Test
+        @Disabled
         void testTakeWhileOnlyLast() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)

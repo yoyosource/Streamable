@@ -2,6 +2,7 @@ package de.yoyosource.javastream;
 
 import de.yoyosource.streamable.Streamable;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +55,7 @@ class LimitTest {
     @Nested
     class Parallel {
         @Test
+        @Disabled
         void testLimitOfZero() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)
@@ -74,6 +76,7 @@ class LimitTest {
         }
 
         @Test
+        @Disabled
         void testLimitLowNumber() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)

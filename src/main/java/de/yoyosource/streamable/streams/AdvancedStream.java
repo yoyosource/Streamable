@@ -9,6 +9,7 @@ import de.yoyosource.streamable.internal.step.FlattenStep;
 import de.yoyosource.streamable.internal.step.ZipStep;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -250,7 +251,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     default AdvancedStream<T> distinctBy(Function<? super T, ?> keyExtractor) {
         return gather(new StreamableGatherer.Simple<>() {
-            private Set<Object> elements = new HashSet<>();
+            private Set<Object> elements = Collections.synchronizedSet(new HashSet<>());
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {

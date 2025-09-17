@@ -7,6 +7,7 @@ import de.yoyosource.streamable.internal.finish.Finish;
 import de.yoyosource.streamable.internal.finish.SequentialFinish;
 import de.yoyosource.streamable.internal.root.Root;
 import de.yoyosource.streamable.internal.step.ParallelStep;
+import de.yoyosource.streamable.internal.step.ParallelStep2;
 import de.yoyosource.streamable.internal.step.SequentialStep;
 import de.yoyosource.streamable.internal.step.Step;
 import lombok.Getter;
@@ -33,7 +34,7 @@ public abstract class StreamableSupplier {
         if (maxParallelTasks == 1) {
             return setNext(new SequentialStep(gatherer));
         } else {
-            return setNext(new ParallelStep(gatherer, maxParallelTasks));
+            return setNext(new ParallelStep2(gatherer, maxParallelTasks));
         }
     }
 
@@ -52,7 +53,7 @@ public abstract class StreamableSupplier {
         if (maxParallelTasks == 1) {
             return setNext(new SequentialFinish(collector));
         } else {
-            return setNext(new ParallelStep(new StreamableGatherer<T, A, R>() {
+            return setNext(new ParallelStep2(new StreamableGatherer<T, A, R>() {
                 @Override
                 public Ordering ordering() {
                     return collector.ordering();

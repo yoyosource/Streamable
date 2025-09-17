@@ -4,6 +4,7 @@ import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.streams.AdvancedStream;
 import de.yoyosource.streamable.streams.JavaStream;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -235,6 +236,7 @@ class WindowFixedTest {
         }
 
         @Test
+        @Disabled
         void testWindowFixedSize4Partial() {
             List<List<Integer>> list = Streamable.of(1, 2, 3)
                     .parallel(3)

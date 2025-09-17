@@ -9,6 +9,27 @@ public class OrderedSequence<T> implements Sequence<T> {
         head = tail = new BreakerNode<>();
     }
 
+    @Override
+    public String toString() {
+        Node<T> current = this.current != null ? this.current : head;
+        StringBuilder sb = new StringBuilder();
+        while (current != null) {
+            if (current == this.current) {
+                sb.append("*");
+            }
+            if (current instanceof OrderedSequence.ElementNode<T> elementNode) {
+                sb.append(elementNode.value);
+            } else {
+                sb.append("[").append(current.released).append("]");
+            }
+            if (current.next != null) {
+                sb.append(" -> ");
+            }
+            current = current.next;
+        }
+        return sb.toString();
+    }
+
     public synchronized Inserter<T> inserter() {
         Node<T> current = tail;
         tail.next = new BreakerNode<>();
@@ -21,21 +42,14 @@ public class OrderedSequence<T> implements Sequence<T> {
     }
 
     private ElementNode<T> _getNext() {
-        if (!head.released) {
-            return null;
+        while (head instanceof OrderedSequence.BreakerNode<T> breakerNode && breakerNode.released) {
+            head = head.next;
         }
-        Node<T> current = head.next;
-        if (current == null) {
-            return null;
+        if (head instanceof OrderedSequence.ElementNode<T> elementNode) {
+            head = head.next;
+            return elementNode;
         }
-
-        head = current;
-        if (!(head instanceof OrderedSequence.ElementNode<T> elementNode)) {
-            return null;
-        }
-
-        head = head.next;
-        return elementNode;
+        return null;
     }
 
     private ElementNode<T> current = null;

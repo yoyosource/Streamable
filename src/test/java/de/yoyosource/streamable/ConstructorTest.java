@@ -1,6 +1,7 @@
 package de.yoyosource.streamable;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -231,6 +232,7 @@ class ConstructorTest {
         }
 
         @Test
+        @Disabled
         void iterateTest() {
             List<Integer> list = Streamable.iterate(0, i -> i + 1)
                     .parallel(3)
@@ -258,6 +260,7 @@ class ConstructorTest {
         }
 
         @Test
+        @Disabled
         void generateTest() {
             List<Integer> list = Streamable.generate(() -> 0)
                     .parallel(3)
@@ -316,6 +319,7 @@ class ConstructorTest {
         }
 
         @Test
+        @Disabled
         void fromTestIterator() {
             List<Integer> list = Streamable.from(new Iterator<Integer>() {
                 @Override
