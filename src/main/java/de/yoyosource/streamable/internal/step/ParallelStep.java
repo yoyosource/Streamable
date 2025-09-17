@@ -3,52 +3,32 @@ package de.yoyosource.streamable.internal.step;
 import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.ThreadManager;
+import de.yoyosource.streamable.internal.ContainerManager;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
-import de.yoyosource.streamable.internal.sequence.Sequence;
 import de.yoyosource.streamable.internal.sequence.OrderedSequence;
+import de.yoyosource.streamable.internal.sequence.Sequence;
 import de.yoyosource.streamable.internal.sequence.UnorderedSequence;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ParallelStep extends Step {
 
-    private final ThreadManager.QueueKey queueKey;
-    private AtomicLong processing = new AtomicLong();
-
-    private final AtomicBoolean processingIntermediateResults = new AtomicBoolean();
-
-    private final Queue<Element.Value<Consumer<Long>>> queue = new LinkedList<>();
-
-    private long finish = Integer.MAX_VALUE;
-    private long counter = 0;
-
-    private final Map<Long, Object> containers = new HashMap<>();
-
-    private final AtomicLong index = new AtomicLong();
-    private Sequence results = null;
+    private Sequence<Element<?>> results = null;
+    private final int maxParallelTasks;
 
     public ParallelStep(StreamableGatherer streamableGatherer, int maxParallelTasks) {
         super(streamableGatherer);
-        if (maxParallelTasks == 0) {
+        if (maxParallelTasks <= 0) {
             throw new IllegalArgumentException("maxParallelTasks must be greater than 0");
         }
-        queueKey = ThreadManager.queueToCurrent(() -> {
-            Element.Value<Consumer<Long>> value;
-            synchronized (queue) {
-                if (queue.isEmpty()) return;
-                value = queue.poll();
-            }
-
-            if (value.index() > finish) return;
-            processing.getAndIncrement();
-            value.value().accept(value.index());
-            processing.getAndDecrement();
-        }, maxParallelTasks);
+        this.maxParallelTasks = maxParallelTasks;
+        this.containers = ContainerManager.get(streamableGatherer);
     }
 
     @Override
@@ -60,147 +40,153 @@ public class ParallelStep extends Step {
 
     public void setSequenceType(boolean ordered) {
         if (ordered) {
-            results = new OrderedSequence();
+            results = new OrderedSequence<>();
         } else {
-            results = new UnorderedSequence();
+            results = new UnorderedSequence<>();
         }
+    }
+
+    private long insertIndex = 0;
+    private long insertFinish = Long.MAX_VALUE;
+    private final Lock insertLock = new ReentrantLock(true);
+    private final Queue<Element.Value<Runnable>> queue = new LinkedList<>();
+
+    private final AtomicBoolean queueKeyStarted = new AtomicBoolean(false);
+    private ThreadManager.QueueKey queueKey = null;
+    private AtomicLong processing = new AtomicLong();
+
+    private void startWorker() {
+        if (queueKeyStarted.getAndSet(true)) return;
+        queueKey = ThreadManager.queueToCurrent(() -> {
+            Element.Value<Runnable> value;
+            insertLock.lock();
+            if (queue.isEmpty()) {
+                insertLock.unlock();
+                return;
+            }
+            value = queue.poll();
+            if (value.index() > insertFinish) {
+                insertLock.unlock();
+                return;
+            }
+            insertLock.unlock();
+
+            processing.incrementAndGet();
+            value.value().run();
+            processing.decrementAndGet();
+        }, maxParallelTasks);
     }
 
     @Override
     public void consume(long index, Object value) {
-        if (counter > finish) throw FinishException.INSTANCE;
+        if (insertIndex > insertFinish) throw FinishException.INSTANCE;
         Sequence.Inserter result = results.inserter();
-        synchronized (queue) {
-            queue.add(new Element.Value<>(counter++, __ -> processValue(index, value, result)));
-        }
+        insertLock.lock();
+        queue.add(new Element.Value<>(insertIndex++, () -> processValue(index, value, result)));
+        insertLock.unlock();
+        startWorker();
     }
 
     @Override
     public void finish() {
-        if (counter > finish) throw FinishException.INSTANCE;
-        synchronized (queue) {
-            finish = Math.min(finish, counter);
-            queue.add(new Element.Value<>(counter++, this::processFinish));
-        }
+        if (insertIndex > insertFinish) throw FinishException.INSTANCE;
+        insertLock.lock();
+        insertFinish = Math.min(insertIndex, insertFinish);
+        queue.add(new Element.Value<>(insertIndex++, this::processFinish));
+        insertLock.unlock();
+        startWorker();
     }
 
+    private final ContainerManager containers;
+    private final Lock processingLock = new ReentrantLock(true);
+
     private void processValue(long index, Object value, Sequence.Inserter resultInserter) {
-        Object container;
-        synchronized (containers) {
-            container = containers.remove(index - 1);
-        }
+        Object container = containers.remove(index - 1);
         if (container == null) {
             container = gatherer.container();
         }
 
         try {
             if (gatherer.integrate(container, index, value, resultInserter::add)) {
-                if (index < finish) {
-                    finish = Math.min(finish, index);
-                    synchronized (queue) {
-                        queue.add(new Element.Value<>(finish, this::processFinish));
-                    }
-                }
+                insertLock.lock();
+                insertFinish = Math.min(insertFinish, index);
+                insertLock.unlock();
             }
         } catch (Throwable e) {
-            if (index < finish) {
-                finish = Math.min(finish, index);
-                synchronized (queue) {
-                    queue.add(new Element.Value<>(finish, this::processFinish));
-                }
-            }
+            insertLock.lock();
+            insertFinish = Math.min(insertFinish, index);
+            insertLock.unlock();
+        }
+
+        resultInserter.release();
+
+        containers.set(index, container);
+
+        if (!processingLock.tryLock()) {
+            return;
+        }
+
+        try {
+            evaluateResults();
+            containers.combine(index);
         } finally {
-            resultInserter.release();
-
-            synchronized (containers) {
-                if (finish >= index && containers.containsKey(index - 1)) {
-                    container = gatherer.combine(containers.remove(index - 1), container);
-                }
-                containers.put(index, container);
-            }
-        }
-
-        synchronized (processingIntermediateResults) {
-            if (processingIntermediateResults.get()) {
-                return;
-            }
-            processingIntermediateResults.set(true);
-        }
-
-        for (Object o : results) {
-            if (this.index.get() > finish) continue; // TODO: This is wrong I need to check the index of the result
-            try {
-                next.consume(this.index.getAndIncrement(), o);
-            } catch (FinishException e) {
-                finish = Math.min(finish, this.index.get());
-                break;
-            }
-        }
-
-        synchronized (containers) {
-            List<Long> indices = new ArrayList<>(containers.size());
-            for (long key : containers.keySet()) {
-                if (key < index) indices.add(key);
-            }
-            indices.sort(Long::compareTo);
-
-            for (int i = 0; i < indices.size() - 1; i++) {
-                long i1 = indices.get(i);
-                long i2 = indices.get(i + 1);
-                Object c1 = containers.remove(i1);
-                Object c2 = containers.remove(i2);
-                Object cr = gatherer.combine(c1, c2);
-                containers.put(Math.max(i1, i2), cr);
-            }
-        }
-
-        synchronized (processingIntermediateResults) {
-            processingIntermediateResults.set(false);
+            processingLock.unlock();
         }
     }
 
-    private void processFinish(long finishIndex) {
+    private void processFinish() {
+        if (!queue.isEmpty() || processing.get() > 1) {
+            insertLock.lock();
+            queue.add(new Element.Value<>(insertFinish, this::processFinish));
+            insertLock.unlock();
+            return;
+        }
+
         queueKey.dequeue();
-        while (processing.get() > 1) {
-            if (finishIndex > finish) return;
-            Thread.yield();
+        processingLock.lock();
+        try {
+            evaluateResults();
+            containers.combine(insertFinish);
+            evaluateLastContainer();
+        } finally {
+            processingLock.unlock();
         }
+        try {
+            next.finish();
+        } catch (FinishException e) {
+            // Ignore
+        }
+    }
 
-        // Finish everything left in results!
-        processingIntermediateResults.set(true);
+    private long evaluateIndex = 0;
+    private long evaluateFinish = Long.MAX_VALUE;
+
+    private void evaluateResults() {
         for (Object o : results) {
-            if (index.get() > finish) continue; // TODO: This is wrong I need to check the index of the result
-            next.consume(index.getAndIncrement(), o);
+            if (evaluateIndex > evaluateFinish) continue;
+            try {
+                next.consume(evaluateIndex++, o);
+            } catch (FinishException e) {
+                evaluateFinish = Math.min(evaluateIndex, evaluateFinish);
+            }
         }
+    }
 
-        // Combining all containers to create a single result container!
-        Queue<Element.Value<Object>> priorityQueue = new PriorityQueue<>(Comparator.comparingLong(Element.Value::index));
-        containers.forEach((aLong, o) -> {
-            if (aLong > finish) return;
-            priorityQueue.add(new Element.Value<>(1L, o));
-        });
-
-        while (priorityQueue.size() > 1) {
-            Element.Value<Object> first = priorityQueue.poll();
-            Element.Value<Object> second = priorityQueue.poll();
-
-            Object combined = gatherer.combine(first.value(), second.value());
-
-            priorityQueue.add(new Element.Value<>(first.index() + second.index(), combined));
-        }
-
-        // Finishing the gatherer
+    private void evaluateLastContainer() {
         Object container;
-        if (priorityQueue.isEmpty()) {
-            container = gatherer.container();
-        } else {
-            container = priorityQueue.poll().value();
+        synchronized (containers) {
+            if (containers.isEmpty()) {
+                container = gatherer.container();
+            } else if (containers.size() == 1) {
+                container = containers.getAny();
+            } else {
+                throw new IllegalStateException();
+            }
         }
         try {
             gatherer.finish(container, o -> {
-                next.consume(index.getAndIncrement(), o);
+                next.consume(evaluateIndex++, o);
             });
-            next.finish();
         } catch (FinishException e) {
             // Ignore
         }

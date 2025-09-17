@@ -1,25 +1,10 @@
 package de.yoyosource.streamable.streams;
 
-import de.yoyosource.streamable.Ordering;
-import de.yoyosource.streamable.Streamable;
-import de.yoyosource.streamable.StreamableCollector;
-import de.yoyosource.streamable.StreamableGatherer;
+import de.yoyosource.streamable.*;
 import de.yoyosource.streamable.internal.SingleData;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -588,7 +573,12 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential_greedy_concurrent;
             }
 
             @Override
@@ -648,7 +638,12 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential_greedy_concurrent;
             }
 
             @Override
@@ -873,16 +868,32 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      */
     default <R, A> R collect(Collector<? super T, A, R> collector) {
         Ordering ordering;
+        Set<Evaluation> evaluation;
         if (collector.characteristics().contains(Collector.Characteristics.UNORDERED)) {
             ordering = Ordering.UNORDERED;
+            if (collector.characteristics().contains(Collector.Characteristics.CONCURRENT)) {
+                evaluation = Evaluation.greedy_concurrent;
+            } else {
+                evaluation = Evaluation.none;
+            }
         } else {
             ordering = Ordering.ORDERED;
+            if (collector.characteristics().contains(Collector.Characteristics.CONCURRENT)) {
+                evaluation = Evaluation.sequential_greedy_concurrent;
+            } else {
+                evaluation = Evaluation.sequential;
+            }
         }
         if (collector.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)) {
             return collect(new StreamableCollector<T, A, R>() {
                 @Override
                 public Ordering ordering() {
                     return ordering;
+                }
+
+                @Override
+                public Set<Evaluation> evaluation() {
+                    return evaluation;
                 }
 
                 @Override
@@ -911,6 +922,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 @Override
                 public Ordering ordering() {
                     return ordering;
+                }
+
+                @Override
+                public Set<Evaluation> evaluation() {
+                    return evaluation;
                 }
 
                 @Override
@@ -1062,7 +1078,12 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential_greedy_concurrent;
             }
 
             @Override
@@ -1188,7 +1209,12 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
         return Optional.ofNullable(collect(new StreamableCollector.Simple<>() {
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential;
             }
 
             private T element = null;

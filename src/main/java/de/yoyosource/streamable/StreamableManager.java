@@ -10,8 +10,7 @@ import de.yoyosource.streamable.internal.finish.Finish;
 import de.yoyosource.streamable.internal.root.Root;
 import de.yoyosource.streamable.internal.step.FlattenStep;
 import de.yoyosource.streamable.internal.step.ParallelStep;
-import de.yoyosource.streamable.internal.step.ParallelStep2;
-import sun.misc.Unsafe;
+import sun.misc.Unsafe; //NOSONAR
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -24,13 +23,13 @@ import java.util.List;
 
 public class StreamableManager {
 
-    private static final Unsafe unsafe;
+    private static final Unsafe unsafe; //NOSONAR
 
     static {
         try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            Field field = Unsafe.class.getDeclaredField("theUnsafe"); //NOSONAR
             field.setAccessible(true);
-            unsafe = (Unsafe) field.get(null);
+            unsafe = (Unsafe) field.get(null); //NOSONAR
         } catch (NoSuchFieldException e) {
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -299,10 +298,6 @@ public class StreamableManager {
         for (StreamableConsumer consumer : consumers) {
             // System.out.println(consumer + " " + ordering + " with " + consumer.ordering() + " -> " + ordering.or(consumer.ordering()));
             if (consumer instanceof ParallelStep parallelStep) {
-                parallelStep.setSequenceType(ordering.ordered);
-                // System.out.println("Set " + consumer + " ordering to " + ordering.ordered);
-            }
-            if (consumer instanceof ParallelStep2 parallelStep) {
                 parallelStep.setSequenceType(ordering.ordered);
                 // System.out.println("Set " + consumer + " ordering to " + ordering.ordered);
             }

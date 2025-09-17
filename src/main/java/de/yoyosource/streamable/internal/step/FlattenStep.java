@@ -22,7 +22,7 @@ public class FlattenStep extends Step implements Evaluator {
 
     @Override
     public Ordering ordering() {
-        return Ordering.SEQUENTIAL;
+        return Ordering.ORDERED;
     }
 
     @Override

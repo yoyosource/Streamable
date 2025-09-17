@@ -1,5 +1,7 @@
 package de.yoyosource.streamable;
 
+import java.util.Collections;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public interface StreamableGatherer<T, A, R> {
@@ -14,6 +16,18 @@ public interface StreamableGatherer<T, A, R> {
      */
     default Ordering ordering() {
         return Ordering.UNORDERED;
+    }
+
+    /**
+     * The Evaluation and optimizations that should be used
+     * for the this {@link StreamableCollector}.
+     *
+     * @implSpec The default implementation will return {@link Collections#emptySet()}.
+     *
+     * @return The desired optimizations.
+     */
+    default Set<Evaluation> evaluation() {
+        return Collections.emptySet();
     }
 
     /**

@@ -1,28 +1,12 @@
 package de.yoyosource.streamable.streams;
 
-import de.yoyosource.streamable.Ordering;
-import de.yoyosource.streamable.Streamable;
-import de.yoyosource.streamable.StreamableCollector;
-import de.yoyosource.streamable.StreamableGatherer;
+import de.yoyosource.streamable.*;
 import de.yoyosource.streamable.internal.InternalStreamable;
 import de.yoyosource.streamable.internal.step.FlattenStep;
 import de.yoyosource.streamable.internal.step.ZipStep;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
@@ -367,7 +351,12 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential;
             }
 
             @Override
@@ -442,7 +431,12 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential;
             }
 
             @Override
@@ -559,7 +553,12 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential_greedy_concurrent;
             }
 
             @Override
@@ -596,7 +595,12 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential_greedy_concurrent;
             }
 
             @Override
@@ -804,7 +808,12 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential_greedy_concurrent;
             }
 
             @Override
@@ -839,7 +848,12 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public Ordering ordering() {
-                return Ordering.SEQUENTIAL;
+                return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential_greedy_concurrent;
             }
 
             @Override

@@ -86,7 +86,7 @@ class LimitTest {
             Assertions.assertEquals(1, list.get(0));
         }
 
-        @Test
+        @Test // TODO Flaky?
         void testLimitHighNumber() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)
