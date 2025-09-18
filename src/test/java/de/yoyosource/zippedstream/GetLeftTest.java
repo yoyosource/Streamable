@@ -3,7 +3,6 @@ package de.yoyosource.zippedstream;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.streams.AdvancedStream;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +43,6 @@ class GetLeftTest {
     @Nested
     class Parallel {
         @Test
-        @Disabled
         void testGetLeft() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)
@@ -59,7 +57,6 @@ class GetLeftTest {
         }
 
         @Test
-        @Disabled
         void testGetLeftNull() {
             List<Integer> list = Streamable.<Integer>of()
                     .parallel(3)

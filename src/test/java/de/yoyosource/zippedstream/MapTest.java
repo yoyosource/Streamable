@@ -3,7 +3,6 @@ package de.yoyosource.zippedstream;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.streams.AdvancedStream;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +30,6 @@ class MapTest {
     @Nested
     class Parallel {
         @Test
-        @Disabled
         void testMap() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)

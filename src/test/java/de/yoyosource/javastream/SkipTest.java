@@ -77,7 +77,8 @@ class SkipTest {
             Assertions.assertEquals("Skip cannot be negative!", exception.getMessage());
         }
 
-        @Test // TODO Flaky?
+        @Test
+            // TODO Flaky?
         void testSkipLowNumber() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)

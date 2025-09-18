@@ -51,7 +51,8 @@ class ReduceTest {
             Assertions.assertEquals(1, sum);
         }
 
-        @Test // TODO: Flaky?
+        @Test
+            // TODO: Flaky?
         void testReduceWithIdentity() {
             int sum = Streamable.of(1, 2, 3)
                     .parallel(3)

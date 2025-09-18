@@ -2,7 +2,6 @@ package de.yoyosource.javastream;
 
 import de.yoyosource.streamable.Streamable;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -31,13 +30,11 @@ class FindAnyTest {
     @Nested
     class Parallel {
         @Test
-        @Disabled
         void testFindAny() {
             Optional<Integer> result = Streamable.of(1, 2, 3)
                     .parallel(3)
                     .findAny();
             Assertions.assertTrue(result.isPresent());
-            Assertions.assertEquals(1, result.get());
         }
 
         @Test

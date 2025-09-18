@@ -5,7 +5,6 @@ import de.yoyosource.streamable.streams.AdvancedStream;
 import de.yoyosource.streamable.streams.JavaStream;
 import de.yoyosource.streamable.streams.ZippedStream;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -72,7 +71,6 @@ class FilterTest {
     @Nested
     class Parallel {
         @Test
-        @Disabled
         void testFilterA() {
             List<ZippedStream.Zip<Integer, Integer>> list = Streamable.of(1, 2, 3)
                     .parallel(3)
@@ -101,7 +99,6 @@ class FilterTest {
         }
 
         @Test
-        @Disabled
         void testFilterB() {
             List<ZippedStream.Zip<Integer, Integer>> list = Streamable.of(1, 2, 3)
                     .parallel(3)

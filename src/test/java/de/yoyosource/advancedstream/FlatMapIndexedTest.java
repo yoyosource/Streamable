@@ -4,7 +4,6 @@ import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.streams.AdvancedStream;
 import de.yoyosource.streamable.streams.JavaStream;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -82,8 +81,8 @@ class FlatMapIndexedTest {
             Assertions.assertEquals(3, list.get(2));
         }
 
-        @Test // TODO: See why this does not work
-        @Disabled
+        @Test
+            // TODO: See why this does not work
         void testFlatMapIndexedMultipleElements() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)
@@ -101,7 +100,6 @@ class FlatMapIndexedTest {
         }
 
         @Test
-        @Disabled
         void testFlatMapIndexedInfiniteElements() {
             List<Integer> list = Streamable.of(1, 2)
                     .parallel(3)

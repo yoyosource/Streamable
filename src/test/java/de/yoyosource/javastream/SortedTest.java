@@ -26,7 +26,8 @@ class SortedTest {
 
     @Nested
     class Parallel {
-        @Test // TODO Flaky?
+        @Test
+            // TODO Flaky?
         void testSorted() {
             List<Integer> list = Streamable.of(3, 2, 1)
                     .parallel(3)

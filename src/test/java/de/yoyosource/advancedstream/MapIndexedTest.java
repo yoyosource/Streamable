@@ -43,7 +43,8 @@ class MapIndexedTest {
 
     @Nested
     class Parallel {
-        @Test // TODO: See why this does not work
+        @Test
+            // TODO: See why this does not work
         void testMapIndexedSameType() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)

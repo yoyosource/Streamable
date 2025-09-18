@@ -3,7 +3,6 @@ package de.yoyosource.numberstream;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.streams.NumberStream;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,6 @@ class MedianTest {
     @Nested
     class Parallel {
         @Test
-        @Disabled
         void testMedian() {
             Optional<Integer> result = Streamable.of(1, 2, 3)
                     .parallel(3)

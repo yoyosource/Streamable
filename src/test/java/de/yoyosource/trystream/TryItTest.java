@@ -5,7 +5,6 @@ import de.yoyosource.streamable.Try;
 import de.yoyosource.streamable.streams.JavaStream;
 import de.yoyosource.streamable.streams.TryingStream;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -77,7 +76,6 @@ class TryItTest {
         }
 
         @Test
-        @Disabled
         void testTryItEndOnError() {
             List<Try<Integer, RuntimeException>> result = Streamable.of("1", "a", "0")
                     .parallel(3)

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -98,7 +97,8 @@ class FlatMapMultiTest {
 
     @Nested
     class Parallel {
-        @Test // TODO: Flaky?
+        @Test
+            // TODO: Flaky?
         void testFlatMapMultiIndexedSameSize() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)
@@ -132,7 +132,6 @@ class FlatMapMultiTest {
         }
 
         @Test
-        @Disabled
         void testFlatMapMultiIndexedInfiniteElements() {
             List<Integer> list = Streamable.of(1, 2)
                     .parallel(3)
