@@ -6,6 +6,7 @@ import de.yoyosource.streamable.internal.step.FlattenStep;
 import de.yoyosource.streamable.internal.step.ZipStep;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.*;
 import java.util.stream.Collectors;
 
@@ -491,18 +492,18 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     default AdvancedStream<T> elementCount(Consumer<Long> consumer) {
         return gather(new StreamableGatherer.Simple<>() {
-            private long count = 0;
+            private AtomicLong count = new AtomicLong();
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
-                count++;
+                count.incrementAndGet();
                 next.accept(element);
                 return false;
             }
 
             @Override
             public void finish(Consumer<? super T> next) {
-                consumer.accept(count);
+                consumer.accept(count.get());
             }
         });
     }

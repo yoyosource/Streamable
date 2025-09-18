@@ -1124,6 +1124,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             }
 
             @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.concurrent;
+            }
+
+            @Override
             public boolean accumulate(SingleData<Boolean> container, long index, T element) {
                 if (predicate.test(element)) {
                     container.first = true;

@@ -5,6 +5,7 @@ import de.yoyosource.streamable.StreamableGatherer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,8 @@ public abstract class ContainerManager {
             }
             indices.sort(Long::compareTo);
 
+            if (indices.isEmpty()) return;
+
             for (int i = 0; i < indices.size() - 1; i++) {
                 long i1 = indices.get(i);
                 long i2 = indices.get(i + 1);
@@ -91,6 +94,9 @@ public abstract class ContainerManager {
                 Object cr = gatherer.combine(c1, c2);
                 containers.put(Math.max(i1, i2), cr);
             }
+
+            // Object c = containers.remove(indices.getLast());
+            // containers.put(index - 1, c);
         }
 
         @Override
@@ -112,9 +118,12 @@ public abstract class ContainerManager {
         @Override
         public synchronized void combine(long index) {
             Queue<Object> queue = new LinkedList<>();
-            for (long key : containers.keySet()) {
+            Iterator<Long> keyIterator = containers.keySet().iterator();
+            while (keyIterator.hasNext()) {
+                Long key = keyIterator.next();
                 if (key < index) {
-                    queue.add(containers.remove(key));
+                    queue.add(containers.get(key));
+                    keyIterator.remove();
                 }
             }
 

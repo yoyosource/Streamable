@@ -77,7 +77,7 @@ public class ParallelStep extends Step {
                 return;
             }
             value = queue.poll();
-            if (value.index() > insertFinish) {
+            if (value.index() >= insertFinish) {
                 insertLock.unlock();
                 return;
             }
@@ -103,8 +103,8 @@ public class ParallelStep extends Step {
     public void finish() {
         if (insertIndex > insertFinish) throw FinishException.INSTANCE;
         insertLock.lock();
-        insertFinish = Math.min(insertIndex, insertFinish);
         queue.add(new Element.Value<>(insertIndex++, this::processFinish));
+        insertFinish = Math.min(insertIndex, insertFinish);
         insertLock.unlock();
         startWorker();
     }
@@ -124,14 +124,20 @@ public class ParallelStep extends Step {
             } else {
                 if (gatherer.integrate(container, index, value, resultInserter::add)) {
                     insertLock.lock();
-                    insertFinish = Math.min(insertFinish, index);
+                    insertFinish = Math.min(insertFinish, index + 1);
+                    queue.add(new Element.Value<>(index, this::processFinish));
                     insertLock.unlock();
                 }
             }
-        } catch (Throwable e) {
+        } catch (FinishException e) {
             insertLock.lock();
-            insertFinish = Math.min(insertFinish, index);
+            insertFinish = Math.min(insertFinish, index + 1);
+            queue.add(new Element.Value<>(index, this::processFinish));
             insertLock.unlock();
+        } catch (Throwable e) {
+            root.setError(e);
+            queueKey.dequeue();
+            return;
         }
 
         resultInserter.release();
@@ -144,18 +150,22 @@ public class ParallelStep extends Step {
         try {
             evaluateResults();
             containers.combine(index);
+        } catch (Exception e) {
+            root.setError(e);
+            queueKey.dequeue();
         } finally {
             processingLock.unlock();
         }
     }
 
     private void processFinish() {
+        insertLock.lock();
         if (!queue.isEmpty() || processing.get() > 1) {
-            insertLock.lock();
-            queue.add(new Element.Value<>(insertFinish, this::processFinish));
+            queue.add(new Element.Value<>(insertFinish - 1, this::processFinish));
             insertLock.unlock();
             return;
         }
+        insertLock.unlock();
 
         queueKey.dequeue();
         processingLock.lock();
@@ -163,6 +173,9 @@ public class ParallelStep extends Step {
             evaluateResults();
             containers.combine(insertFinish);
             evaluateLastContainer();
+        } catch (Throwable e) {
+            root.setError(e);
+            return;
         } finally {
             processingLock.unlock();
         }
@@ -195,7 +208,7 @@ public class ParallelStep extends Step {
             } else if (containers.size() == 1) {
                 container = containers.getAny();
             } else {
-                throw new IllegalStateException();
+                container = containers.get(insertFinish - 1);
             }
         }
         try {
