@@ -30,13 +30,21 @@ public enum Evaluation {
     CONCURRENT,
 
     /**
-     * Using this Evaluation flag is will be assumed that the
+     * Using this Evaluation flag it will be assumed that the
      * {@link StreamableGatherer#integrate(Object, long, Object, Consumer)}
      * and {@link StreamableCollector#accumulate(Object, long, Object)}
      * method both never return {@code false} thus ignoring the
      * result.
      */
     GREEDY,
+
+    /**
+     * Using this Evaluation flag it will be assumed that the
+     * {@link StreamableGatherer#container()} can be safely ignored.
+     * This results in a local {@link #GREEDY} being applied
+     * to the current element, making it perform faster.
+     */
+    NO_CONTAINER,
     ;
 
     public static final Set<Evaluation> none = Collections.emptySet();
@@ -44,9 +52,11 @@ public enum Evaluation {
     public static final Set<Evaluation> sequential = Set.of(SEQUENTIAL);
     public static final Set<Evaluation> greedy = Set.of(GREEDY);
     public static final Set<Evaluation> concurrent = Set.of(CONCURRENT);
+    public static final Set<Evaluation> noContainer = Set.of(NO_CONTAINER);
 
     public static final Set<Evaluation> sequential_greedy = Set.of(SEQUENTIAL, GREEDY);
     public static final Set<Evaluation> sequential_concurrent = Set.of(SEQUENTIAL, CONCURRENT);
     public static final Set<Evaluation> greedy_concurrent = Set.of(GREEDY, CONCURRENT);
     public static final Set<Evaluation> sequential_greedy_concurrent = Set.of(SEQUENTIAL, GREEDY, CONCURRENT);
+    public static final Set<Evaluation> sequential_noContainer = Set.of(SEQUENTIAL, NO_CONTAINER);
 }

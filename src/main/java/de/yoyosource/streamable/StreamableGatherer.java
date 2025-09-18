@@ -84,6 +84,11 @@ public interface StreamableGatherer<T, A, R> {
      */
     abstract class Simple<T, R> implements StreamableGatherer<T, Object, R> {
         @Override
+        public Set<Evaluation> evaluation() {
+            return Evaluation.noContainer;
+        }
+
+        @Override
         public final Object container() {
             return null;
         }

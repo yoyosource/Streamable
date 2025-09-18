@@ -319,7 +319,6 @@ class ConstructorTest {
         }
 
         @Test
-        @Disabled
         void fromTestIterator() {
             List<Integer> list = Streamable.from(new Iterator<Integer>() {
                 @Override

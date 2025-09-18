@@ -578,7 +578,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
             @Override
             public Set<Evaluation> evaluation() {
-                return Evaluation.sequential_greedy_concurrent;
+                return Evaluation.sequential_noContainer;
             }
 
             @Override

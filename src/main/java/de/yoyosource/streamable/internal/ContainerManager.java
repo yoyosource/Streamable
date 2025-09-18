@@ -15,10 +15,10 @@ import java.util.Set;
 public abstract class ContainerManager {
 
     public static ContainerManager get(StreamableGatherer streamableGatherer, boolean greedy) {
-        if (streamableGatherer instanceof StreamableGatherer.Simple<?,?>) {
+        Set<Evaluation> evaluation = streamableGatherer.evaluation();
+        if (evaluation.contains(Evaluation.NO_CONTAINER)) {
             return new Empty(streamableGatherer);
         }
-        Set<Evaluation> evaluation = streamableGatherer.evaluation();
         if ((evaluation.contains(Evaluation.GREEDY) && greedy)) {
             if (evaluation.contains(Evaluation.CONCURRENT)) {
                 return new GreedyConcurrent(streamableGatherer);
