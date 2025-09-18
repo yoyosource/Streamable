@@ -24,8 +24,6 @@ public enum Evaluation {
      * method and the {@link StreamableCollector#accumulate(Object, long, Object)}
      * method can receive a container used in another {@link Thread}
      * simultaneously.
-     *
-     * @implNote Currently, this only takes effect in conjunction with {@link #GREEDY}.
      */
     CONCURRENT,
 
