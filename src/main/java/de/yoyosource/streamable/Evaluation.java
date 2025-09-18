@@ -41,8 +41,6 @@ public enum Evaluation {
     /**
      * Using this Evaluation flag it will be assumed that the
      * {@link StreamableGatherer#container()} can be safely ignored.
-     * This results in a local {@link #GREEDY} being applied
-     * to the current element, making it perform faster.
      */
     NO_CONTAINER,
     ;
