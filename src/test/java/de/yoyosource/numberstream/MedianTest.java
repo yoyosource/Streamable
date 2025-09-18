@@ -32,7 +32,7 @@ class MedianTest {
 
     @Nested
     class Parallel {
-        @Test
+        @Test // TODO: This is flaky
         void testMedian() {
             Optional<Integer> result = Streamable.of(1, 2, 3)
                     .parallel(3)

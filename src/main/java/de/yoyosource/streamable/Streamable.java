@@ -6,6 +6,7 @@ import de.yoyosource.streamable.streams.JavaStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -419,6 +420,11 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
             @Override
             public Ordering ordering() {
                 return Ordering.ORDERED;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.sequential;
             }
 
             @Override
