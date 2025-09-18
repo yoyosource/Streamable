@@ -232,7 +232,6 @@ class ConstructorTest {
         }
 
         @Test
-        @Disabled
         void iterateTest() {
             List<Integer> list = Streamable.iterate(0, i -> i + 1)
                     .parallel(3)
@@ -260,7 +259,6 @@ class ConstructorTest {
         }
 
         @Test
-        @Disabled
         void generateTest() {
             List<Integer> list = Streamable.generate(() -> 0)
                     .parallel(3)
