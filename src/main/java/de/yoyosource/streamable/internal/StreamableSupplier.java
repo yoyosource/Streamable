@@ -5,8 +5,11 @@ import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.finish.Finish;
+import de.yoyosource.streamable.internal.finish.GreedySequentialFinish;
 import de.yoyosource.streamable.internal.finish.SequentialFinish;
 import de.yoyosource.streamable.internal.root.Root;
+import de.yoyosource.streamable.internal.step.GreedyParallelStep;
+import de.yoyosource.streamable.internal.step.GreedySequentialStep;
 import de.yoyosource.streamable.internal.step.ParallelStep;
 import de.yoyosource.streamable.internal.step.SequentialStep;
 import de.yoyosource.streamable.internal.step.Step;
@@ -27,15 +30,28 @@ public abstract class StreamableSupplier {
         if (this.next != null) {
             throw new IllegalStateException("Cannot add more than one next steps");
         }
+        if (gatherer == null) {
+            throw new IllegalArgumentException("Gatherer must not be null!");
+        }
 
-        if (gatherer != null && gatherer.evaluation().contains(Evaluation.SEQUENTIAL)) {
+        Set<Evaluation> evaluation = gatherer.evaluation();
+        if (evaluation.contains(Evaluation.SEQUENTIAL)) {
             maxParallelTasks = 1;
         }
 
+        boolean greedy = evaluation.contains(Evaluation.GREEDY);
         if (maxParallelTasks == 1) {
-            return setNext(new SequentialStep(gatherer));
+            if (greedy) {
+                return setNext(new GreedySequentialStep(gatherer));
+            } else {
+                return setNext(new SequentialStep(gatherer));
+            }
         } else {
-            return setNext(new ParallelStep(gatherer, maxParallelTasks));
+            if (greedy) {
+                return setNext(new GreedyParallelStep(gatherer, maxParallelTasks));
+            } else {
+                return setNext(new ParallelStep(gatherer, maxParallelTasks));
+            }
         }
     }
 
@@ -43,18 +59,25 @@ public abstract class StreamableSupplier {
         if (this.next != null) {
             throw new IllegalStateException("Cannot add more than one next steps");
         }
-
-        if (collector != null && collector.evaluation().contains(Evaluation.SEQUENTIAL)) {
-            maxParallelTasks = 1;
-        }
-
         if (collector == null) {
             throw new IllegalArgumentException("Collector must not be null!");
         }
+
+        Set<Evaluation> evaluation = collector.evaluation();
+        if (evaluation.contains(Evaluation.SEQUENTIAL)) {
+            maxParallelTasks = 1;
+        }
+
+        boolean greedy = evaluation.contains(Evaluation.GREEDY);
         if (maxParallelTasks == 1) {
-            return setNext(new SequentialFinish(collector));
+            if (greedy) {
+                return setNext(new GreedySequentialFinish(collector));
+            } else {
+                return setNext(new SequentialFinish(collector));
+            }
         } else {
-            return setNext(new ParallelStep(new StreamableGatherer<T, A, R>() {
+            Step step;
+            StreamableGatherer<T, A, R> gatherer = new StreamableGatherer<T, A, R>() {
                 @Override
                 public Ordering ordering() {
                     return collector.ordering();
@@ -84,7 +107,13 @@ public abstract class StreamableSupplier {
                 public void finish(A container, Consumer<? super R> next) {
                     next.accept(collector.finish(container));
                 }
-            }, maxParallelTasks)).setNext(new SequentialFinish(new StreamableCollector.Simple<>() {
+            };
+            if (greedy) {
+                step = setNext(new GreedyParallelStep(gatherer, maxParallelTasks));
+            } else {
+                step = setNext(new ParallelStep(gatherer, maxParallelTasks));
+            }
+            StreamableCollector.Simple<R, R> finalCollector = new StreamableCollector.Simple<R, R>() {
                 @Override
                 public Ordering ordering() {
                     return collector.ordering();
@@ -95,19 +124,24 @@ public abstract class StreamableSupplier {
                     return Evaluation.sequential;
                 }
 
-                private Object element = null;
+                private R element = null;
 
                 @Override
-                public boolean accumulate(long index, Object element) {
+                public boolean accumulate(long index, R element) {
                     this.element = element;
                     return true;
                 }
 
                 @Override
-                public Object finish() {
+                public R finish() {
                     return element;
                 }
-            }));
+            };
+            if (greedy) {
+                return step.setNext(new GreedySequentialFinish(finalCollector));
+            } else {
+                return step.setNext(new SequentialFinish(finalCollector));
+            }
         }
     }
 

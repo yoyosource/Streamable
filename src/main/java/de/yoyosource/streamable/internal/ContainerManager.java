@@ -3,20 +3,22 @@ package de.yoyosource.streamable.internal;
 import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.StreamableGatherer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 public abstract class ContainerManager {
 
-    public static ContainerManager get(StreamableGatherer streamableGatherer) {
+    public static ContainerManager get(StreamableGatherer streamableGatherer, boolean greedy) {
+        if (streamableGatherer instanceof StreamableGatherer.Simple<?,?>) {
+            return new Empty(streamableGatherer);
+        }
         Set<Evaluation> evaluation = streamableGatherer.evaluation();
-        // TODO: This is not completely correct.
-        //       The GREEDY Option can only be used
-        //       when all subsequent StreamableGatherer
-        //       and StreamableCollector are also Greedy
-        //       otherwise this optimization will fail
-        //       on a FinishException being thrown by
-        //       subsequent steps!
-        if (evaluation.contains(Evaluation.GREEDY)) {
+        if ((evaluation.contains(Evaluation.GREEDY) && greedy)) {
             if (evaluation.contains(Evaluation.CONCURRENT)) {
                 return new GreedyConcurrent(streamableGatherer);
             } else {
@@ -217,6 +219,40 @@ public abstract class ContainerManager {
         @Override
         public synchronized Object getAny() {
             return container;
+        }
+    }
+
+    public static class Empty extends ContainerManager {
+        public Empty(StreamableGatherer streamableGatherer) {
+            super(streamableGatherer);
+        }
+
+        @Override
+        public Object get(long index) {
+            return null;
+        }
+
+        @Override
+        public void set(long index, Object value) {
+        }
+
+        @Override
+        public Object remove(long index) {
+            return null;
+        }
+
+        @Override
+        public void combine(long index) {
+        }
+
+        @Override
+        public int size() {
+            return 1;
+        }
+
+        @Override
+        public Object getAny() {
+            return null;
         }
     }
 }

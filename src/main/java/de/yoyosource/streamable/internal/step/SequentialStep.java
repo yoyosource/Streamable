@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.ThreadManager;
@@ -7,19 +8,20 @@ import de.yoyosource.streamable.internal.FinishException;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class SequentialStep extends Step {
 
-    private final ThreadManager.QueueKey queueKey;
-    private volatile long index = 0;
-    private volatile boolean finished = false;
+    protected final ThreadManager.QueueKey queueKey;
+    protected volatile long index = 0;
+    protected volatile boolean finished = false;
 
     private final Queue<Long> elementIndex = new LinkedList<>();
     private final Queue<Object> elementValue = new LinkedList<>();
 
-    private boolean containerInitialized = false;
-    private Object container = null;
+    protected boolean containerInitialized = false;
+    protected Object container = null;
 
     public SequentialStep(StreamableGatherer streamableGatherer) {
         super(streamableGatherer);
@@ -48,6 +50,11 @@ public class SequentialStep extends Step {
     }
 
     @Override
+    public Set<Evaluation> evaluation() {
+        return gatherer.evaluation();
+    }
+
+    @Override
     public void consume(long index, Object value) {
         if (finished) throw FinishException.INSTANCE;
         synchronized (elementIndex) {
@@ -65,11 +72,11 @@ public class SequentialStep extends Step {
         }
     }
 
-    private final Consumer<Object> nextSink = o -> {
+    protected final Consumer<Object> nextSink = o -> {
         next.consume(this.index++, o);
     };
 
-    private void processElement(Long index, Object value) {
+    protected void processElement(Long index, Object value) {
         if (!containerInitialized) {
             container = gatherer.container();
             containerInitialized = true;

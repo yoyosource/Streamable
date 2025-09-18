@@ -1,9 +1,13 @@
 package de.yoyosource.streamable.internal;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Ordering;
+
+import java.util.Set;
 
 public interface StreamableConsumer {
     Ordering ordering();
+    Set<Evaluation> evaluation();
 
     default void consume(Element element) {
         throw new UnsupportedOperationException();

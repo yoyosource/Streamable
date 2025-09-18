@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.Evaluator;
@@ -7,7 +8,9 @@ import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.sequence.Sequence;
 import de.yoyosource.streamable.internal.sequence.UnorderedSequence;
 
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class FlattenStep extends Step implements Evaluator {
@@ -23,6 +26,11 @@ public class FlattenStep extends Step implements Evaluator {
     @Override
     public Ordering ordering() {
         return Ordering.ORDERED;
+    }
+
+    @Override
+    public Set<Evaluation> evaluation() {
+        return Evaluation.sequential_greedy;
     }
 
     @Override

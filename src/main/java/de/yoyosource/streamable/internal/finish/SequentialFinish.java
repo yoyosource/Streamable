@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.finish;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.ThreadManager;
@@ -7,17 +8,18 @@ import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.sequence.OrderedSequence;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SequentialFinish extends Finish {
 
-    private final ThreadManager.QueueKey queueKey;
-    private volatile boolean finished = false;
+    protected final ThreadManager.QueueKey queueKey;
+    protected volatile boolean finished = false;
 
     private final OrderedSequence<Element> sequence = new OrderedSequence<>();
 
-    private boolean containerInitialized = false;
-    private Object container = null;
+    protected boolean containerInitialized = false;
+    protected Object container = null;
 
     public SequentialFinish(StreamableCollector collector) {
         super(collector);
@@ -34,12 +36,17 @@ public class SequentialFinish extends Finish {
     }
 
     @Override
+    public Set<Evaluation> evaluation() {
+        return collector.evaluation();
+    }
+
+    @Override
     public void consume(Element element) {
         if (finished) throw FinishException.INSTANCE;
         sequence.inserter().add(element).release();
     }
 
-    private void processElement(Element element) {
+    protected void processElement(Element element) {
         if (!containerInitialized) {
             container = collector.container();
             containerInitialized = true;
@@ -47,7 +54,6 @@ public class SequentialFinish extends Finish {
 
         if (element instanceof Element.Value<?> value) {
             try {
-                // TODO: Greedy optimization of this if -> remove it if evaluation is greedy!
                 if (collector.accumulate(container, value.index(), value.value())) {
                     finished = true;
                     processElement(Element.Finish.getInstance());

@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.ThreadManager;
@@ -12,6 +13,7 @@ import de.yoyosource.streamable.internal.sequence.UnorderedSequence;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -28,7 +30,6 @@ public class ParallelStep extends Step {
             throw new IllegalArgumentException("maxParallelTasks must be greater than 0");
         }
         this.maxParallelTasks = maxParallelTasks;
-        this.containers = ContainerManager.get(streamableGatherer);
     }
 
     @Override
@@ -36,6 +37,11 @@ public class ParallelStep extends Step {
         // This will never return sequential.
         // Since otherwise the SequentialStep should have been used!
         return gatherer.ordering();
+    }
+
+    @Override
+    public Set<Evaluation> evaluation() {
+        return gatherer.evaluation();
     }
 
     public void setSequenceType(boolean ordered) {
@@ -46,10 +52,14 @@ public class ParallelStep extends Step {
         }
     }
 
-    private long insertIndex = 0;
-    private long insertFinish = Long.MAX_VALUE;
-    private final Lock insertLock = new ReentrantLock(true);
-    private final Queue<Element.Value<Runnable>> queue = new LinkedList<>();
+    public void setContainerManager(boolean greedy) {
+        this.containers = ContainerManager.get(gatherer, greedy);
+    }
+
+    protected long insertIndex = 0;
+    protected long insertFinish = Long.MAX_VALUE;
+    protected final Lock insertLock = new ReentrantLock(true);
+    protected final Queue<Element.Value<Runnable>> queue = new LinkedList<>();
 
     private final AtomicBoolean queueKeyStarted = new AtomicBoolean(false);
     private ThreadManager.QueueKey queueKey = null;
@@ -97,10 +107,10 @@ public class ParallelStep extends Step {
         startWorker();
     }
 
-    private final ContainerManager containers;
-    private final Lock processingLock = new ReentrantLock(true);
+    protected ContainerManager containers = null;
+    protected final Lock processingLock = new ReentrantLock(true);
 
-    private void processValue(long index, Object value, Sequence.Inserter resultInserter) {
+    protected void processValue(long index, Object value, Sequence.Inserter resultInserter) {
         Object container = containers.remove(index - 1);
         if (container == null) {
             container = gatherer.container();
@@ -134,7 +144,7 @@ public class ParallelStep extends Step {
         }
     }
 
-    private void processFinish() {
+    protected void processFinish() {
         if (!queue.isEmpty() || processing.get() > 1) {
             insertLock.lock();
             queue.add(new Element.Value<>(insertFinish, this::processFinish));
@@ -161,7 +171,7 @@ public class ParallelStep extends Step {
     private long evaluateIndex = 0;
     private long evaluateFinish = Long.MAX_VALUE;
 
-    private void evaluateResults() {
+    protected void evaluateResults() {
         for (Object o : results) {
             if (evaluateIndex > evaluateFinish) continue;
             try {
@@ -172,7 +182,7 @@ public class ParallelStep extends Step {
         }
     }
 
-    private void evaluateLastContainer() {
+    protected void evaluateLastContainer() {
         Object container;
         synchronized (containers) {
             if (containers.isEmpty()) {
