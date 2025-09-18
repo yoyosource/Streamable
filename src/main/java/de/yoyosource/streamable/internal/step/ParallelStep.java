@@ -23,6 +23,7 @@ public class ParallelStep extends Step {
 
     private Sequence<Element<?>> results = null;
     private final int maxParallelTasks;
+    private final boolean greedy;
 
     public ParallelStep(StreamableGatherer streamableGatherer, int maxParallelTasks) {
         super(streamableGatherer);
@@ -30,6 +31,7 @@ public class ParallelStep extends Step {
             throw new IllegalArgumentException("maxParallelTasks must be greater than 0");
         }
         this.maxParallelTasks = maxParallelTasks;
+        this.greedy = streamableGatherer.evaluation().contains(Evaluation.GREEDY);
     }
 
     @Override
@@ -56,10 +58,10 @@ public class ParallelStep extends Step {
         this.containers = ContainerManager.get(gatherer, greedy);
     }
 
-    protected long insertIndex = 0;
-    protected long insertFinish = Long.MAX_VALUE;
-    protected final Lock insertLock = new ReentrantLock(true);
-    protected final Queue<Element.Value<Runnable>> queue = new LinkedList<>();
+    private long insertIndex = 0;
+    private long insertFinish = Long.MAX_VALUE;
+    private final Lock insertLock = new ReentrantLock(true);
+    private final Queue<Element.Value<Runnable>> queue = new LinkedList<>();
 
     private final AtomicBoolean queueKeyStarted = new AtomicBoolean(false);
     private ThreadManager.QueueKey queueKey = null;
@@ -107,21 +109,24 @@ public class ParallelStep extends Step {
         startWorker();
     }
 
-    protected ContainerManager containers = null;
-    protected final Lock processingLock = new ReentrantLock(true);
+    private ContainerManager containers = null;
+    private final Lock processingLock = new ReentrantLock(true);
 
-    protected void processValue(long index, Object value, Sequence.Inserter resultInserter) {
+    private void processValue(long index, Object value, Sequence.Inserter resultInserter) {
         Object container = containers.remove(index - 1);
         if (container == null) {
             container = gatherer.container();
         }
 
         try {
-            // TODO: Greedy optimization of this if -> remove it if evaluation is greedy!
-            if (gatherer.integrate(container, index, value, resultInserter::add)) {
-                insertLock.lock();
-                insertFinish = Math.min(insertFinish, index);
-                insertLock.unlock();
+            if (greedy) {
+                gatherer.integrate(container, index, value, resultInserter::add);
+            } else {
+                if (gatherer.integrate(container, index, value, resultInserter::add)) {
+                    insertLock.lock();
+                    insertFinish = Math.min(insertFinish, index);
+                    insertLock.unlock();
+                }
             }
         } catch (Throwable e) {
             insertLock.lock();
@@ -144,7 +149,7 @@ public class ParallelStep extends Step {
         }
     }
 
-    protected void processFinish() {
+    private void processFinish() {
         if (!queue.isEmpty() || processing.get() > 1) {
             insertLock.lock();
             queue.add(new Element.Value<>(insertFinish, this::processFinish));
@@ -171,7 +176,7 @@ public class ParallelStep extends Step {
     private long evaluateIndex = 0;
     private long evaluateFinish = Long.MAX_VALUE;
 
-    protected void evaluateResults() {
+    private void evaluateResults() {
         for (Object o : results) {
             if (evaluateIndex > evaluateFinish) continue;
             try {
@@ -182,7 +187,7 @@ public class ParallelStep extends Step {
         }
     }
 
-    protected void evaluateLastContainer() {
+    private void evaluateLastContainer() {
         Object container;
         synchronized (containers) {
             if (containers.isEmpty()) {

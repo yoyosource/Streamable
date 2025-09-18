@@ -13,13 +13,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class SequentialFinish extends Finish {
 
-    protected final ThreadManager.QueueKey queueKey;
-    protected volatile boolean finished = false;
+    private final ThreadManager.QueueKey queueKey;
+    private volatile boolean finished = false;
 
     private final OrderedSequence<Element> sequence = new OrderedSequence<>();
 
-    protected boolean containerInitialized = false;
-    protected Object container = null;
+    private boolean containerInitialized = false;
+    private Object container = null;
+
+    private final boolean greedy;
 
     public SequentialFinish(StreamableCollector collector) {
         super(collector);
@@ -28,6 +30,7 @@ public class SequentialFinish extends Finish {
                 processElement(sequence.next());
             }
         }, 1);
+        this.greedy = collector.evaluation().contains(Evaluation.GREEDY);
     }
 
     @Override
@@ -46,7 +49,7 @@ public class SequentialFinish extends Finish {
         sequence.inserter().add(element).release();
     }
 
-    protected void processElement(Element element) {
+    private void processElement(Element element) {
         if (!containerInitialized) {
             container = collector.container();
             containerInitialized = true;
@@ -54,9 +57,13 @@ public class SequentialFinish extends Finish {
 
         if (element instanceof Element.Value<?> value) {
             try {
-                if (collector.accumulate(container, value.index(), value.value())) {
-                    finished = true;
-                    processElement(Element.Finish.getInstance());
+                if (greedy) {
+                    collector.accumulate(container, value.index(), value.value());
+                } else {
+                    if (collector.accumulate(container, value.index(), value.value())) {
+                        finished = true;
+                        processElement(Element.Finish.getInstance());
+                    }
                 }
             } catch (Throwable e) {
                 queueKey.dequeue();

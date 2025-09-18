@@ -13,15 +13,17 @@ import java.util.function.Consumer;
 
 public class SequentialStep extends Step {
 
-    protected final ThreadManager.QueueKey queueKey;
-    protected volatile long index = 0;
-    protected volatile boolean finished = false;
+    private final ThreadManager.QueueKey queueKey;
+    private volatile long index = 0;
+    private volatile boolean finished = false;
 
     private final Queue<Long> elementIndex = new LinkedList<>();
     private final Queue<Object> elementValue = new LinkedList<>();
 
-    protected boolean containerInitialized = false;
-    protected Object container = null;
+    private boolean containerInitialized = false;
+    private Object container = null;
+
+    private final boolean greedy;
 
     public SequentialStep(StreamableGatherer streamableGatherer) {
         super(streamableGatherer);
@@ -42,6 +44,7 @@ public class SequentialStep extends Step {
 
             processElement(index, value);
         }, 1);
+        this.greedy = streamableGatherer.evaluation().contains(Evaluation.GREEDY);
     }
 
     @Override
@@ -72,11 +75,11 @@ public class SequentialStep extends Step {
         }
     }
 
-    protected final Consumer<Object> nextSink = o -> {
+    private final Consumer<Object> nextSink = o -> {
         next.consume(this.index++, o);
     };
 
-    protected void processElement(Long index, Object value) {
+    private void processElement(Long index, Object value) {
         if (!containerInitialized) {
             container = gatherer.container();
             containerInitialized = true;
@@ -84,9 +87,12 @@ public class SequentialStep extends Step {
 
         if (index != null) {
             try {
-                // TODO: Greedy optimization of this if -> remove it if evaluation is greedy!
-                if (gatherer.integrate(container, index, value, nextSink)) {
-                    finished = true;
+                if (greedy) {
+                    gatherer.integrate(container, index, value, nextSink);
+                } else {
+                    if (gatherer.integrate(container, index, value, nextSink)) {
+                        finished = true;
+                    }
                 }
             } catch (FinishException e) {
                 finished = true;
