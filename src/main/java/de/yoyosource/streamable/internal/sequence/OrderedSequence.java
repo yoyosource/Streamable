@@ -153,5 +153,10 @@ public class OrderedSequence<T> implements Sequence<T> {
             first = null;
             current = null;
         }
+
+        @Override
+        public void cutShort() {
+            current.next = null;
+        }
     }
 }

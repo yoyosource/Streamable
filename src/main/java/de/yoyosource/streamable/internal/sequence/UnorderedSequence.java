@@ -13,6 +13,9 @@ public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
 
     @Override
     public synchronized Inserter<T> add(T value) {
+        if (tail == null && head != null) {
+            return this;
+        }
         Node<T> node = new Node<>(value);
         if (head == null) {
             head = tail = node;
@@ -26,6 +29,11 @@ public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
 
     @Override
     public void release() {
+    }
+
+    @Override
+    public void cutShort() {
+        tail = null;
     }
 
     @Override

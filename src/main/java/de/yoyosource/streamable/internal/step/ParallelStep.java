@@ -126,6 +126,7 @@ public class ParallelStep extends Step {
                     insertLock.lock();
                     insertFinish = Math.min(insertFinish, index + 1);
                     queue.add(new Element.Value<>(index, this::processFinish));
+                    resultInserter.cutShort();
                     insertLock.unlock();
                 }
             }
@@ -133,6 +134,7 @@ public class ParallelStep extends Step {
             insertLock.lock();
             insertFinish = Math.min(insertFinish, index + 1);
             queue.add(new Element.Value<>(index, this::processFinish));
+            resultInserter.cutShort();
             insertLock.unlock();
         } catch (Throwable e) {
             root.setError(e);

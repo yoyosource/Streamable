@@ -28,5 +28,6 @@ public interface Sequence<T> extends Iterable<T>, Iterator<T> {
 
         Inserter<T> add(T value);
         void release();
+        void cutShort();
     }
 }
