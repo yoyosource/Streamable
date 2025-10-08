@@ -84,7 +84,7 @@ public class StreamableManager {
                         synchronized (data) {
                             data.add(element);
                         }
-                        return false;
+                        return true;
                     }
 
                     @Override

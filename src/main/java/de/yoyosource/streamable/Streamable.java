@@ -236,7 +236,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 next.accept(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -430,7 +430,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
             @Override
             public boolean accumulate(long index, T element) {
                 action.accept(element);
-                return false;
+                return true;
             }
 
             @Override

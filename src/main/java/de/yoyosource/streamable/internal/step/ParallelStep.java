@@ -129,7 +129,7 @@ public class ParallelStep extends Step {
         }
 
         try {
-            if (gatherer.integrate(container, index, value, resultInserter::add)) {
+            if (!gatherer.integrate(container, index, value, resultInserter::add)) {
                 throw FinishException.INSTANCE;
             }
         } catch (FinishException e) {

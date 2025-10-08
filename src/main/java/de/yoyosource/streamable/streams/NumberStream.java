@@ -61,7 +61,7 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
             @Override
             public boolean integrate(List<T> container, long index, T element, Consumer<? super Iterable<T>> next) {
                 container.add(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -137,7 +137,7 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
             @Override
             public boolean accumulate(Map<T, Long> container, long index, T element) {
                 container.compute(element, (k, v) -> v == null ? 1 : v + 1);
-                return false;
+                return true;
             }
 
             @Override
@@ -251,7 +251,7 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
                 min(container, element);
                 max(container, element);
                 container.count++;
-                return false;
+                return true;
             }
 
             @Override

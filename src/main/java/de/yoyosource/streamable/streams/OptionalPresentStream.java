@@ -22,7 +22,7 @@ public interface OptionalPresentStream<T> extends OptionalBaseStream<OptionalPre
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super T> next) {
                 next.accept(input.get());
-                return false;
+                return true;
             }
 
             @Override

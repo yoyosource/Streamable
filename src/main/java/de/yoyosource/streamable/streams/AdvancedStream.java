@@ -53,7 +53,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                 if (predicate.test(element, index)) {
                     next.accept(element);
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -80,7 +80,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public boolean integrate(long index, T element, Consumer<? super R> next) {
                 next.accept(mapper.apply(element, index));
-                return false;
+                return true;
             }
 
             @Override
@@ -135,7 +135,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public boolean integrate(long index, T input, Consumer<? super Iterable<R>> next) {
                 next.accept((Iterable<R>) mapper.apply(input, index));
-                return false;
+                return true;
             }
 
             @Override
@@ -225,7 +225,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public boolean integrate(long index, T element, Consumer<? super R> next) {
                 mapper.accept(element, index, next);
-                return false;
+                return true;
             }
 
             @Override
@@ -243,7 +243,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                 if (elements.add(keyExtractor.apply(element))) {
                     next.accept(element);
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -291,7 +291,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 action.accept(element, index);
                 next.accept(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -364,9 +364,9 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 if (predicate.test(input, index)) {
                     next.accept(input);
-                    return false;
-                } else {
                     return true;
+                } else {
+                    return false;
                 }
             }
 
@@ -444,7 +444,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 if (!predicate.test(element, index)) take = true;
                 if (take) next.accept(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -468,7 +468,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public boolean integrate(Map<K, List<T>> container, long index, T element, Consumer<? super Map<K, List<T>>> next) {
                 container.computeIfAbsent(keyExtractor.apply(element), __ -> new ArrayList<>()).add(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -498,7 +498,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 count.incrementAndGet();
                 next.accept(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -522,7 +522,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public boolean integrate(Map<K, Long> container, long index, T element, Consumer<? super Map<K, Long>> next) {
                 container.compute(keyExtractor.apply(element), (k, aLong) -> aLong == null ? 1 : aLong + 1);
-                return false;
+                return true;
             }
 
             @Override
@@ -569,7 +569,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                     next.accept(elements);
                     elements = new ArrayList<>();
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -614,7 +614,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                     next.accept(new ArrayList<>(elements));
                     hadOneResult = true;
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -750,7 +750,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public boolean integrate(long index, T element, Consumer<? super Iterable<R>> next) {
                 mapper.accept(element, next);
-                return false;
+                return true;
             }
 
             @Override
@@ -785,7 +785,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public boolean accumulate(Set<T> container, long index, T element) {
                 container.add(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -827,7 +827,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                     current = accumulator.apply(current, element);
                     next.accept(current);
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -872,7 +872,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
                         count = 1;
                     }
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -897,7 +897,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public boolean integrate(List<T> container, long index, T element, Consumer<? super List<T>> next) {
                 container.add(element);
-                return false;
+                return true;
             }
 
             @Override

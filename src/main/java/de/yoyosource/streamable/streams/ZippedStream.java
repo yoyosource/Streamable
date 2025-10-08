@@ -54,7 +54,7 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
             @Override
             public boolean integrate(long index, Zip<A, B> input, Consumer<? super C> next) {
                 next.accept(mapper.apply(input.a, input.b));
-                return false;
+                return true;
             }
 
             @Override
@@ -70,7 +70,7 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
                 if (predicate.test(input.a, input.b)) {
                     next.accept(input);
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -86,7 +86,7 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
                 if (predicate.test(input.a)) {
                     next.accept(input);
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -102,7 +102,7 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
                 if (predicate.test(input.b)) {
                     next.accept(input);
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -116,7 +116,7 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
             @Override
             public boolean integrate(long index, Zip<A, B> input, Consumer<? super A> next) {
                 next.accept(input.a);
-                return false;
+                return true;
             }
 
             @Override
@@ -130,7 +130,7 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
             @Override
             public boolean integrate(long index, Zip<A, B> input, Consumer<? super B> next) {
                 next.accept(input.b);
-                return false;
+                return true;
             }
 
             @Override

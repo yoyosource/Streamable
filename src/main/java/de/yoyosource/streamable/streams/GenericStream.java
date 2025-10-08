@@ -51,7 +51,7 @@ public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable
             @Override
             public boolean integrate(long index, S element, Consumer<? super N> next) {
                 next.accept(mapper.apply(element));
-                return false;
+                return true;
             }
 
             @Override
@@ -76,7 +76,7 @@ public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable
             @Override
             public boolean integrate(long index, S element, Consumer<? super R> next) {
                 next.accept(mapper.apply(element));
-                return false;
+                return true;
             }
 
             @Override

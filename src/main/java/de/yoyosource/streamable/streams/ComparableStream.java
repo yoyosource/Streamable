@@ -55,7 +55,7 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
             @Override
             public boolean integrate(List<T> container, long index, T element, Consumer<? super Iterable<T>> next) {
                 container.add(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -94,15 +94,15 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
             public boolean accumulate(SingleData<T> container, long index, T element) {
                 if (container.first == null) {
                     container.first = element;
-                    return false;
+                    return true;
                 }
                 if (element == null) {
-                    return false;
+                    return true;
                 }
                 if (container.first.compareTo(element) > 0) {
                     container.first = element;
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -143,15 +143,15 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
             public boolean accumulate(SingleData<T> container, long index, T element) {
                 if (container.first == null) {
                     container.first = element;
-                    return false;
+                    return true;
                 }
                 if (element == null) {
-                    return false;
+                    return true;
                 }
                 if (container.first.compareTo(element) < 0) {
                     container.first = element;
                 }
-                return false;
+                return true;
             }
 
             @Override

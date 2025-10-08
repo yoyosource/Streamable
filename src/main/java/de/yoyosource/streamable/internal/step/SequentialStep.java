@@ -90,7 +90,7 @@ public class SequentialStep extends Step {
                 if (greedy) {
                     gatherer.integrate(container, index, value, nextSink);
                 } else {
-                    if (gatherer.integrate(container, index, value, nextSink)) {
+                    if (!gatherer.integrate(container, index, value, nextSink)) {
                         finished = true;
                     }
                 }

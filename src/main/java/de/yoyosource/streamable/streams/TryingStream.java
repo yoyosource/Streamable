@@ -44,12 +44,12 @@ public interface TryingStream<T> extends Streamable<TryingStream<T>, T> {
                     next.accept(Try.Success(functionWithException.apply(element)));
                 } catch (Throwable e) {
                     if (endOnException) {
-                        return true;
+                        return false;
                     } else {
                         next.accept(Try.Failure((E) e));
                     }
                 }
-                return false;
+                return true;
             }
 
             @Override

@@ -49,7 +49,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 if (predicate.test(element)) next.accept(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -76,7 +76,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean integrate(long index, T element, Consumer<? super R> next) {
                 next.accept(mapper.apply(element));
-                return false;
+                return true;
             }
 
             @Override
@@ -133,7 +133,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 Iterable<R> iterable = (Iterable<R>) mapper.apply(element);
                 if (iterable == null) return false;
                 next.accept(iterable);
-                return false;
+                return true;
             }
 
             @Override
@@ -218,7 +218,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean integrate(long index, T input, Consumer<? super R> next) {
                 mapper.accept(input, next);
-                return false;
+                return true;
             }
 
             @Override
@@ -255,7 +255,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 if (elements.add(input)) next.accept(input);
-                return false;
+                return true;
             }
 
             @Override
@@ -289,7 +289,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean integrate(List<T> container, long index, T element, Consumer<? super Iterable<T>> next) {
                 container.add(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -345,7 +345,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 action.accept(input);
                 next.accept(input);
-                return false;
+                return true;
             }
 
             @Override
@@ -382,7 +382,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             return gather(new StreamableGatherer.Simple<>() {
                 @Override
                 public boolean integrate(long index, T element, Consumer<? super T> next) {
-                    return true;
+                    return false;
                 }
 
                 @Override
@@ -394,7 +394,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 @Override
                 public boolean integrate(long index, T input, Consumer<? super T> next) {
                     next.accept(input);
-                    return index == maxSize - 1;
+                    return index != maxSize - 1;
                 }
 
                 @Override
@@ -436,7 +436,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 @Override
                 public boolean integrate(long index, T input, Consumer<? super T> next) {
                     if (index >= skip) next.accept(input);
-                    return false;
+                    return true;
                 }
 
                 @Override
@@ -505,9 +505,9 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 if (predicate.test(input)) {
                     next.accept(input);
-                    return false;
-                } else {
                     return true;
+                } else {
+                    return false;
                 }
             }
 
@@ -585,7 +585,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 if (!predicate.test(input)) take = true;
                 if (take) next.accept(input);
-                return false;
+                return true;
             }
 
             @Override
@@ -649,7 +649,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean accumulate(long index, T input) {
                 elements.add(input);
-                return false;
+                return true;
             }
 
             @Override
@@ -721,7 +721,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 } else {
                     container.first = accumulator.apply(container.first, element);
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -797,7 +797,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 } else {
                     container.first = accumulator.apply(container.first, element);
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -904,7 +904,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 @Override
                 public boolean accumulate(A container, long index, T element) {
                     collector.accumulator().accept(container, element);
-                    return false;
+                    return true;
                 }
 
                 @Override
@@ -937,7 +937,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 @Override
                 public boolean accumulate(A container, long index, T element) {
                     collector.accumulator().accept(container, element);
-                    return false;
+                    return true;
                 }
 
                 @Override
@@ -999,7 +999,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 if (container.first == null || comparator.compare(container.first, element) > 0) {
                     container.first = element;
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -1045,7 +1045,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 if (container.first == null || comparator.compare(container.first, element) < 0) {
                     container.first = element;
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -1089,7 +1089,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean accumulate(long index, T element) {
                 count++;
-                return false;
+                return true;
             }
 
             @Override
@@ -1132,9 +1132,9 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             public boolean accumulate(SingleData<Boolean> container, long index, T element) {
                 if (predicate.test(element)) {
                     container.first = true;
-                    return true;
+                    return false;
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -1187,9 +1187,9 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             public boolean accumulate(SingleData<Boolean> container, long index, T element) {
                 if (!predicate.test(element)) {
                     container.first = false;
-                    return true;
+                    return false;
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -1240,10 +1240,10 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             public boolean accumulate(SingleData<Boolean> container, long index, T element) {
                 if (predicate.test(element)) {
                     container.first = false;
-                    return true;
+                    return false;
                 }
                 container.first = true;
-                return false;
+                return true;
             }
 
             @Override
@@ -1288,7 +1288,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean accumulate(long index, T element) {
                 this.element = element;
-                return true;
+                return false;
             }
 
             @Override
@@ -1322,7 +1322,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean accumulate(long index, T element) {
                 this.element = element;
-                return true;
+                return false;
             }
 
             @Override
@@ -1370,7 +1370,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                         }
                     }
                 }
-                return false;
+                return true;
             }
 
             @Override

@@ -49,8 +49,8 @@ public interface StreamableGatherer<T, A, R> {
      * @param index The index of the current Element
      * @param element The element to integrate
      * @param next The downstream object of this integration
-     * @return {@code false} if subsequent integration is desired,
-     *         {@code true} if not
+     * @return {@code true} if subsequent integration is desired,
+     *         {@code false} if not
      */
     boolean integrate(A container, long index, T element, Consumer<? super R> next);
 

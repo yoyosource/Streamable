@@ -60,7 +60,7 @@ public class SequentialFinish extends Finish {
                 if (greedy) {
                     collector.accumulate(container, value.index(), value.value());
                 } else {
-                    if (collector.accumulate(container, value.index(), value.value())) {
+                    if (!collector.accumulate(container, value.index(), value.value())) {
                         finished = true;
                         processElement(Element.Finish.getInstance());
                     }

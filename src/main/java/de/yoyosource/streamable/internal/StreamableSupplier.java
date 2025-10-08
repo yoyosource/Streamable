@@ -105,7 +105,7 @@ public abstract class StreamableSupplier {
                 @Override
                 public boolean accumulate(long index, R element) {
                     this.element = element;
-                    return true;
+                    return false;
                 }
 
                 @Override

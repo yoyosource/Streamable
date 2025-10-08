@@ -82,7 +82,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
             @Override
             public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<T, E>> next) {
                 if (option.check(element)) next.accept(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -96,7 +96,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
             @Override
             public boolean integrate(long index, Try<T, E> element, Consumer<? super U> next) {
                 next.accept(option.unwrap(element));
-                return false;
+                return true;
             }
 
             @Override
@@ -115,7 +115,7 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
             public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<T, E>> next) {
                 if (option.check(element)) consumer.accept(option.unwrap(element));
                 next.accept(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -137,18 +137,18 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
                         next.accept(Try.Success(functionWithException.apply(element.getSuccess())));
                     } catch (Throwable e) {
                         if (endOnException) {
-                            return true;
+                            return false;
                         } else {
                             next.accept(Try.Failure((E) e));
                         }
                     }
                 } else {
                     if (endOnException) {
-                        return true;
+                        return false;
                     }
                     next.accept((Try<R, E>) element);
                 }
-                return false;
+                return true;
             }
 
             @Override

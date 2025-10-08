@@ -25,7 +25,7 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
             @Override
             public boolean integrate(long index, Optional<T> element, Consumer<? super Optional<T>> next) {
                 if (element.isPresent()) next.accept(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -49,7 +49,7 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super Optional<T>> next) {
                 next.accept(input.filter(predicate));
-                return false;
+                return true;
             }
 
             @Override
@@ -72,7 +72,7 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super Optional<U>> next) {
                 next.accept(input.map(mapper));
-                return false;
+                return true;
             }
 
             @Override
@@ -95,7 +95,7 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super Optional<U>> next) {
                 next.accept(input.flatMap(mapper));
-                return false;
+                return true;
             }
 
             @Override
@@ -117,7 +117,7 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super Optional<T>> next) {
                 next.accept(input.or(supplier));
-                return false;
+                return true;
             }
 
             @Override
@@ -139,7 +139,7 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super T> next) {
                 next.accept(input.orElse(other));
-                return false;
+                return true;
             }
 
             @Override
@@ -161,7 +161,7 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super T> next) {
                 next.accept(input.orElseGet(supplier));
-                return false;
+                return true;
             }
 
             @Override
