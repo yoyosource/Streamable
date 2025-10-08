@@ -257,7 +257,7 @@ class ConstructorTest {
             Assertions.assertEquals(4, list.get(4));
         }
 
-        @Test // TODO: See why this does not work
+        @Test
         void generateTest() {
             List<Integer> list = Streamable.generate(() -> 0)
                     .parallel(3)

@@ -98,7 +98,6 @@ class FlatMapMultiTest {
     @Nested
     class Parallel {
         @Test
-            // TODO: Flaky?
         void testFlatMapMultiIndexedSameSize() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)

@@ -80,7 +80,7 @@ public abstract class ContainerManager {
         public synchronized void combine(long index) {
             List<Long> indices = new ArrayList<>(containers.size());
             for (long key : containers.keySet()) {
-                if (key < index) indices.add(key);
+                if (key <= index) indices.add(key);
             }
             indices.sort(Long::compareTo);
 
@@ -121,7 +121,7 @@ public abstract class ContainerManager {
             Iterator<Long> keyIterator = containers.keySet().iterator();
             while (keyIterator.hasNext()) {
                 Long key = keyIterator.next();
-                if (key < index) {
+                if (key <= index) {
                     queue.add(containers.get(key));
                     keyIterator.remove();
                 }

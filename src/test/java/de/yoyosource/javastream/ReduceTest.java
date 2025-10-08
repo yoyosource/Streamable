@@ -52,7 +52,6 @@ class ReduceTest {
         }
 
         @Test
-            // TODO: Flaky?
         void testReduceWithIdentity() {
             int sum = Streamable.of(1, 2, 3)
                     .parallel(3)

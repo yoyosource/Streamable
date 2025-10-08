@@ -1172,7 +1172,37 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * satisfied</em> and is always {@code true} (regardless of P(x)).
      */
     default boolean allMatch(Predicate<? super T> predicate) {
-        return !anyMatch(predicate.negate());
+        return collect(new StreamableCollector<T, SingleData<Boolean>, Boolean>() {
+            @Override
+            public SingleData<Boolean> container() {
+                return new SingleData<>(true);
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.concurrent;
+            }
+
+            @Override
+            public boolean accumulate(SingleData<Boolean> container, long index, T element) {
+                if (!predicate.test(element)) {
+                    container.first = false;
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public SingleData<Boolean> combine(SingleData<Boolean> firstContainer, SingleData<Boolean> secondContainer) {
+                firstContainer.first = firstContainer.first && secondContainer.first;
+                return firstContainer;
+            }
+
+            @Override
+            public Boolean finish(SingleData<Boolean> container) {
+                return container.first;
+            }
+        });
     }
 
     /**
@@ -1195,7 +1225,38 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * and is always {@code true}, regardless of P(x).
      */
     default boolean noneMatch(Predicate<? super T> predicate) {
-        return !anyMatch(predicate);
+        return collect(new StreamableCollector<T, SingleData<Boolean>, Boolean>() {
+            @Override
+            public SingleData<Boolean> container() {
+                return new SingleData<>(true);
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.concurrent;
+            }
+
+            @Override
+            public boolean accumulate(SingleData<Boolean> container, long index, T element) {
+                if (predicate.test(element)) {
+                    container.first = false;
+                    return true;
+                }
+                container.first = true;
+                return false;
+            }
+
+            @Override
+            public SingleData<Boolean> combine(SingleData<Boolean> firstContainer, SingleData<Boolean> secondContainer) {
+                firstContainer.first = firstContainer.first && secondContainer.first;
+                return firstContainer;
+            }
+
+            @Override
+            public Boolean finish(SingleData<Boolean> container) {
+                return container.first;
+            }
+        });
     }
 
     /**

@@ -75,7 +75,7 @@ class MapMultiIndexedTest {
 
     @Nested
     class Parallel {
-        @Test // TODO: See why this does not work
+        @Test
         void testMapMultiIndexedSameSize() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)
@@ -89,7 +89,7 @@ class MapMultiIndexedTest {
             Assertions.assertEquals(3, list.get(2));
         }
 
-        @Test // TODO: See why this does not work
+        @Test
         void testMapMultiIndexedMultipleElements() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)

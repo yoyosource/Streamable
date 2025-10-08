@@ -212,7 +212,7 @@ public class ParallelStep extends Step {
             } else if (containers.size() == 1) {
                 container = containers.getAny();
             } else {
-                container = containers.get(insertFinished - 1);
+                container = containers.get(insertFinished);
             }
         }
         try {

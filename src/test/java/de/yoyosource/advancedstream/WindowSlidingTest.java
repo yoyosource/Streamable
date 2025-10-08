@@ -133,7 +133,7 @@ class WindowSlidingTest {
 
     @Nested
     class Parallel {
-        @Test // TODO: See why this does not work
+        @Test
         void testWindowSlidingSize1() {
             List<List<Integer>> list = Streamable.of(1, 2, 3)
                     .parallel(3)
