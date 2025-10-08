@@ -6,6 +6,7 @@ import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
+import de.yoyosource.streamable.internal.sequence.OrderedSequence;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
