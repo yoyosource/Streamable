@@ -2,19 +2,24 @@ package de.yoyosource.streamable.internal.sequence;
 
 import de.yoyosource.streamable.internal.FinishException;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class OrderedSequence<T> implements Sequence<T> {
 
     private Node<T> head;
     private Node<T> tail;
-    private boolean finished = false;
+    private AtomicLong inserterId = new AtomicLong();
+    private long finished = Long.MAX_VALUE;
 
     public OrderedSequence() {
-        head = tail = new Node<>();
+        head = new Node<>();
+        tail = head;
     }
 
     @Override
     public void finish() {
-        finished = true;
+        finished = 0;
     }
 
     @Override
@@ -118,6 +123,7 @@ public class OrderedSequence<T> implements Sequence<T> {
 
         private Node<T> current;
         private Node<T> tail;
+        private long id = inserterId.getAndIncrement();
 
         public InserterImpl(Node<T> head, Node<T> tail) {
             this.current = head;
@@ -126,7 +132,7 @@ public class OrderedSequence<T> implements Sequence<T> {
 
         @Override
         public Inserter<T> add(T value) {
-            if (finished) {
+            if (finished <= id) {
                 throw FinishException.INSTANCE;
             }
             if (current == null) {
@@ -153,6 +159,7 @@ public class OrderedSequence<T> implements Sequence<T> {
             if (current == null) {
                 throw new IllegalStateException();
             }
+            finished = Math.min(finished, id);
             Node<T> cutShort = new Node<>();
             cutShort.nodeState = NodeState.CUT_OFF;
             current.next = cutShort;

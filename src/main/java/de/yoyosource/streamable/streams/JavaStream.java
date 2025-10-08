@@ -503,6 +503,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
             @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
+                System.out.println(index + " " + input + " " + predicate.test(input));
                 if (predicate.test(input)) {
                     next.accept(input);
                     return true;

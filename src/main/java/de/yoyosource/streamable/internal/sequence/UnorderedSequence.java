@@ -26,7 +26,8 @@ public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
         }
         Node<T> node = new Node<>(value);
         if (head == null) {
-            head = tail = node;
+            head = node;
+            tail = node;
         } else {
             tail.next = node;
             tail = node;

@@ -137,7 +137,6 @@ public class ParallelStep extends Step {
                 insertFinished = Math.min(insertFinished, index);
                 tasks.add(Element.Finish.getInstance());
                 resultInserter.cutShort();
-                results.finish();
             }
         } catch (Throwable e) {
             root.setError(e);

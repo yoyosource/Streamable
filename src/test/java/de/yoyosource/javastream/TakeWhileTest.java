@@ -72,7 +72,7 @@ class TakeWhileTest {
             Assertions.assertEquals(3, list.get(2));
         }
 
-        @Test // TODO: Flaky?
+        @Test
         void testTakeWhileOnlyFirst() {
             List<Integer> list = Streamable.of(1, 2, 3)
                     .parallel(3)
