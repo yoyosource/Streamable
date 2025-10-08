@@ -110,7 +110,6 @@ class MapMultiIndexedTest {
         }
 
         @Test
-        @Disabled // Infinite Loop
         void testMapMultiIndexedInfiniteElements() {
             List<Integer> list = Streamable.of(1, 2)
                     .parallel(3)

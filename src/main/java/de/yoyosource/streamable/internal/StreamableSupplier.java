@@ -36,7 +36,6 @@ public abstract class StreamableSupplier {
             maxParallelTasks = 1;
         }
 
-        boolean greedy = evaluation.contains(Evaluation.GREEDY);
         if (maxParallelTasks == 1) {
             return setNext(new SequentialStep(gatherer));
         } else {

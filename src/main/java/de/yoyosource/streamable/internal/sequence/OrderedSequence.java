@@ -1,92 +1,84 @@
 package de.yoyosource.streamable.internal.sequence;
 
+import de.yoyosource.streamable.internal.FinishException;
+
 public class OrderedSequence<T> implements Sequence<T> {
 
     private Node<T> head;
     private Node<T> tail;
+    private boolean finished = false;
 
     public OrderedSequence() {
-        head = tail = new BreakerNode<>();
+        head = tail = new Node<>();
+    }
+
+    @Override
+    public void finish() {
+        finished = true;
     }
 
     @Override
     public String toString() {
-        Node<T> current = this.current != null ? this.current : head;
-        StringBuilder sb = new StringBuilder();
+        Node<T> current = head;
+        StringBuilder st = new StringBuilder();
         while (current != null) {
-            if (current == this.current) {
-                sb.append("*");
-            }
-            if (current instanceof OrderedSequence.ElementNode<T> elementNode) {
-                sb.append(elementNode.value);
+            if (current.nodeState == NodeState.WITH_VALUE) {
+                st.append(current.value);
             } else {
-                sb.append("[").append(current.released).append("]");
+                st.append("[").append(current.nodeState.name()).append("]");
             }
             if (current.next != null) {
-                sb.append(" -> ");
+                st.append(" -> ");
             }
             current = current.next;
         }
-        return sb.toString();
+        return st.toString();
     }
 
+    private enum NodeState {
+        WITH_VALUE,
+        NO_VALUE,
+        CUT_OFF
+    }
+
+    private class Node<T> {
+        private final T value;
+        private NodeState nodeState;
+        private Node<T> next = null;
+
+        public Node() {
+            this.value = null;
+            this.nodeState = NodeState.NO_VALUE;
+        }
+
+        public Node(T value) {
+            this.value = value;
+            this.nodeState = NodeState.WITH_VALUE;
+        }
+    }
+
+    @Override
     public synchronized Inserter<T> inserter() {
-        Node<T> current = tail;
-        tail.next = new BreakerNode<>();
-        tail = tail.next;
-        return new InserterImpl<>(current);
+        Node<T> tail = new Node<>();
+        Inserter<T> inserter = new InserterImpl<>(this.tail, tail);
+        this.tail = tail;
+        return inserter;
     }
 
-    public boolean isEmpty() {
+    @Override
+    public synchronized boolean isEmpty() {
         return head.next == null;
-    }
-
-    private ElementNode<T> _getNext() {
-        while (head instanceof OrderedSequence.BreakerNode<T> breakerNode && breakerNode.released) {
-            head = head.next;
-        }
-        if (head instanceof OrderedSequence.ElementNode<T> elementNode) {
-            head = head.next;
-            return elementNode;
-        }
-        return null;
-    }
-
-    private ElementNode<T> current = null;
-
-    @Override
-    public synchronized boolean hasNext() {
-        if (current == null) {
-            current = _getNext();
-        }
-        return current != null;
-    }
-
-    @Override
-    @SuppressWarnings("java:S2272")
-    public synchronized T next() {
-        T value = current.value;
-        current = null;
-        return value;
     }
 
     @Override
     public synchronized T peek() {
-        if (current == null) {
-            current = _getNext();
+        while (head.nodeState == NodeState.NO_VALUE && head.next != null) {
+            head = head.next;
         }
-        if (current == null) {
-            return null;
-        }
-        return current.value;
-    }
-
-    @Override
-    public synchronized void remove() {
-        if (current == null) {
-            _getNext();
+        if (head.nodeState == NodeState.WITH_VALUE) {
+            return head.value;
         } else {
-            current = null;
+            return null;
         }
     }
 
@@ -95,68 +87,76 @@ public class OrderedSequence<T> implements Sequence<T> {
         throw new UnsupportedOperationException();
     }
 
-    private abstract static class Node<T> {
-        protected Node<T> next = null;
-
-        protected volatile boolean released = false;
+    @Override
+    public synchronized boolean hasNext() {
+        while (head.nodeState == NodeState.NO_VALUE && head.next != null) {
+            head = head.next;
+        }
+        return head.nodeState == NodeState.WITH_VALUE;
     }
 
-    private static class BreakerNode<T> extends Node<T> {
-
-        @Override
-        public String toString() {
-            return "BreakerNode{" +
-                    "released=" + released +
-                    '}';
+    @Override
+    public synchronized T next() {
+        T value = head.value;
+        if (head.next != null) {
+            head = head.next;
+        } else {
+            head.nodeState = NodeState.NO_VALUE;
         }
+        return value;
     }
 
-    private static class ElementNode<T> extends Node<T> {
-
-        private T value;
-
-        public ElementNode(T value) {
-            this.value = value;
-            this.released = true;
+    @Override
+    public synchronized void remove() {
+        while (head.nodeState == NodeState.NO_VALUE && head.next != null) {
+            head = head.next;
         }
-
-        @Override
-        public String toString() {
-            return "ElementNode{" +
-                    "value=" + value +
-                    '}';
-        }
+        head.nodeState = NodeState.NO_VALUE;
     }
 
-    private static class InserterImpl<T> implements Inserter<T> {
-        private BreakerNode<T> first;
+    private class InserterImpl<T> implements Sequence.Inserter<T> {
+
         private Node<T> current;
+        private Node<T> tail;
 
-        private InserterImpl(Node<T> current) {
-            if (!(current instanceof OrderedSequence.BreakerNode<T>)) {
-                throw new IllegalArgumentException("Inserter requires a Sequence.BreakerNode");
-            }
-            this.first = (OrderedSequence.BreakerNode<T>) current;
-            this.current = current;
+        public InserterImpl(Node<T> head, Node<T> tail) {
+            this.current = head;
+            this.tail = tail;
         }
 
-        public synchronized InserterImpl<T> add(T value) {
-            ElementNode<T> newNode = new ElementNode<>(value);
-            newNode.next = current.next;
-            current.next = newNode;
-            current = newNode;
+        @Override
+        public Inserter<T> add(T value) {
+            if (finished) {
+                throw FinishException.INSTANCE;
+            }
+            if (current == null) {
+                throw new IllegalStateException();
+            }
+            Node<T> node = new Node<>(value);
+            current.next = node;
+            current = node;
             return this;
         }
 
-        public synchronized void release() {
-            first.released = true;
-            first = null;
+        @Override
+        public void release() {
+            if (current == null) {
+                throw new IllegalStateException();
+            }
+            current.next = tail;
             current = null;
+            tail = null;
         }
 
         @Override
         public void cutShort() {
-            current.next = null;
+            if (current == null) {
+                throw new IllegalStateException();
+            }
+            Node<T> cutShort = new Node<>();
+            cutShort.nodeState = NodeState.CUT_OFF;
+            current.next = cutShort;
+            tail = null;
         }
     }
 }

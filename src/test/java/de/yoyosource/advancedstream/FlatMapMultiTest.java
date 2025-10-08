@@ -156,7 +156,6 @@ class FlatMapMultiTest {
         }
 
         @Test
-        @Disabled // Infinite Loop
         void testFlatMapMultiIndexedInfiniteLoop() {
             List<Integer> list = Streamable.of(1, 2)
                     .parallel(3)

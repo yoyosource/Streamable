@@ -1,10 +1,13 @@
 package de.yoyosource.streamable.internal.sequence;
 
+import de.yoyosource.streamable.internal.FinishException;
+
 public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
 
     private Node<T> head;
     private Node<T> tail;
     private int size = 0;
+    private boolean finished = false;
 
     @Override
     public Inserter<T> inserter() {
@@ -12,9 +15,14 @@ public class UnorderedSequence<T> implements Sequence<T>, Sequence.Inserter<T> {
     }
 
     @Override
+    public void finish() {
+        finished = true;
+    }
+
+    @Override
     public synchronized Inserter<T> add(T value) {
-        if (tail == null && head != null) {
-            return this;
+        if (finished || (tail == null && head != null)) {
+            throw FinishException.INSTANCE;
         }
         Node<T> node = new Node<>(value);
         if (head == null) {

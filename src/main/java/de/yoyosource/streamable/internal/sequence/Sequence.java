@@ -14,6 +14,8 @@ public interface Sequence<T> extends Iterable<T>, Iterator<T> {
 
     T peek();
 
+    void finish();
+
     default T poll() {
         if (hasNext()) {
             return next();

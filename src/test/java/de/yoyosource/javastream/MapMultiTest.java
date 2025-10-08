@@ -98,7 +98,6 @@ class MapMultiTest {
         }
 
         @Test
-        @Disabled
         void testMapMultiInfiniteElements() {
             List<Integer> list = Streamable.of(1, 2)
                     .parallel(3)
