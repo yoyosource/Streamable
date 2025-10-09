@@ -18,6 +18,14 @@ public class AddTest {
         }
 
         @Test
+        void testAddMultipleElements() {
+            long count = Streamable.of(1, 2, 3, 4)
+                    .add(5, 6, 7, 8)
+                    .count();
+            Assertions.assertEquals(8, count);
+        }
+
+        @Test
         void testAddOfStream() {
             long allCount = Streamable.of(1, 2, 3, 4)
                     .generic()
@@ -37,6 +45,15 @@ public class AddTest {
                     .add(5)
                     .count();
             Assertions.assertEquals(5, count);
+        }
+
+        @Test
+        void testAddMultipleElements() {
+            long count = Streamable.of(1, 2, 3, 4)
+                    .parallel(3)
+                    .add(5, 6, 7, 8)
+                    .count();
+            Assertions.assertEquals(8, count);
         }
 
         @Test
