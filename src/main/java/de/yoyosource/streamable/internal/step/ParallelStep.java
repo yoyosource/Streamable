@@ -24,9 +24,12 @@ public class ParallelStep extends Step {
     private ContainerManager containers = null;
     private final int maxParallelTasks;
 
+    private final boolean greedy;
+
     public ParallelStep(StreamableGatherer streamableGatherer, int maxParallelTasks) {
         super(streamableGatherer);
         this.maxParallelTasks = maxParallelTasks;
+        this.greedy = StreamableGatherer.getEvaluation(streamableGatherer).contains(Evaluation.GREEDY);
     }
 
     @Override
@@ -129,8 +132,12 @@ public class ParallelStep extends Step {
         }
 
         try {
-            if (!gatherer.integrate(container, index, value, resultInserter::add)) {
-                throw FinishException.INSTANCE;
+            if (greedy) {
+                gatherer.integrate(container, index, value, resultInserter::add);
+            } else {
+                if (!gatherer.integrate(container, index, value, resultInserter::add)) {
+                    throw FinishException.INSTANCE;
+                }
             }
         } catch (FinishException e) {
             synchronized (insertLock) {

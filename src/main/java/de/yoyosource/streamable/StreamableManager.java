@@ -297,14 +297,13 @@ public class StreamableManager {
         Ordering ordering = Ordering.UNORDERED;
         boolean greedy = true;
         for (StreamableConsumer consumer : consumers) {
-            // System.out.println(consumer + " " + ordering + " with " + consumer.ordering() + " -> " + ordering.or(consumer.ordering()));
+            ordering = ordering.or(consumer.ordering());
+            greedy &= consumer.evaluation().contains(Evaluation.GREEDY);
+
             if (consumer instanceof ParallelStep parallelStep) {
                 parallelStep.setSequenceType(ordering.ordered);
                 parallelStep.setContainerManager(greedy);
-                // System.out.println("Set " + consumer + " ordering to " + ordering.ordered);
             }
-            ordering = ordering.or(consumer.ordering());
-            greedy &= consumer.evaluation().contains(Evaluation.GREEDY);
         }
     }
 

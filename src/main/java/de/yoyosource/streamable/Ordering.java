@@ -21,15 +21,6 @@ public enum Ordering {
      * execution.
      */
     ORDERED(true),
-
-    // /**
-    //  * A Sequential Stream has the Elements in the order
-    //  * it was originally supplied in. Elements will not
-    //  * be evaluated in an unpredictable manner. No parallel
-    //  * execution is possible and everything will be done
-    //  * in the original order provided.
-    //  */
-    // SEQUENTIAL(true, true),
     ;
 
     private static final Ordering[] VALUES = values();
