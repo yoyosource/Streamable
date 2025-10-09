@@ -6,6 +6,15 @@ import java.util.function.Consumer;
 
 public interface StreamableGatherer<T, A, R> {
 
+    static Set<Evaluation> getEvaluation(StreamableGatherer<?, ?, ?> gatherer) {
+        Set<Evaluation> evaluation = gatherer.evaluation();
+        if (gatherer instanceof StreamableGatherer.Simple<?,?> && !evaluation.contains(Evaluation.NO_CONTAINER)) {
+            evaluation = new java.util.HashSet<>(evaluation);
+            evaluation.add(Evaluation.NO_CONTAINER);
+        }
+        return evaluation;
+    }
+
     /**
      * The {@link Ordering} this {@link StreamableGatherer}
      * needs to work properly.

@@ -30,7 +30,7 @@ public class SequentialFinish extends Finish {
                 processElement(sequence.next());
             }
         }, 1);
-        this.greedy = collector.evaluation().contains(Evaluation.GREEDY);
+        this.greedy = StreamableCollector.getEvaluation(collector).contains(Evaluation.GREEDY);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class SequentialFinish extends Finish {
 
     @Override
     public Set<Evaluation> evaluation() {
-        return collector.evaluation();
+        return StreamableCollector.getEvaluation(collector);
     }
 
     @Override

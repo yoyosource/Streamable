@@ -38,7 +38,7 @@ public class ParallelStep extends Step {
 
     @Override
     public Set<Evaluation> evaluation() {
-        return gatherer.evaluation();
+        return StreamableGatherer.getEvaluation(gatherer);
     }
 
     public void setSequenceType(boolean ordered) {

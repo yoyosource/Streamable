@@ -15,7 +15,7 @@ import java.util.Set;
 public abstract class ContainerManager {
 
     public static ContainerManager get(StreamableGatherer streamableGatherer, boolean greedy) {
-        Set<Evaluation> evaluation = streamableGatherer.evaluation();
+        Set<Evaluation> evaluation = StreamableGatherer.getEvaluation(streamableGatherer);
         if (evaluation.contains(Evaluation.NO_CONTAINER)) {
             return new Empty(streamableGatherer);
         }

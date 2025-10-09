@@ -1,9 +1,19 @@
 package de.yoyosource.streamable;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 public interface StreamableCollector<T, A, R> {
+
+    static Set<Evaluation> getEvaluation(StreamableCollector<?, ?, ?> collector) {
+        Set<Evaluation> evaluation = collector.evaluation();
+        if (collector instanceof StreamableCollector.Simple<?,?> && !evaluation.contains(Evaluation.NO_CONTAINER)) {
+            evaluation = new HashSet<>(evaluation);
+            evaluation.add(Evaluation.NO_CONTAINER);
+        }
+        return evaluation;
+    }
 
     /**
      * The {@link Ordering} this {@link StreamableCollector}

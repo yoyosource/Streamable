@@ -44,7 +44,7 @@ public class SequentialStep extends Step {
 
             processElement(index, value);
         }, 1);
-        this.greedy = streamableGatherer.evaluation().contains(Evaluation.GREEDY);
+        this.greedy = StreamableGatherer.getEvaluation(streamableGatherer).contains(Evaluation.GREEDY);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class SequentialStep extends Step {
 
     @Override
     public Set<Evaluation> evaluation() {
-        return gatherer.evaluation();
+        return StreamableGatherer.getEvaluation(gatherer);
     }
 
     @Override

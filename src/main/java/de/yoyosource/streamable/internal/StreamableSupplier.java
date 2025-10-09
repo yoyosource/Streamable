@@ -31,7 +31,7 @@ public abstract class StreamableSupplier {
             throw new IllegalArgumentException("Gatherer must not be null!");
         }
 
-        Set<Evaluation> evaluation = gatherer.evaluation();
+        Set<Evaluation> evaluation = StreamableGatherer.getEvaluation(gatherer);
         if (evaluation.contains(Evaluation.SEQUENTIAL)) {
             maxParallelTasks = 1;
         }
@@ -51,7 +51,7 @@ public abstract class StreamableSupplier {
             throw new IllegalArgumentException("Collector must not be null!");
         }
 
-        Set<Evaluation> evaluation = collector.evaluation();
+        Set<Evaluation> evaluation = StreamableCollector.getEvaluation(collector);
         if (evaluation.contains(Evaluation.SEQUENTIAL)) {
             maxParallelTasks = 1;
         }
@@ -67,7 +67,7 @@ public abstract class StreamableSupplier {
 
                 @Override
                 public Set<Evaluation> evaluation() {
-                    return collector.evaluation();
+                    return StreamableCollector.getEvaluation(collector);
                 }
 
                 @Override
@@ -97,7 +97,7 @@ public abstract class StreamableSupplier {
 
                 @Override
                 public Set<Evaluation> evaluation() {
-                    return Evaluation.sequential;
+                    return Evaluation.sequential_noContainer;
                 }
 
                 private R element = null;
