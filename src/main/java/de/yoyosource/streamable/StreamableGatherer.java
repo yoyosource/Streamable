@@ -1,6 +1,7 @@
 package de.yoyosource.streamable;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -8,9 +9,12 @@ public interface StreamableGatherer<T, A, R> {
 
     static Set<Evaluation> getEvaluation(StreamableGatherer<?, ?, ?> gatherer) {
         Set<Evaluation> evaluation = gatherer.evaluation();
-        if (gatherer instanceof StreamableGatherer.Simple<?,?> && !evaluation.contains(Evaluation.NO_CONTAINER)) {
+        if (gatherer instanceof StreamableGatherer.Simple<?, ?> && !evaluation.contains(Evaluation.NO_CONTAINER)) {
             evaluation = new java.util.HashSet<>(evaluation);
             evaluation.add(Evaluation.NO_CONTAINER);
+        } else if (!(gatherer instanceof StreamableGatherer.Simple<?, ?>) && evaluation.contains(Evaluation.NO_CONTAINER)) {
+            evaluation = new HashSet<>(evaluation);
+            evaluation.remove(Evaluation.NO_CONTAINER);
         }
         return evaluation;
     }

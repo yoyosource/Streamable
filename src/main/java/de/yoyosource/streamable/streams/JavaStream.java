@@ -1073,28 +1073,37 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * @return the count of elements in this stream
      */
     default long count() {
-        return collect(new StreamableCollector.Simple<>() {
-            private long count = 0;
-
+        return collect(new StreamableCollector<T, SingleData<Long>, Long>() {
             @Override
             public Ordering ordering() {
-                return Ordering.ORDERED;
+                return Ordering.UNORDERED;
             }
 
             @Override
             public Set<Evaluation> evaluation() {
-                return Evaluation.sequential_greedy_concurrent;
+                return Evaluation.greedy;
             }
 
             @Override
-            public boolean accumulate(long index, T element) {
-                count++;
-                return true;
+            public SingleData<Long> container() {
+                return new SingleData<>(0L);
             }
 
             @Override
-            public Long finish() {
-                return count;
+            public boolean accumulate(SingleData<Long> container, long index, T element) {
+                container.first++;
+                return false;
+            }
+
+            @Override
+            public SingleData<Long> combine(SingleData<Long> firstContainer, SingleData<Long> secondContainer) {
+                firstContainer.first += secondContainer.first;
+                return firstContainer;
+            }
+
+            @Override
+            public Long finish(SingleData<Long> container) {
+                return container.first;
             }
         });
     }
