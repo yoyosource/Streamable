@@ -1092,7 +1092,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             @Override
             public boolean accumulate(SingleData<Long> container, long index, T element) {
                 container.first++;
-                return false;
+                return true;
             }
 
             @Override
