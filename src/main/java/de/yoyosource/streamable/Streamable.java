@@ -1,6 +1,7 @@
 package de.yoyosource.streamable;
 
 import de.yoyosource.streamable.internal.InternalStreamable;
+import de.yoyosource.streamable.streams.GenericStream;
 import de.yoyosource.streamable.streams.JavaStream;
 
 import java.util.Arrays;
@@ -219,6 +220,33 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
      */
     <N extends Streamable<N, ? super T>> N as(Class<N> clazz);
 
+    default GenericStream<S, T> generic() {
+        return Streamable.of((S) this).as(GenericStream.GenericStream());
+    }
+
+    default S add(T value, T... values) {
+        return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.greedy;
+            }
+
+            @Override
+            public boolean integrate(long index, T element, Consumer<? super T> next) {
+                next.accept(element);
+                return false;
+            }
+
+            @Override
+            public void finish(Consumer<? super T> next) {
+                next.accept(value);
+                for (T t : values) {
+                    next.accept(t);
+                }
+            }
+        });
+    }
+
     /**
      * Sets the all operations done before this to be at least evaluated as the supplied parameter.
      * <p>This is an intermediate operation.</p>
@@ -231,6 +259,11 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
             @Override
             public Ordering ordering() {
                 return ordering;
+            }
+
+            @Override
+            public Set<Evaluation> evaluation() {
+                return Evaluation.greedy;
             }
 
             @Override

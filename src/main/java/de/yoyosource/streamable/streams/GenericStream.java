@@ -96,4 +96,19 @@ public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable
     default JavaStream<T> flatten() {
         return (JavaStream<T>) ((GenericStream)((InternalStreamable) this).setNext(new FlattenStep())).as(JavaStream.JavaStream());
     }
+
+    // default GenericStream<S, T> add(S stream) {
+    //     return gather(new StreamableGatherer.Simple<S, S>() {
+    //         @Override
+    //         public boolean integrate(long index, S element, Consumer<? super S> next) {
+    //             next.accept(element);
+    //             return false;
+    //         }
+//
+    //         @Override
+    //         public void finish(Consumer<? super S> next) {
+    //             next.accept(stream);
+    //         }
+    //     });
+    // }
 }
