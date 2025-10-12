@@ -220,10 +220,25 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
      */
     <N extends Streamable<N, ? super T>> N as(Class<N> clazz);
 
+    /**
+     * Returns a GenericStream containing the
+     * current Stream as one element.
+     *
+     * @return the new stream
+     */
     default GenericStream<S, T> generic() {
         return Streamable.of((S) this).as(GenericStream.GenericStream());
     }
 
+    /**
+     * Returns a Stream combining all the elements
+     * currently in the stream with the supplied
+     * values appended at the end.
+     *
+     * @param value  the value to add
+     * @param values any additional values to add
+     * @return the new Stream
+     */
     default S add(T value, T... values) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
@@ -234,7 +249,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 next.accept(element);
-                return false;
+                return true;
             }
 
             @Override
@@ -340,10 +355,10 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
      *     var stream1 = Streamable.of(...).gather(gatherer1).gather(gatherer2);
      * }</pre>
      *
-     * @see StreamableGatherer
-     * @param <R> The element type of the new stream
+     * @param <R>      The element type of the new stream
      * @param gatherer a gatherer
      * @return the new stream
+     * @see StreamableGatherer
      */
     <R, C, N extends Streamable<N, R>> N gather(StreamableGatherer<? super T, C, R> gatherer);
 
@@ -373,10 +388,10 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
      *     var stream1 = Streamable.of(...).flatGather(gatherer1).flatGather(gatherer2);
      * }</pre>
      *
-     * @see StreamableGatherer
-     * @param <R> The element type of the new stream
+     * @param <R>      The element type of the new stream
      * @param gatherer a gatherer
      * @return the new stream
+     * @see StreamableGatherer
      */
     <R, C, N extends Streamable<N, R>> N flatGather(StreamableGatherer<? super T, C, Iterable<R>> gatherer);
 
@@ -394,8 +409,8 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
      * with non-thread-safe data structures (such as {@code ArrayList}), no
      * additional synchronization is needed for a parallel reduction.
      *
-     * @param <R> the type of the result
-     * @param <C> the intermediate accumulation type of the {@code StreamableCollector}
+     * @param <R>       the type of the result
+     * @param <C>       the intermediate accumulation type of the {@code StreamableCollector}
      * @param collector the {@code StreamableCollector} describing the reduction
      * @return the result of the reduction
      */
