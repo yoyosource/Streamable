@@ -6,8 +6,8 @@ import static de.yoyosource.streamable.Evaluation.NO_CONTAINER;
 
 public interface StreamableGatherer<T, A, R> {
 
-    static Evaluation.EvaluationValidSet getEvaluation(StreamableGatherer<?, ?, ?> gatherer) {
-        Evaluation.EvaluationValidSet evaluation = gatherer.evaluation();
+    static Evaluation getEvaluation(StreamableGatherer<?, ?, ?> gatherer) {
+        Evaluation evaluation = gatherer.evaluation();
         if (gatherer instanceof StreamableGatherer.Simple<?, ?> && !evaluation.contains(NO_CONTAINER)) {
             return evaluation.with(NO_CONTAINER);
         } else if (!(gatherer instanceof StreamableGatherer.Simple<?, ?>) && evaluation.contains(NO_CONTAINER)) {
@@ -29,7 +29,7 @@ public interface StreamableGatherer<T, A, R> {
      *
      * @return The desired optimizations.
      */
-    default Evaluation.EvaluationValidSet evaluation() {
+    default Evaluation evaluation() {
         return Evaluation.UNORDERED;
     }
 
@@ -87,7 +87,7 @@ public interface StreamableGatherer<T, A, R> {
      */
     abstract class Simple<T, R> implements StreamableGatherer<T, Object, R> {
         @Override
-        public Evaluation.EvaluationValidSet evaluation() {
+        public Evaluation evaluation() {
             return Evaluation.get(Evaluation.UNORDERED, NO_CONTAINER);
         }
 

@@ -1,86 +1,172 @@
 package de.yoyosource.streamable;
 
-import java.io.Serializable;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.Constable;
-import java.lang.constant.ConstantDesc;
-import java.lang.constant.DirectMethodHandleDesc;
-import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodHandleDesc;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
-public class Evaluation implements Serializable {
+public sealed interface Evaluation permits Evaluation.SelfValue, Evaluation.Combined {
 
-    final int identifier;
+    /**
+     * An unordered Stream has the Elements in any order.
+     * The order is not deterministic and can vary from
+     * call to call.
+     */
+    SelfValue UNORDERED = new SelfValue("UNORDERED", 0b00000001);
 
-    private Evaluation(int identifier) {
-        this.identifier = identifier;
-    }
+    /**
+     * An Ordered Stream has the Elements in the order
+     * it was originally supplied in. Elements can still
+     * be evaluated in an unpredictable manner for parallel
+     * execution.
+     */
+    SelfValue ORDERED = new SelfValue("ORDERED", 0b00000010);
 
-    private static final List<Pure> PURE = new ArrayList<>();
+    /**
+     * The current step will not be evaluated in parallel
+     * regardless what was supplied to a previous
+     * {@link Streamable#parallel(int)} call. Only one single
+     * {@link Thread} will be used to evaluate the step.
+     */
+    Value SEQUENTIAL = new SelfValue("SEQUENTIAL", 0b00000100);
 
-    public interface EvaluationValidSet {
-        EvaluationSet with(Pure pure, Pure... evaluations);
-        EvaluationSet without(Pure pure, Pure... evaluations);
-        boolean contains(Pure pure, Pure... evaluations);
-        boolean contains(Evaluation evaluation2);
-    }
+    /**
+     * Using this Evaluation flag it will be assumed that the
+     * {@link StreamableGatherer#combine(Object, Object)} method
+     * and the {@link StreamableCollector#combine(Object, Object)}
+     * method can be called simultaneously from multiple {@link Thread}'s
+     * to combine values. Both methods must return the first
+     * parameter as there return value. This also assumes that the
+     * {@link StreamableGatherer#integrate(Object, long, Object, Consumer)}
+     * method and the {@link StreamableCollector#accumulate(Object, long, Object)}
+     * method can receive a container used in another {@link Thread}
+     * simultaneously.
+     */
+    Value CONCURRENT = new SelfValue("CONCURRENT", 0b00001000);
 
-    public static class EvaluationSet extends Evaluation implements EvaluationValidSet {
+    /**
+     * Using this Evaluation flag it will be assumed that the
+     * {@link StreamableGatherer#integrate(Object, long, Object, Consumer)}
+     * and {@link StreamableCollector#accumulate(Object, long, Object)}
+     * method both never return {@code false} thus ignoring the
+     * result.
+     */
+    Value GREEDY = new SelfValue("GREEDY", 0b00010000);
 
-        private EvaluationSet(int identifier) {
-            super(identifier);
+    /**
+     * Using this Evaluation flag it will be assumed that the
+     * {@link StreamableGatherer#container()} can be safely ignored.
+     */
+    Value NO_CONTAINER = new SelfValue("NO_CONTAINER", 0b00100000);
+
+    static Evaluation get(Value first, Value... others) {
+        if (others.length == 0) {
+            if (first == UNORDERED) {
+                return UNORDERED;
+            } else if (first == ORDERED) {
+                return ORDERED;
+            }
         }
 
-        public EvaluationSet with(Pure pure, Pure... evaluations) {
-            int id = identifier;
-            if (pure == ORDERED) {
-                id = id & ~UNORDERED.identifier;
-            } else if (pure == UNORDERED) {
-                id = id & ~ORDERED.identifier;
-            }
-            id |= pure.identifier;
-
-            for (Pure pure2 : evaluations) {
-                if (pure2 == ORDERED) {
-                    id = id & ~UNORDERED.identifier;
-                } else if (pure2 == UNORDERED) {
-                    id = id & ~ORDERED.identifier;
-                }
-                id |= pure2.identifier;
-            }
-            if (EVALUATIONS[id] == null) {
-                EVALUATIONS[id] = new EvaluationSet(id);
-            }
-            return EVALUATIONS[id];
+        int combinedIdentifier = UNORDERED.identifier;
+        combinedIdentifier |= first.identifier;
+        if (first == ORDERED) {
+            combinedIdentifier &= ~UNORDERED.identifier;
         }
 
-        public EvaluationSet without(Pure pure, Pure... evaluations) {
-            int id = identifier & ~NONE.with(pure, evaluations).identifier;
-            if ((id & UNORDERED.identifier) == 0 && (id & ORDERED.identifier) == 0) {
-                id |= UNORDERED.identifier;
+        for (Value other : others) {
+            combinedIdentifier |= other.identifier;
+            if (other == ORDERED) {
+                combinedIdentifier &= ~UNORDERED.identifier;
+            } else if (other == UNORDERED) {
+                combinedIdentifier &= ~ORDERED.identifier;
             }
-            if (EVALUATIONS[id] == null) {
-                EVALUATIONS[id] = new EvaluationSet(id);
+        }
+
+        if (Combined.COMBINED[combinedIdentifier] == null) {
+            Combined.COMBINED[combinedIdentifier] = new Combined(combinedIdentifier);
+        }
+        return Combined.COMBINED[combinedIdentifier];
+    }
+
+    static Value valueOf(String name) {
+        for (Value value : Value.VALUES) {
+            if (value.name().equals(name)) {
+                return value;
             }
-            return EVALUATIONS[id];
+        }
+        throw new IllegalArgumentException("No enum constant " + Evaluation.class.getCanonicalName() + "." + name);
+    }
+
+    static Value[] values() {
+        return Value.VALUES.toArray(new Value[0]);
+    }
+
+    default Evaluation with(Value first, Value... others) {
+        int identifier = ((Base) this).identifier;
+
+        identifier |= first.identifier;
+        if (first == ORDERED) {
+            identifier &= ~UNORDERED.identifier;
+        } else if (first == UNORDERED) {
+            identifier &= ~ORDERED.identifier;
+        }
+
+        for (Value other : others) {
+            identifier |= other.identifier;
+            if (other == ORDERED) {
+                identifier &= ~UNORDERED.identifier;
+            } else if (other == UNORDERED) {
+                identifier &= ~ORDERED.identifier;
+            }
+        }
+
+        if (Combined.COMBINED[identifier] == null) {
+            Combined.COMBINED[identifier] = new Combined(identifier);
+        }
+        return Combined.COMBINED[identifier];
+    }
+
+    default Evaluation without(Value first, Value... others) {
+        int identifier = ((Base) this).identifier & ~((Base) Combined.NONE.with(first, others)).identifier;
+        if ((identifier & UNORDERED.identifier) == 0 && (identifier & ORDERED.identifier) == 0) {
+            identifier |= UNORDERED.identifier;
+        }
+
+        if (Combined.COMBINED[identifier] == null) {
+            Combined.COMBINED[identifier] = new Combined(identifier);
+        }
+        return Combined.COMBINED[identifier];
+    }
+
+    default boolean contains(Value first, Value... others) {
+        int check = ((Base)Combined.NONE.with(first, others)).identifier;
+        int identifier = ((Base)this).identifier;
+        return (identifier & check) == check;
+    }
+
+    sealed class Base {
+
+        protected final int identifier;
+
+        private Base(int identifier) {
+            this.identifier = identifier;
         }
     }
 
-    public static class Pure extends Evaluation implements Constable, Comparable<Pure> {
+    sealed class Value extends Base {
 
-        private static int ORDINAL_COUNTER = 0;
+        private static final List<Value> VALUES = new ArrayList<>();
+
+        private static int ordinalCounter = 0;
+
         private final String name;
         private final int ordinal;
 
-        private Pure(String name, int identifier) {
+        private Value(String name, int identifier) {
             super(identifier);
             this.name = name;
-            this.ordinal = ORDINAL_COUNTER++;
-            PURE.add(this);
+            this.ordinal = ordinalCounter++;
+            VALUES.add(this);
         }
 
         public String name() {
@@ -95,163 +181,36 @@ public class Evaluation implements Serializable {
         public String toString() {
             return name;
         }
-
-        @Override
-        public Optional<? extends ConstantDesc> describeConstable() {
-            DirectMethodHandleDesc bootstrapMethod = MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, ClassDesc.of("de.yoyosource.streamable.Evaluation"), name, ClassDesc.of("de.yoyosource.streamable.Evaluation$Pure"));
-            return Optional.of(DynamicConstantDesc.ofNamed(bootstrapMethod, name, ClassDesc.of("de.yoyosource.streamable.Evaluation.Pure")));
-        }
-
-        @Override
-        public int compareTo(Pure other) {
-            return this.ordinal - other.ordinal;
-        }
     }
 
-    public static class PureValidSet extends Pure implements EvaluationValidSet {
-        private PureValidSet(String name, int identifier) {
+    final class SelfValue extends Value implements Evaluation {
+
+        private SelfValue(String name, int identifier) {
             super(name, identifier);
         }
-
-        public EvaluationSet with(Pure pure, Pure... evaluations) {
-            int id = identifier;
-            if (pure == ORDERED) {
-                id = id & ~UNORDERED.identifier;
-            } else if (pure == UNORDERED) {
-                id = id & ~ORDERED.identifier;
-            }
-            id |= pure.identifier;
-
-            for (Pure pure2 : evaluations) {
-                if (pure2 == ORDERED) {
-                    id = id & ~UNORDERED.identifier;
-                } else if (pure2 == UNORDERED) {
-                    id = id & ~ORDERED.identifier;
-                }
-                id |= pure2.identifier;
-            }
-            if (EVALUATIONS[id] == null) {
-                EVALUATIONS[id] = new EvaluationSet(id);
-            }
-            return EVALUATIONS[id];
-        }
-
-        public EvaluationSet without(Pure pure, Pure... evaluations) {
-            int id = identifier & ~NONE.with(pure, evaluations).identifier;
-            if ((id & UNORDERED.identifier) == 0 && (id & ORDERED.identifier) == 0) {
-                id |= UNORDERED.identifier;
-            }
-            if (EVALUATIONS[id] == null) {
-                EVALUATIONS[id] = new EvaluationSet(id);
-            }
-            return EVALUATIONS[id];
-        }
     }
 
-    public static Pure[] values() {
-        return PURE.toArray(new Pure[0]);
-    }
+    final class Combined extends Base implements Evaluation {
 
-    public static Pure valueOf(String name) {
-        for (Pure pure : PURE) {
-            if (pure.name.equals(name)) {
-                return pure;
-            }
+        private static final Combined NONE = new Combined(0b00000000);
+        private static final Combined[] COMBINED = new Combined[1 << Value.VALUES.size()];
+
+        private Combined(int identifier) {
+            super(identifier);
         }
-        throw new IllegalArgumentException("No enum constant Evaluation." + name);
-    }
-
-    private static final EvaluationSet NONE = new EvaluationSet(0b00000000) {
 
         @Override
         public String toString() {
-            return "<NONE>";
-        }
-    };
-
-    /**
-     * An unordered Stream has the Elements in any order.
-     * The order is not deterministic and can vary from
-     * call to call.
-     */
-    public static final PureValidSet UNORDERED = new PureValidSet("UNORDERED", 0b00000001) {
-    };
-
-    /**
-     * An Ordered Stream has the Elements in the order
-     * it was originally supplied in. Elements can still
-     * be evaluated in an unpredictable manner for parallel
-     * execution.
-     */
-    public static final PureValidSet ORDERED = new PureValidSet("ORDERED", 0b00000010) {
-    };
-
-    /**
-     * The current step will not be evaluated in parallel
-     * regardless what was supplied to a previous
-     * {@link Streamable#parallel(int)} call. Only one single
-     * {@link Thread} will be used to evaluate the step.
-     */
-    public static final Pure SEQUENTIAL = new Pure("SEQUENTIAL", 0b00000100) {
-    };
-
-    /**
-     * Using this Evaluation flag it will be assumed that the
-     * {@link StreamableGatherer#combine(Object, Object)} method
-     * and the {@link StreamableCollector#combine(Object, Object)}
-     * method can be called simultaneously from multiple {@link Thread}'s
-     * to combine values. Both methods must return the first
-     * parameter as there return value. This also assumes that the
-     * {@link StreamableGatherer#integrate(Object, long, Object, Consumer)}
-     * method and the {@link StreamableCollector#accumulate(Object, long, Object)}
-     * method can receive a container used in another {@link Thread}
-     * simultaneously.
-     */
-    public static final Pure CONCURRENT = new Pure("CONCURRENT", 0b00001000) {
-    };
-
-    /**
-     * Using this Evaluation flag it will be assumed that the
-     * {@link StreamableGatherer#integrate(Object, long, Object, Consumer)}
-     * and {@link StreamableCollector#accumulate(Object, long, Object)}
-     * method both never return {@code false} thus ignoring the
-     * result.
-     */
-    public static final Pure GREEDY = new Pure("GREEDY", 0b00010000) {
-    };
-
-    /**
-     * Using this Evaluation flag it will be assumed that the
-     * {@link StreamableGatherer#container()} can be safely ignored.
-     */
-    public static final Pure NO_CONTAINER = new Pure("NO_CONTAINER", 0b00100000) {
-    };
-
-    @Override
-    public String toString() {
-        StringBuilder st = new StringBuilder();
-        for (Pure pure : PURE) {
-            if ((identifier & pure.identifier) != 0) {
-                if (!st.isEmpty()) {
-                    st.append(", ");
+            StringBuilder st = new StringBuilder();
+            for (Evaluation.Value value : Value.VALUES) {
+                if ((identifier & value.identifier) != 0) {
+                    if (!st.isEmpty()) {
+                        st.append(", ");
+                    }
+                    st.append(value);
                 }
-                st.append(pure);
             }
+            return "Evaluation[" + identifier + ": " + st + ']';
         }
-        return "Evaluation[" + identifier + ": " + st + ']';
-    }
-
-    private static final EvaluationSet[] EVALUATIONS = new EvaluationSet[1 << PURE.size()];
-
-    public static EvaluationSet get(Pure pure, Pure... evaluations) {
-        return Evaluation.UNORDERED.with(pure, evaluations);
-    }
-
-    public boolean contains(Pure pure, Pure... evaluations) {
-        return contains(Evaluation.NONE.with(pure, evaluations));
-    }
-
-    public boolean contains(Evaluation evaluation2) {
-        return (identifier & evaluation2.identifier) == evaluation2.identifier;
     }
 }

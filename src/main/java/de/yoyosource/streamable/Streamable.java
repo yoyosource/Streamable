@@ -7,7 +7,6 @@ import de.yoyosource.streamable.streams.JavaStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -242,7 +241,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
     default S add(T value, T... values) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.UNORDERED, Evaluation.GREEDY);
             }
 
@@ -435,7 +434,7 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
     default void forEach(Consumer<? super T> action) {
         collect(new StreamableCollector.Simple<T, T>() {
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL);
             }
 

@@ -14,7 +14,7 @@ import java.util.Queue;
 public abstract class ContainerManager {
 
     public static ContainerManager get(StreamableGatherer streamableGatherer, boolean greedy) {
-        Evaluation.EvaluationValidSet evaluation = StreamableGatherer.getEvaluation(streamableGatherer);
+        Evaluation evaluation = StreamableGatherer.getEvaluation(streamableGatherer);
         if (evaluation.contains(Evaluation.NO_CONTAINER)) {
             return new Empty(streamableGatherer);
         }

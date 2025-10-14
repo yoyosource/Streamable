@@ -512,7 +512,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default JavaStream<T> takeWhile(Predicate<? super T> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.ORDERED;
             }
 
@@ -587,7 +587,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             private boolean take = false;
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
@@ -647,7 +647,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             private List<T> elements = Collections.synchronizedList(new ArrayList<>());
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.GREEDY, Evaluation.CONCURRENT);
             }
 
@@ -872,7 +872,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      * @see Collectors
      */
     default <R, A> R collect(Collector<? super T, A, R> collector) {
-        Evaluation.EvaluationValidSet evaluation;
+        Evaluation evaluation;
         if (collector.characteristics().contains(Collector.Characteristics.UNORDERED)) {
             if (collector.characteristics().contains(Collector.Characteristics.CONCURRENT)) {
                 evaluation = Evaluation.get(Evaluation.UNORDERED, Evaluation.GREEDY, Evaluation.CONCURRENT);
@@ -889,7 +889,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
         if (collector.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)) {
             return collect(new StreamableCollector<T, A, R>() {
                 @Override
-                public Evaluation.EvaluationValidSet evaluation() {
+                public Evaluation evaluation() {
                     return evaluation;
                 }
 
@@ -917,7 +917,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
         } else {
             return collect(new StreamableCollector<T, A, R>() {
                 @Override
-                public Evaluation.EvaluationValidSet evaluation() {
+                public Evaluation evaluation() {
                     return evaluation;
                 }
 
@@ -1067,7 +1067,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default long count() {
         return collect(new StreamableCollector<T, SingleData<Long>, Long>() {
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.UNORDERED, Evaluation.GREEDY);
             }
 
@@ -1120,7 +1120,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             }
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.UNORDERED, Evaluation.CONCURRENT);
             }
 
@@ -1175,7 +1175,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             }
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.UNORDERED, Evaluation.CONCURRENT);
             }
 
@@ -1228,7 +1228,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             }
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.UNORDERED, Evaluation.CONCURRENT);
             }
 
@@ -1270,7 +1270,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default Optional<T> findFirst() {
         return Optional.ofNullable(collect(new StreamableCollector.Simple<>() {
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL);
             }
 
@@ -1342,7 +1342,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             private T element = null;
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.ORDERED;
             }
 

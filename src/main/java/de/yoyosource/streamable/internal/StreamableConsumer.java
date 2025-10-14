@@ -3,7 +3,7 @@ package de.yoyosource.streamable.internal;
 import de.yoyosource.streamable.Evaluation;
 
 public interface StreamableConsumer {
-    Evaluation.EvaluationValidSet evaluation();
+    Evaluation evaluation();
 
     default void consume(Element element) {
         throw new UnsupportedOperationException();

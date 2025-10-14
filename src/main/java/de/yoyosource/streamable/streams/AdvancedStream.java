@@ -367,7 +367,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     default AdvancedStream<T> takeWhileIndexed(BiPredicate<? super T, Long> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
@@ -442,7 +442,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private boolean take = false;
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
@@ -559,7 +559,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private List<T> elements = new ArrayList<>();
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
@@ -596,7 +596,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private List<T> elements = new ArrayList<>();
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
@@ -804,7 +804,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private T current;
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
@@ -839,7 +839,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private long count;
 
             @Override
-            public Evaluation.EvaluationValidSet evaluation() {
+            public Evaluation evaluation() {
                 return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 

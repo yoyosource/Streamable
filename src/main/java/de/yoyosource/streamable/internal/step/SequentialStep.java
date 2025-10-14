@@ -46,7 +46,7 @@ public class SequentialStep extends Step {
     }
 
     @Override
-    public Evaluation.EvaluationValidSet evaluation() {
+    public Evaluation evaluation() {
         return StreamableGatherer.getEvaluation(gatherer);
     }
 

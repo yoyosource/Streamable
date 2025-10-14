@@ -4,8 +4,8 @@ import static de.yoyosource.streamable.Evaluation.NO_CONTAINER;
 
 public interface StreamableCollector<T, A, R> {
 
-    static Evaluation.EvaluationValidSet getEvaluation(StreamableCollector<?, ?, ?> collector) {
-        Evaluation.EvaluationValidSet evaluation = collector.evaluation();
+    static Evaluation getEvaluation(StreamableCollector<?, ?, ?> collector) {
+        Evaluation evaluation = collector.evaluation();
         if (collector instanceof StreamableCollector.Simple<?, ?> && !evaluation.contains(Evaluation.NO_CONTAINER)) {
             return evaluation.with(Evaluation.NO_CONTAINER);
         } else if (!(collector instanceof StreamableCollector.Simple<?, ?>) && evaluation.contains(Evaluation.NO_CONTAINER)) {
@@ -27,7 +27,7 @@ public interface StreamableCollector<T, A, R> {
      *
      * @return The desired optimizations.
      */
-    default Evaluation.EvaluationValidSet evaluation() {
+    default Evaluation evaluation() {
         return Evaluation.UNORDERED;
     }
 
@@ -74,7 +74,7 @@ public interface StreamableCollector<T, A, R> {
 
     abstract class Simple<T, R> implements StreamableCollector<T, Object, R> {
         @Override
-        public Evaluation.EvaluationValidSet evaluation() {
+        public Evaluation evaluation() {
             return Evaluation.get(Evaluation.UNORDERED, NO_CONTAINER);
         }
 

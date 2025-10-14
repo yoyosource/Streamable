@@ -75,7 +75,7 @@ public class StreamableManager {
                 final List<Object> data = new LinkedList<>();
                 streamData.supplier.setNext(1, new StreamableCollector.Simple<>() {
                     @Override
-                    public Evaluation.EvaluationValidSet evaluation() {
+                    public Evaluation evaluation() {
                         return Evaluation.ORDERED;
                     }
 

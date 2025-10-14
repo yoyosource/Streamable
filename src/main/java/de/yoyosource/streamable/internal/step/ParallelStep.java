@@ -31,7 +31,7 @@ public class ParallelStep extends Step {
     }
 
     @Override
-    public Evaluation.EvaluationValidSet evaluation() {
+    public Evaluation evaluation() {
         return StreamableGatherer.getEvaluation(gatherer);
     }
 

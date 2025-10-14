@@ -32,7 +32,7 @@ public class SequentialFinish extends Finish {
     }
 
     @Override
-    public Evaluation.EvaluationValidSet evaluation() {
+    public Evaluation evaluation() {
         return StreamableCollector.getEvaluation(collector);
     }
 

@@ -28,7 +28,7 @@ public class ZipStep extends Step implements Evaluator {
     }
 
     @Override
-    public Evaluation.EvaluationValidSet evaluation() {
+    public Evaluation evaluation() {
         return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.GREEDY);
     }
 

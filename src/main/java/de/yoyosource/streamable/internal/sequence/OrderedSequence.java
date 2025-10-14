@@ -2,7 +2,6 @@ package de.yoyosource.streamable.internal.sequence;
 
 import de.yoyosource.streamable.internal.FinishException;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class OrderedSequence<T> implements Sequence<T> {

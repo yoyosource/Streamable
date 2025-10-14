@@ -12,7 +12,6 @@ import de.yoyosource.streamable.internal.step.Step;
 import lombok.Getter;
 
 import java.lang.reflect.Field;
-import java.util.Set;
 import java.util.function.Consumer;
 
 public abstract class StreamableSupplier {
@@ -30,7 +29,7 @@ public abstract class StreamableSupplier {
             throw new IllegalArgumentException("Gatherer must not be null!");
         }
 
-        Evaluation.EvaluationValidSet evaluation = StreamableGatherer.getEvaluation(gatherer);
+        Evaluation evaluation = StreamableGatherer.getEvaluation(gatherer);
         if (evaluation.contains(Evaluation.SEQUENTIAL)) {
             maxParallelTasks = 1;
         }
@@ -50,7 +49,7 @@ public abstract class StreamableSupplier {
             throw new IllegalArgumentException("Collector must not be null!");
         }
 
-        Evaluation.EvaluationValidSet evaluation = StreamableCollector.getEvaluation(collector);
+        Evaluation evaluation = StreamableCollector.getEvaluation(collector);
         if (evaluation.contains(Evaluation.SEQUENTIAL)) {
             maxParallelTasks = 1;
         }
@@ -60,7 +59,7 @@ public abstract class StreamableSupplier {
         } else {
             return setNext(new ParallelStep(new StreamableGatherer<T, A, R>() {
                 @Override
-                public Evaluation.EvaluationValidSet evaluation() {
+                public Evaluation evaluation() {
                     return StreamableCollector.getEvaluation(collector);
                 }
 
@@ -85,7 +84,7 @@ public abstract class StreamableSupplier {
                 }
             }, maxParallelTasks)).setNext(new SequentialFinish(new StreamableCollector.Simple<R, R>() {
                 @Override
-                public Evaluation.EvaluationValidSet evaluation() {
+                public Evaluation evaluation() {
                     return collector.evaluation().with(Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
                 }
 
