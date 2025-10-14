@@ -1,7 +1,5 @@
 package de.yoyosource.streamable.internal.finish;
 
-import de.yoyosource.streamable.Evaluation;
-import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.Element;

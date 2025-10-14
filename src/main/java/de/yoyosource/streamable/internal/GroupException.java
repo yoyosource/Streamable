@@ -28,7 +28,7 @@ public class GroupException extends RuntimeException {
 
     @Override
     public void printStackTrace(PrintWriter s) {
-        for  (Throwable throwable : throwables) {
+        for (Throwable throwable : throwables) {
             throwable.printStackTrace(s);
         }
     }

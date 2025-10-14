@@ -1,8 +1,5 @@
 package de.yoyosource.streamable.internal;
 
-import de.yoyosource.streamable.Evaluation;
-import de.yoyosource.streamable.Ordering;
-
 import java.util.Set;
 
 public interface StreamableConsumer {

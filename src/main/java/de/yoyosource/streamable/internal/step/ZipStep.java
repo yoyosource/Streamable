@@ -1,7 +1,5 @@
 package de.yoyosource.streamable.internal.step;
 
-import de.yoyosource.streamable.Evaluation;
-import de.yoyosource.streamable.Ordering;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.Evaluator;

@@ -1,6 +1,5 @@
 package de.yoyosource.streamable.internal;
 
-import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.StreamableGatherer;
 
 import java.util.ArrayList;

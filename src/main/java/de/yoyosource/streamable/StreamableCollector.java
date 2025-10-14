@@ -1,45 +1,32 @@
 package de.yoyosource.streamable;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 public interface StreamableCollector<T, A, R> {
 
-    static Set<Evaluation> getEvaluation(StreamableCollector<?, ?, ?> collector) {
-        Set<Evaluation> evaluation = collector.evaluation();
-        if (collector instanceof StreamableCollector.Simple<?, ?> && !evaluation.contains(Evaluation.NO_CONTAINER)) {
-            evaluation = new HashSet<>(evaluation);
-            evaluation.add(Evaluation.NO_CONTAINER);
-        } else if (!(collector instanceof StreamableCollector.Simple<?, ?>) && evaluation.contains(Evaluation.NO_CONTAINER)) {
-            evaluation = new HashSet<>(evaluation);
-            evaluation.remove(Evaluation.NO_CONTAINER);
+    static Evaluation2 getEvaluation(StreamableCollector<?, ?, ?> collector) {
+        Evaluation2 evaluation = collector.evaluation();
+        if (collector instanceof StreamableCollector.Simple<?, ?> && !evaluation.contains(Evaluation2.NO_CONTAINER)) {
+            return evaluation.with(Evaluation2.NO_CONTAINER);
+        } else if (!(collector instanceof StreamableCollector.Simple<?, ?>) && evaluation.contains(Evaluation2.NO_CONTAINER)) {
+            return evaluation.without(Evaluation2.NO_CONTAINER);
         }
         return evaluation;
     }
 
     /**
-     * The {@link Ordering} this {@link StreamableCollector}
-     * needs to work properly.
-     *
-     * @implSpec The default implementation will return {@link Ordering#UNORDERED}.
-     *
-     * @return The needed Ordering
-     */
-    default Ordering ordering() {
-        return Ordering.UNORDERED;
-    }
-
-    /**
      * The Evaluation and optimizations that should be used
-     * for the this {@link StreamableCollector}.
+     * for the this {@link StreamableCollector}. This also
+     * includes the ordering required for this element.
+     * Both {@link Evaluation2#UNORDERED} and {@link Evaluation2#ORDERED}
+     * will have an effect on the Streamable processing before
+     * this element. The {@link Evaluation2#GREEDY} will
+     * also have an effect.
      *
-     * @implSpec The default implementation will return {@link Collections#emptySet()}.
+     * @implSpec The default implementation will return {@link Evaluation2#UNORDERED}.
      *
      * @return The desired optimizations.
      */
-    default Set<Evaluation> evaluation() {
-        return Collections.emptySet();
+    default Evaluation2 evaluation() {
+        return Evaluation2.UNORDERED;
     }
 
     /**
