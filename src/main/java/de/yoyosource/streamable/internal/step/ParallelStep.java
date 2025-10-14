@@ -117,10 +117,7 @@ public class ParallelStep extends Step {
     private final Lock processingLock = new ReentrantLock(true);
 
     private void processValue(long index, Object value, Sequence.Inserter resultInserter) {
-        Object container = containers.remove(index - 1);
-        if (container == null) {
-            container = gatherer.container();
-        }
+        Object container = gatherer.container();
 
         try {
             if (greedy) {
