@@ -12,17 +12,65 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-public class Evaluation2 implements Serializable {
+public class Evaluation implements Serializable {
 
     final int identifier;
 
-    private Evaluation2(int identifier) {
+    private Evaluation(int identifier) {
         this.identifier = identifier;
     }
 
     private static final List<Pure> PURE = new ArrayList<>();
 
-    public static class Pure extends Evaluation2 implements Constable, Comparable<Pure> {
+    public interface EvaluationValidSet {
+        EvaluationSet with(Pure pure, Pure... evaluations);
+        EvaluationSet without(Pure pure, Pure... evaluations);
+        boolean contains(Pure pure, Pure... evaluations);
+        boolean contains(Evaluation evaluation2);
+    }
+
+    public static class EvaluationSet extends Evaluation implements EvaluationValidSet {
+
+        private EvaluationSet(int identifier) {
+            super(identifier);
+        }
+
+        public EvaluationSet with(Pure pure, Pure... evaluations) {
+            int id = identifier;
+            if (pure == ORDERED) {
+                id = id & ~UNORDERED.identifier;
+            } else if (pure == UNORDERED) {
+                id = id & ~ORDERED.identifier;
+            }
+            id |= pure.identifier;
+
+            for (Pure pure2 : evaluations) {
+                if (pure2 == ORDERED) {
+                    id = id & ~UNORDERED.identifier;
+                } else if (pure2 == UNORDERED) {
+                    id = id & ~ORDERED.identifier;
+                }
+                id |= pure2.identifier;
+            }
+            if (EVALUATIONS[id] == null) {
+                EVALUATIONS[id] = new EvaluationSet(id);
+            }
+            return EVALUATIONS[id];
+        }
+
+        public EvaluationSet without(Pure pure, Pure... evaluations) {
+            int id = identifier & ~NONE.with(pure, evaluations).identifier;
+            if ((id & UNORDERED.identifier) == 0 && (id & ORDERED.identifier) == 0) {
+                id |= UNORDERED.identifier;
+            }
+            if (EVALUATIONS[id] == null) {
+                EVALUATIONS[id] = new EvaluationSet(id);
+            }
+            return EVALUATIONS[id];
+        }
+    }
+
+    public static class Pure extends Evaluation implements Constable, Comparable<Pure> {
 
         private static int ORDINAL_COUNTER = 0;
         private final String name;
@@ -50,13 +98,53 @@ public class Evaluation2 implements Serializable {
 
         @Override
         public Optional<? extends ConstantDesc> describeConstable() {
-            DirectMethodHandleDesc bootstrapMethod = MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, ClassDesc.of("de.yoyosource.streamable.Evaluation2"), name, ClassDesc.of("de.yoyosource.streamable.Evaluation2$Pure"));
-            return Optional.of(DynamicConstantDesc.ofNamed(bootstrapMethod, name, ClassDesc.of("de.yoyosource.streamable.Evaluation2.Pure")));
+            DirectMethodHandleDesc bootstrapMethod = MethodHandleDesc.ofField(DirectMethodHandleDesc.Kind.STATIC_GETTER, ClassDesc.of("de.yoyosource.streamable.Evaluation"), name, ClassDesc.of("de.yoyosource.streamable.Evaluation$Pure"));
+            return Optional.of(DynamicConstantDesc.ofNamed(bootstrapMethod, name, ClassDesc.of("de.yoyosource.streamable.Evaluation.Pure")));
         }
 
         @Override
         public int compareTo(Pure other) {
             return this.ordinal - other.ordinal;
+        }
+    }
+
+    public static class PureValidSet extends Pure implements EvaluationValidSet {
+        private PureValidSet(String name, int identifier) {
+            super(name, identifier);
+        }
+
+        public EvaluationSet with(Pure pure, Pure... evaluations) {
+            int id = identifier;
+            if (pure == ORDERED) {
+                id = id & ~UNORDERED.identifier;
+            } else if (pure == UNORDERED) {
+                id = id & ~ORDERED.identifier;
+            }
+            id |= pure.identifier;
+
+            for (Pure pure2 : evaluations) {
+                if (pure2 == ORDERED) {
+                    id = id & ~UNORDERED.identifier;
+                } else if (pure2 == UNORDERED) {
+                    id = id & ~ORDERED.identifier;
+                }
+                id |= pure2.identifier;
+            }
+            if (EVALUATIONS[id] == null) {
+                EVALUATIONS[id] = new EvaluationSet(id);
+            }
+            return EVALUATIONS[id];
+        }
+
+        public EvaluationSet without(Pure pure, Pure... evaluations) {
+            int id = identifier & ~NONE.with(pure, evaluations).identifier;
+            if ((id & UNORDERED.identifier) == 0 && (id & ORDERED.identifier) == 0) {
+                id |= UNORDERED.identifier;
+            }
+            if (EVALUATIONS[id] == null) {
+                EVALUATIONS[id] = new EvaluationSet(id);
+            }
+            return EVALUATIONS[id];
         }
     }
 
@@ -73,7 +161,7 @@ public class Evaluation2 implements Serializable {
         throw new IllegalArgumentException("No enum constant Evaluation." + name);
     }
 
-    private static final Evaluation2 NONE = new Evaluation2(0b00000000) {
+    private static final EvaluationSet NONE = new EvaluationSet(0b00000000) {
 
         @Override
         public String toString() {
@@ -86,7 +174,7 @@ public class Evaluation2 implements Serializable {
      * The order is not deterministic and can vary from
      * call to call.
      */
-    public static final Pure UNORDERED = new Pure("UNORDERED", 0b00000001) {
+    public static final PureValidSet UNORDERED = new PureValidSet("UNORDERED", 0b00000001) {
     };
 
     /**
@@ -95,7 +183,7 @@ public class Evaluation2 implements Serializable {
      * be evaluated in an unpredictable manner for parallel
      * execution.
      */
-    public static final Pure ORDERED = new Pure("ORDERED", 0b00000010) {
+    public static final PureValidSet ORDERED = new PureValidSet("ORDERED", 0b00000010) {
     };
 
     /**
@@ -153,57 +241,17 @@ public class Evaluation2 implements Serializable {
         return "Evaluation[" + identifier + ": " + st + ']';
     }
 
-    private static final Evaluation2[] EVALUATIONS = new Evaluation2[1 << PURE.size()];
+    private static final EvaluationSet[] EVALUATIONS = new EvaluationSet[1 << PURE.size()];
 
-    static {
-        for (Evaluation2 pure : PURE) {
-            EVALUATIONS[pure.identifier] = pure;
-        }
-    }
-
-    public static Evaluation2 get(Pure pure, Pure... evaluations) {
-        return Evaluation2.UNORDERED.with(pure, evaluations);
-    }
-
-    public Evaluation2 with(Pure pure, Pure... evaluations) {
-        int id = identifier;
-        if (pure == ORDERED) {
-            id = id & ~UNORDERED.identifier;
-        } else if (pure == UNORDERED) {
-            id = id & ~ORDERED.identifier;
-        }
-        id |= pure.identifier;
-
-        for (Pure pure2 : evaluations) {
-            if (pure2 == ORDERED) {
-                id = id & ~UNORDERED.identifier;
-            } else if (pure2 == UNORDERED) {
-                id = id & ~ORDERED.identifier;
-            }
-            id |= pure2.identifier;
-        }
-        if (EVALUATIONS[id] == null) {
-            EVALUATIONS[id] = new Evaluation2(id);
-        }
-        return EVALUATIONS[id];
-    }
-
-    public Evaluation2 without(Pure pure, Pure... evaluations) {
-        int id = identifier & ~NONE.with(pure, evaluations).identifier;
-        if ((id & UNORDERED.identifier) == 0 && (id & ORDERED.identifier) == 0) {
-            id |= UNORDERED.identifier;
-        }
-        if (EVALUATIONS[id] == null) {
-            EVALUATIONS[id] = new Evaluation2(id);
-        }
-        return EVALUATIONS[id];
+    public static EvaluationSet get(Pure pure, Pure... evaluations) {
+        return Evaluation.UNORDERED.with(pure, evaluations);
     }
 
     public boolean contains(Pure pure, Pure... evaluations) {
-        return contains(Evaluation2.NONE.with(pure, evaluations));
+        return contains(Evaluation.NONE.with(pure, evaluations));
     }
 
-    public boolean contains(Evaluation2 evaluation2) {
+    public boolean contains(Evaluation evaluation2) {
         return (identifier & evaluation2.identifier) == evaluation2.identifier;
     }
 }

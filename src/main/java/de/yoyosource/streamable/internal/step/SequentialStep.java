@@ -1,12 +1,12 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.FinishException;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
 import java.util.function.Consumer;
 
 public class SequentialStep extends Step {
@@ -46,12 +46,7 @@ public class SequentialStep extends Step {
     }
 
     @Override
-    public Ordering ordering() {
-        return gatherer.ordering();
-    }
-
-    @Override
-    public Set<Evaluation> evaluation() {
+    public Evaluation.EvaluationValidSet evaluation() {
         return StreamableGatherer.getEvaluation(gatherer);
     }
 

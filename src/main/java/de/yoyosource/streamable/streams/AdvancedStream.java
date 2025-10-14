@@ -1,13 +1,29 @@
 package de.yoyosource.streamable.streams;
 
-import de.yoyosource.streamable.*;
+import de.yoyosource.streamable.Evaluation;
+import de.yoyosource.streamable.Streamable;
+import de.yoyosource.streamable.StreamableCollector;
+import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.InternalStreamable;
 import de.yoyosource.streamable.internal.step.FlattenStep;
 import de.yoyosource.streamable.internal.step.ZipStep;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
@@ -351,13 +367,8 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     default AdvancedStream<T> takeWhileIndexed(BiPredicate<? super T, Long> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
-            public Ordering ordering() {
-                return Ordering.ORDERED;
-            }
-
-            @Override
-            public Set<Evaluation> evaluation() {
-                return Evaluation.sequential_noContainer;
+            public Evaluation.EvaluationValidSet evaluation() {
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
             @Override
@@ -431,13 +442,8 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private boolean take = false;
 
             @Override
-            public Ordering ordering() {
-                return Ordering.ORDERED;
-            }
-
-            @Override
-            public Set<Evaluation> evaluation() {
-                return Evaluation.sequential_noContainer;
+            public Evaluation.EvaluationValidSet evaluation() {
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
             @Override
@@ -553,13 +559,8 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private List<T> elements = new ArrayList<>();
 
             @Override
-            public Ordering ordering() {
-                return Ordering.ORDERED;
-            }
-
-            @Override
-            public Set<Evaluation> evaluation() {
-                return Evaluation.sequential_noContainer;
+            public Evaluation.EvaluationValidSet evaluation() {
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
             @Override
@@ -595,13 +596,8 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private List<T> elements = new ArrayList<>();
 
             @Override
-            public Ordering ordering() {
-                return Ordering.ORDERED;
-            }
-
-            @Override
-            public Set<Evaluation> evaluation() {
-                return Evaluation.sequential_noContainer;
+            public Evaluation.EvaluationValidSet evaluation() {
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
             @Override
@@ -808,13 +804,8 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private T current;
 
             @Override
-            public Ordering ordering() {
-                return Ordering.ORDERED;
-            }
-
-            @Override
-            public Set<Evaluation> evaluation() {
-                return Evaluation.sequential_noContainer;
+            public Evaluation.EvaluationValidSet evaluation() {
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
             @Override
@@ -848,13 +839,8 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private long count;
 
             @Override
-            public Ordering ordering() {
-                return Ordering.ORDERED;
-            }
-
-            @Override
-            public Set<Evaluation> evaluation() {
-                return Evaluation.sequential_noContainer;
+            public Evaluation.EvaluationValidSet evaluation() {
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
             }
 
             @Override

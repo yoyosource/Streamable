@@ -10,7 +10,7 @@ import de.yoyosource.streamable.internal.finish.Finish;
 import de.yoyosource.streamable.internal.root.Root;
 import de.yoyosource.streamable.internal.step.FlattenStep;
 import de.yoyosource.streamable.internal.step.ParallelStep;
-import sun.misc.Unsafe; //NOSONAR
+import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -75,8 +75,8 @@ public class StreamableManager {
                 final List<Object> data = new LinkedList<>();
                 streamData.supplier.setNext(1, new StreamableCollector.Simple<>() {
                     @Override
-                    public Ordering ordering() {
-                        return Ordering.ORDERED;
+                    public Evaluation.EvaluationValidSet evaluation() {
+                        return Evaluation.ORDERED;
                     }
 
                     @Override
@@ -294,14 +294,14 @@ public class StreamableManager {
 
         // System.out.println(consumers);
 
-        Ordering ordering = Ordering.UNORDERED;
+        boolean ordered = false;
         boolean greedy = true;
         for (StreamableConsumer consumer : consumers) {
-            ordering = ordering.or(consumer.ordering());
+            ordered |= consumer.evaluation().contains(Evaluation.ORDERED);
             greedy &= consumer.evaluation().contains(Evaluation.GREEDY);
 
             if (consumer instanceof ParallelStep parallelStep) {
-                parallelStep.setSequenceType(ordering.ordered);
+                parallelStep.setSequenceType(ordered);
                 parallelStep.setContainerManager(greedy);
             }
         }

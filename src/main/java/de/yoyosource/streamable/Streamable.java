@@ -242,8 +242,8 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
     default S add(T value, T... values) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
-            public Set<Evaluation> evaluation() {
-                return Evaluation.greedy;
+            public Evaluation.EvaluationValidSet evaluation() {
+                return Evaluation.get(Evaluation.UNORDERED, Evaluation.GREEDY);
             }
 
             @Override
@@ -258,37 +258,6 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
                 for (T t : values) {
                     next.accept(t);
                 }
-            }
-        });
-    }
-
-    /**
-     * Sets the all operations done before this to be at least evaluated as the supplied parameter.
-     * <p>This is an intermediate operation.</p>
-     *
-     * @param ordering the ordering the stream should have at least until this operation
-     * @return the new Stream
-     */
-    default S ordering(Ordering ordering) {
-        return gather(new StreamableGatherer.Simple<>() {
-            @Override
-            public Ordering ordering() {
-                return ordering;
-            }
-
-            @Override
-            public Set<Evaluation> evaluation() {
-                return Evaluation.greedy;
-            }
-
-            @Override
-            public boolean integrate(long index, T element, Consumer<? super T> next) {
-                next.accept(element);
-                return true;
-            }
-
-            @Override
-            public void finish(Consumer<? super T> next) {
             }
         });
     }
@@ -466,13 +435,8 @@ public interface Streamable<S extends Streamable<S, T>, T> extends Iterable<T>, 
     default void forEach(Consumer<? super T> action) {
         collect(new StreamableCollector.Simple<T, T>() {
             @Override
-            public Ordering ordering() {
-                return Ordering.ORDERED;
-            }
-
-            @Override
-            public Set<Evaluation> evaluation() {
-                return Evaluation.sequential;
+            public Evaluation.EvaluationValidSet evaluation() {
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL);
             }
 
             @Override

@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.Evaluator;
@@ -9,7 +10,6 @@ import de.yoyosource.streamable.internal.sequence.UnorderedSequence;
 import de.yoyosource.streamable.streams.ZippedStream;
 
 import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ZipStep extends Step implements Evaluator {
@@ -28,13 +28,8 @@ public class ZipStep extends Step implements Evaluator {
     }
 
     @Override
-    public Ordering ordering() {
-        return Ordering.ORDERED;
-    }
-
-    @Override
-    public Set<Evaluation> evaluation() {
-        return Evaluation.sequential_greedy;
+    public Evaluation.EvaluationValidSet evaluation() {
+        return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.GREEDY);
     }
 
     @Override

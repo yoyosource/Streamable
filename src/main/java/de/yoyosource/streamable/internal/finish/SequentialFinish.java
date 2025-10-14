@@ -1,12 +1,12 @@
 package de.yoyosource.streamable.internal.finish;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.Element;
 import de.yoyosource.streamable.internal.FinishException;
 import de.yoyosource.streamable.internal.sequence.OrderedSequence;
 
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SequentialFinish extends Finish {
@@ -32,12 +32,7 @@ public class SequentialFinish extends Finish {
     }
 
     @Override
-    public Ordering ordering() {
-        return collector.ordering();
-    }
-
-    @Override
-    public Set<Evaluation> evaluation() {
+    public Evaluation.EvaluationValidSet evaluation() {
         return StreamableCollector.getEvaluation(collector);
     }
 

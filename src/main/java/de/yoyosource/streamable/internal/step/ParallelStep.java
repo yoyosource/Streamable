@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.internal.step;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.ThreadManager;
 import de.yoyosource.streamable.internal.ContainerManager;
@@ -11,7 +12,6 @@ import de.yoyosource.streamable.internal.sequence.UnorderedSequence;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -31,14 +31,7 @@ public class ParallelStep extends Step {
     }
 
     @Override
-    public Ordering ordering() {
-        // This will never return sequential.
-        // Since otherwise the SequentialStep should have been used!
-        return gatherer.ordering();
-    }
-
-    @Override
-    public Set<Evaluation> evaluation() {
+    public Evaluation.EvaluationValidSet evaluation() {
         return StreamableGatherer.getEvaluation(gatherer);
     }
 

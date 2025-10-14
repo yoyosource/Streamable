@@ -1,13 +1,15 @@
 package de.yoyosource.streamable;
 
+import static de.yoyosource.streamable.Evaluation.NO_CONTAINER;
+
 public interface StreamableCollector<T, A, R> {
 
-    static Evaluation2 getEvaluation(StreamableCollector<?, ?, ?> collector) {
-        Evaluation2 evaluation = collector.evaluation();
-        if (collector instanceof StreamableCollector.Simple<?, ?> && !evaluation.contains(Evaluation2.NO_CONTAINER)) {
-            return evaluation.with(Evaluation2.NO_CONTAINER);
-        } else if (!(collector instanceof StreamableCollector.Simple<?, ?>) && evaluation.contains(Evaluation2.NO_CONTAINER)) {
-            return evaluation.without(Evaluation2.NO_CONTAINER);
+    static Evaluation.EvaluationValidSet getEvaluation(StreamableCollector<?, ?, ?> collector) {
+        Evaluation.EvaluationValidSet evaluation = collector.evaluation();
+        if (collector instanceof StreamableCollector.Simple<?, ?> && !evaluation.contains(Evaluation.NO_CONTAINER)) {
+            return evaluation.with(Evaluation.NO_CONTAINER);
+        } else if (!(collector instanceof StreamableCollector.Simple<?, ?>) && evaluation.contains(Evaluation.NO_CONTAINER)) {
+            return evaluation.without(Evaluation.NO_CONTAINER);
         }
         return evaluation;
     }
@@ -16,17 +18,17 @@ public interface StreamableCollector<T, A, R> {
      * The Evaluation and optimizations that should be used
      * for the this {@link StreamableCollector}. This also
      * includes the ordering required for this element.
-     * Both {@link Evaluation2#UNORDERED} and {@link Evaluation2#ORDERED}
+     * Both {@link Evaluation#UNORDERED} and {@link Evaluation#ORDERED}
      * will have an effect on the Streamable processing before
-     * this element. The {@link Evaluation2#GREEDY} will
+     * this element. The {@link Evaluation#GREEDY} will
      * also have an effect.
      *
-     * @implSpec The default implementation will return {@link Evaluation2#UNORDERED}.
+     * @implSpec The default implementation will return {@link Evaluation#UNORDERED}.
      *
      * @return The desired optimizations.
      */
-    default Evaluation2 evaluation() {
-        return Evaluation2.UNORDERED;
+    default Evaluation.EvaluationValidSet evaluation() {
+        return Evaluation.UNORDERED;
     }
 
     /**
@@ -71,6 +73,11 @@ public interface StreamableCollector<T, A, R> {
     R finish(A container);
 
     abstract class Simple<T, R> implements StreamableCollector<T, Object, R> {
+        @Override
+        public Evaluation.EvaluationValidSet evaluation() {
+            return Evaluation.get(Evaluation.UNORDERED, NO_CONTAINER);
+        }
+
         @Override
         public final Object container() {
             return null;
