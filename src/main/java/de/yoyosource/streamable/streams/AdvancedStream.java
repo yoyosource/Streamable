@@ -390,7 +390,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     /**
      * Returns, if this stream is ordered, a stream consisting of the remaining
      * elements of this stream after dropping the longest prefix of elements
-     * that match the given predicate.  Otherwise returns, if this stream is
+     * that match the given predicate. Otherwise, returns, if this stream is
      * unordered, a stream consisting of the remaining elements of this stream
      * after dropping a subset of elements that match the given predicate.
      *
