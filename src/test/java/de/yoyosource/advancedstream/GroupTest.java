@@ -63,7 +63,29 @@ class GroupTest {
     class Parallel {
         @Test // TODO: Flaky?
         void testGroup() {
+            // Count: 1056
+            // Integrating: {} with 1
+            // Integrating: {} with 2
+            // Integrating: {} with 3
+            // Integrating: {} with 3
+            // Integrating: {} with 3
+            // Combining:
+            // - {1=[1]}
+            // - {2=[2]}
+            // Combining:
+            // - {1=[1], 2=[2]}
+            // - {3=[3]}
+            // Integrating: {} with 2
+            // Combining:
+            // - {1=[1], 2=[2], 3=[3]}
+            // - {3=[3]}
+            // Combining:
+            // - {1=[1], 2=[2], 3=[3, 3]}
+            // - {3=[3]}
+
+            long time = 0;
             while (true) {
+                System.out.println("Count: " + ++time);
                 Map<Integer, List<Integer>> map = Streamable.of(1, 2, 2, 3, 3, 3)
                         .parallel(3)
                         .as(AdvancedStream.AdvancedStream())

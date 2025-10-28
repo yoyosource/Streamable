@@ -34,6 +34,9 @@ public class OrderedSequence<T> implements Sequence<T> {
             if (current.next != null) {
                 st.append(" -> ");
             }
+            if (current.next == null && current != tail) {
+                st.append(" -> CUT-SHORT");
+            }
             current = current.next;
         }
         return st.toString();

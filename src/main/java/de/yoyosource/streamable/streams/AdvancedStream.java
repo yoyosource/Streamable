@@ -508,12 +508,14 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public boolean integrate(Map<K, List<T>> container, long index, T element, Consumer<? super Map<K, List<T>>> next) {
+                System.out.println("Integrating: " + container + " with " + element);
                 container.computeIfAbsent(keyExtractor.apply(element), __ -> new ArrayList<>()).add(element);
                 return true;
             }
 
             @Override
             public Map<K, List<T>> combine(Map<K, List<T>> firstContainer, Map<K, List<T>> secondContainer) {
+                System.out.println("Combining:\n- " + firstContainer + "\n- " + secondContainer);
                 secondContainer.forEach((k, ts) -> {
                     if (firstContainer.containsKey(k)) {
                         firstContainer.get(k).addAll(ts);
