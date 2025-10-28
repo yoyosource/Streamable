@@ -515,7 +515,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public Map<K, List<T>> combine(Map<K, List<T>> firstContainer, Map<K, List<T>> secondContainer) {
-                System.out.println("Combining:\n- " + firstContainer + "\n- " + secondContainer);
+                System.out.println("Combining: " + firstContainer + " + " + secondContainer);
                 secondContainer.forEach((k, ts) -> {
                     if (firstContainer.containsKey(k)) {
                         firstContainer.get(k).addAll(ts);

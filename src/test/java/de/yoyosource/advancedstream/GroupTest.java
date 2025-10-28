@@ -69,19 +69,11 @@ class GroupTest {
             // Integrating: {} with 3
             // Integrating: {} with 3
             // Integrating: {} with 3
-            // Combining:
-            // - {1=[1]}
-            // - {2=[2]}
-            // Combining:
-            // - {1=[1], 2=[2]}
-            // - {3=[3]}
+            // Combining: {1=[1]} + {2=[2]}
+            // Combining: {1=[1], 2=[2]} + {3=[3]}
             // Integrating: {} with 2
-            // Combining:
-            // - {1=[1], 2=[2], 3=[3]}
-            // - {3=[3]}
-            // Combining:
-            // - {1=[1], 2=[2], 3=[3, 3]}
-            // - {3=[3]}
+            // Combining: {1=[1], 2=[2], 3=[3]} + {3=[3]}
+            // Combining: {1=[1], 2=[2], 3=[3, 3]} + {3=[3]}
 
             long time = 0;
             while (true) {
