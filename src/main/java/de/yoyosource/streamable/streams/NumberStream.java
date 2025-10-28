@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
@@ -53,6 +54,11 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
      */
     default NumberStream<T> sorted() {
         return flatGather(new StreamableGatherer<T, List<T>, Iterable<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public List<T> container() {
                 return new ArrayList<>();
@@ -129,6 +135,11 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
      */
     default Optional<T> modus() {
         return collect(new StreamableCollector<T, Map<T, Long>, Optional<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public Map<T, Long> container() {
                 return new HashMap<>();
@@ -240,6 +251,11 @@ public interface NumberStream<T extends Number & Comparable<T>> extends Streamab
      */
     default SummaryStatistics<T> summaryStatistics() {
         return collect(new StreamableCollector<T, SummaryStatistics<T>, SummaryStatistics<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public SummaryStatistics<T> container() {
                 return new SummaryStatistics<>(0, null, null, null, null);

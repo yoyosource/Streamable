@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableGatherer;
 
@@ -52,6 +53,11 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
     default <C> JavaStream<C> map(BiFunction<A, B, C> mapper) {
         return gather(new StreamableGatherer.Simple<Zip<A, B>, C>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, Zip<A, B> input, Consumer<? super C> next) {
                 next.accept(mapper.apply(input.a, input.b));
                 return true;
@@ -65,6 +71,11 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
 
     default ZippedStream<A, B> filter(BiPredicate<A, B> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Zip<A, B> input, Consumer<? super Zip<A, B>> next) {
                 if (predicate.test(input.a, input.b)) {
@@ -82,6 +93,11 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
     default ZippedStream<A, B> filterLeft(Predicate<A> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, Zip<A, B> input, Consumer<? super Zip<A, B>> next) {
                 if (predicate.test(input.a)) {
                     next.accept(input);
@@ -97,6 +113,11 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
 
     default ZippedStream<A, B> filterRight(Predicate<B> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Zip<A, B> input, Consumer<? super Zip<A, B>> next) {
                 if (predicate.test(input.b)) {
@@ -114,6 +135,11 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
     default JavaStream<A> getLeft() {
         return gather(new StreamableGatherer.Simple<Zip<A, B>, A>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, Zip<A, B> input, Consumer<? super A> next) {
                 next.accept(input.a);
                 return true;
@@ -127,6 +153,11 @@ public interface ZippedStream<A, B> extends Streamable<ZippedStream<A, B>, Zippe
 
     default JavaStream<B> getRight() {
         return gather(new StreamableGatherer.Simple<Zip<A, B>, B>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Zip<A, B> input, Consumer<? super B> next) {
                 next.accept(input.b);

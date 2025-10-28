@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableGatherer;
 
@@ -22,6 +23,11 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
     @SuppressWarnings({"unchecked"})
     default OptionalPresentStream<T> isPresent() {
         return gather(new StreamableGatherer.Simple<Optional<T>, Optional<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Optional<T> element, Consumer<? super Optional<T>> next) {
                 if (element.isPresent()) next.accept(element);
@@ -47,6 +53,11 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
     default OptionalStream<T> filter(Predicate<? super T> predicate) {
         return gather(new StreamableGatherer.Simple<Optional<T>, Optional<T>>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super Optional<T>> next) {
                 next.accept(input.filter(predicate));
                 return true;
@@ -69,6 +80,11 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
      */
     default <U> OptionalStream<U> map(Function<? super T, ? extends U> mapper) {
         return gather(new StreamableGatherer.Simple<Optional<T>, Optional<U>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super Optional<U>> next) {
                 next.accept(input.map(mapper));
@@ -93,6 +109,11 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
     default <U> OptionalStream<U> flatMap(Function<? super T, ? extends Optional<? extends U>> mapper) {
         return gather(new StreamableGatherer.Simple<Optional<T>, Optional<U>>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super Optional<U>> next) {
                 next.accept(input.flatMap(mapper));
                 return true;
@@ -114,6 +135,11 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
     @SuppressWarnings("unchecked")
     default OptionalStream<T> or(Supplier<? extends Optional<? extends T>> supplier) {
         return gather(new StreamableGatherer.Simple<Optional<T>, Optional<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super Optional<T>> next) {
                 next.accept(input.or(supplier));
@@ -137,6 +163,11 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
     default JavaStream<T> orElse(T other) {
         return gather(new StreamableGatherer.Simple<Optional<T>, T>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super T> next) {
                 next.accept(input.orElse(other));
                 return true;
@@ -158,6 +189,11 @@ public interface OptionalBaseStream<N extends OptionalBaseStream<N, T>, T> exten
     @SuppressWarnings("unchecked")
     default JavaStream<T> orElseGet(Supplier<? extends T> supplier) {
         return gather(new StreamableGatherer.Simple<Optional<T>, T>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super T> next) {
                 next.accept(input.orElseGet(supplier));

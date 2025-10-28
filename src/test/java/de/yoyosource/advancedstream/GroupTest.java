@@ -61,28 +61,30 @@ class GroupTest {
 
     @Nested
     class Parallel {
-        @Test
+        @Test // TODO: Flaky?
         void testGroup() {
-            Map<Integer, List<Integer>> map = Streamable.of(1, 2, 2, 3, 3, 3)
-                    .parallel(3)
-                    .as(AdvancedStream.AdvancedStream())
-                    .group()
-                    .as(JavaStream.JavaStream())
-                    .findFirst()
-                    .orElseThrow();
-            Assertions.assertEquals(3, map.size());
-            Assertions.assertTrue(map.containsKey(1));
-            Assertions.assertEquals(1, map.get(1).size());
-            Assertions.assertEquals(1, map.get(1).get(0));
-            Assertions.assertTrue(map.containsKey(2));
-            Assertions.assertEquals(2, map.get(2).size());
-            Assertions.assertEquals(2, map.get(2).get(0));
-            Assertions.assertEquals(2, map.get(2).get(1));
-            Assertions.assertTrue(map.containsKey(3));
-            Assertions.assertEquals(3, map.get(3).size());
-            Assertions.assertEquals(3, map.get(3).get(0));
-            Assertions.assertEquals(3, map.get(3).get(1));
-            Assertions.assertEquals(3, map.get(3).get(2));
+            while (true) {
+                Map<Integer, List<Integer>> map = Streamable.of(1, 2, 2, 3, 3, 3)
+                        .parallel(3)
+                        .as(AdvancedStream.AdvancedStream())
+                        .group()
+                        .as(JavaStream.JavaStream())
+                        .findFirst()
+                        .orElseThrow();
+                Assertions.assertEquals(3, map.size());
+                Assertions.assertTrue(map.containsKey(1));
+                Assertions.assertEquals(1, map.get(1).size());
+                Assertions.assertEquals(1, map.get(1).get(0));
+                Assertions.assertTrue(map.containsKey(2));
+                Assertions.assertEquals(2, map.get(2).size());
+                Assertions.assertEquals(2, map.get(2).get(0));
+                Assertions.assertEquals(2, map.get(2).get(1));
+                Assertions.assertTrue(map.containsKey(3));
+                Assertions.assertEquals(3, map.get(3).size());
+                Assertions.assertEquals(3, map.get(3).get(0));
+                Assertions.assertEquals(3, map.get(3).get(1));
+                Assertions.assertEquals(3, map.get(3).get(2));
+            }
         }
 
         @Test

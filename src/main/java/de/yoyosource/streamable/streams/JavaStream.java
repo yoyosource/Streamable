@@ -62,6 +62,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default JavaStream<T> filter(Predicate<? super T> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 if (predicate.test(element)) next.accept(element);
                 return true;
@@ -88,6 +93,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      */
     default <R> JavaStream<R> map(Function<? super T, ? extends R> mapper) {
         return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, T element, Consumer<? super R> next) {
                 next.accept(mapper.apply(element));
@@ -144,9 +154,14 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default <R> JavaStream<R> flatMap(Function<? super T, ? extends Iterable<? extends R>> mapper) {
         return flatGather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, T element, Consumer<? super Iterable<R>> next) {
                 Iterable<R> iterable = (Iterable<R>) mapper.apply(element);
-                if (iterable == null) return false;
+                if (iterable == null) return true;
                 next.accept(iterable);
                 return true;
             }
@@ -231,6 +246,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default <R> JavaStream<R> mapMulti(BiConsumer<? super T, ? super Consumer<? super R>> mapper) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, T input, Consumer<? super R> next) {
                 mapper.accept(input, next);
                 return true;
@@ -268,6 +288,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             private Set<T> elements = Collections.synchronizedSet(new HashSet<>());
 
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.ORDERED, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 if (elements.add(input)) next.accept(input);
                 return true;
@@ -296,6 +321,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      */
     default JavaStream<T> sorted(Comparator<? super T> comparator) {
         return flatGather(new StreamableGatherer<T, List<T>, Iterable<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public List<T> container() {
                 return new ArrayList<>();
@@ -357,6 +387,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default JavaStream<T> peek(Consumer<? super T> action) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, T input, Consumer<? super T> next) {
                 action.accept(input);
                 next.accept(input);
@@ -396,6 +431,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
         if (maxSize == 0) {
             return gather(new StreamableGatherer.Simple<>() {
                 @Override
+                public Evaluation evaluation() {
+                    return Evaluation.get(Evaluation.NO_CONTAINER);
+                }
+
+                @Override
                 public boolean integrate(long index, T element, Consumer<? super T> next) {
                     return false;
                 }
@@ -406,6 +446,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             });
         } else {
             return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public Evaluation evaluation() {
+                    return Evaluation.get(Evaluation.NO_CONTAINER);
+                }
+
                 @Override
                 public boolean integrate(long index, T input, Consumer<? super T> next) {
                     next.accept(input);
@@ -448,6 +493,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             return this;
         } else {
             return gather(new StreamableGatherer.Simple<>() {
+                @Override
+                public Evaluation evaluation() {
+                    return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+                }
+
                 @Override
                 public boolean integrate(long index, T input, Consumer<? super T> next) {
                     if (index >= skip) next.accept(input);
@@ -715,6 +765,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default T reduce(T identity, BinaryOperator<T> accumulator) {
         return collect(new StreamableCollector<T, SingleData<T>, T>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
+            @Override
             public SingleData<T> container() {
                 return new SingleData<>(null);
             }
@@ -790,6 +845,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      */
     default Optional<T> reduce(BinaryOperator<T> accumulator) {
         return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public SingleData<T> container() {
                 return new SingleData<>(null);
@@ -982,6 +1042,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default Optional<T> min(Comparator<? super T> comparator) {
         return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
+            @Override
             public SingleData<T> container() {
                 return new SingleData<>(null);
             }
@@ -1027,6 +1092,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
      */
     default Optional<T> max(Comparator<? super T> comparator) {
         return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public SingleData<T> container() {
                 return new SingleData<>(null);
@@ -1115,13 +1185,13 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default boolean anyMatch(Predicate<? super T> predicate) {
         return collect(new StreamableCollector<T, SingleData<Boolean>, Boolean>() {
             @Override
-            public SingleData<Boolean> container() {
-                return new SingleData<>(false);
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.UNORDERED, Evaluation.CONCURRENT);
             }
 
             @Override
-            public Evaluation evaluation() {
-                return Evaluation.get(Evaluation.UNORDERED, Evaluation.CONCURRENT);
+            public SingleData<Boolean> container() {
+                return new SingleData<>(false);
             }
 
             @Override
@@ -1170,13 +1240,13 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default boolean allMatch(Predicate<? super T> predicate) {
         return collect(new StreamableCollector<T, SingleData<Boolean>, Boolean>() {
             @Override
-            public SingleData<Boolean> container() {
-                return new SingleData<>(true);
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.UNORDERED, Evaluation.CONCURRENT);
             }
 
             @Override
-            public Evaluation evaluation() {
-                return Evaluation.get(Evaluation.UNORDERED, Evaluation.CONCURRENT);
+            public SingleData<Boolean> container() {
+                return new SingleData<>(true);
             }
 
             @Override
@@ -1223,13 +1293,13 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
     default boolean noneMatch(Predicate<? super T> predicate) {
         return collect(new StreamableCollector<T, SingleData<Boolean>, Boolean>() {
             @Override
-            public SingleData<Boolean> container() {
-                return new SingleData<>(true);
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.UNORDERED, Evaluation.CONCURRENT);
             }
 
             @Override
-            public Evaluation evaluation() {
-                return Evaluation.get(Evaluation.UNORDERED, Evaluation.CONCURRENT);
+            public SingleData<Boolean> container() {
+                return new SingleData<>(true);
             }
 
             @Override
@@ -1306,6 +1376,11 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
             private T element = null;
 
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.UNORDERED);
+            }
+
+            @Override
             public boolean accumulate(long index, T element) {
                 this.element = element;
                 return false;
@@ -1343,7 +1418,7 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
             @Override
             public Evaluation evaluation() {
-                return Evaluation.ORDERED;
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.GREEDY);
             }
 
             @Override

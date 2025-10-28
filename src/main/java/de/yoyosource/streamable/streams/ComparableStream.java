@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
@@ -48,6 +49,11 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
     default ComparableStream<T> sorted() {
         return flatGather(new StreamableGatherer<T, List<T>, Iterable<T>>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
+            @Override
             public List<T> container() {
                 return new ArrayList<>();
             }
@@ -85,6 +91,11 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
      */
     default Optional<T> min() {
         return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public SingleData<T> container() {
                 return new SingleData<>(null);
@@ -134,6 +145,11 @@ public interface ComparableStream<T extends Comparable<T>> extends Streamable<Co
      */
     default Optional<T> max() {
         return collect(new StreamableCollector<T, SingleData<T>, Optional<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public SingleData<T> container() {
                 return new SingleData<>(null);

@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.FunctionWithException;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableGatherer;
@@ -38,6 +39,11 @@ public interface TryingStream<T> extends Streamable<TryingStream<T>, T> {
 
     default <R, E extends Throwable> TryedStream<R, E> tryIt(FunctionWithException<T, R, E> functionWithException, boolean endOnException) {
         return gather(new StreamableGatherer.Simple<T, Try<R, E>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER);
+            }
+
             @Override
             public boolean integrate(long index, T element, Consumer<? super Try<R, E>> next) {
                 try {

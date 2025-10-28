@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.FunctionWithException;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableGatherer;
@@ -80,6 +81,11 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
     default TryedStream<T, E> keep(Option<T, E, ?> option) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<T, E>> next) {
                 if (option.check(element)) next.accept(element);
                 return true;
@@ -93,6 +99,11 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
 
     default <U> JavaStream<U> unwrap(Option<T, E, U> option) {
         return gather(new StreamableGatherer.Simple<Try<T, E>, U>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Try<T, E> element, Consumer<? super U> next) {
                 next.accept(option.unwrap(element));
@@ -112,6 +123,11 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
     default <U> TryedStream<T, E> peek(Option<T, E, U> option, Consumer<U> consumer) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<T, E>> next) {
                 if (option.check(element)) consumer.accept(option.unwrap(element));
                 next.accept(element);
@@ -130,6 +146,11 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
 
     default <R> TryedStream<R, E> tryIt(FunctionWithException<T, R, E> functionWithException, boolean endOnException) {
         return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<R, E>> next) {
                 if (element.successful()) {

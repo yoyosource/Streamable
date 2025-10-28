@@ -65,6 +65,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     default AdvancedStream<T> filterIndexed(BiPredicate<T, Long> predicate) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 if (predicate.test(element, index)) {
                     next.accept(element);
@@ -93,6 +98,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
      */
     default <R> AdvancedStream<R> mapIndexed(BiFunction<? super T, Long, ? extends R> mapper) {
         return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, T element, Consumer<? super R> next) {
                 next.accept(mapper.apply(element, index));
@@ -148,6 +158,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
      */
     default <R> AdvancedStream<R> flatMapIndexed(BiFunction<? super T, Long, ? extends Iterable<? extends R>> mapper) {
         return flatGather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, T input, Consumer<? super Iterable<R>> next) {
                 next.accept((Iterable<R>) mapper.apply(input, index));
@@ -239,6 +254,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     default <R> AdvancedStream<R> mapMultiIndexed(TriConsumer<? super T, Long, Consumer<? super R>> mapper) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, T element, Consumer<? super R> next) {
                 mapper.accept(element, index, next);
                 return true;
@@ -253,6 +273,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
     default AdvancedStream<T> distinctBy(Function<? super T, ?> keyExtractor) {
         return gather(new StreamableGatherer.Simple<>() {
             private Set<Object> elements = Collections.synchronizedSet(new HashSet<>());
+
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.ORDERED, Evaluation.GREEDY);
+            }
 
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
@@ -303,6 +328,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
      */
     default AdvancedStream<T> peekIndexed(BiConsumer<? super T, Long> action) {
         return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 action.accept(element, index);
@@ -472,6 +502,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             }
 
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.GREEDY, Evaluation.NO_CONTAINER);
+            }
+
+            @Override
             public boolean integrate(Map<K, List<T>> container, long index, T element, Consumer<? super Map<K, List<T>>> next) {
                 container.computeIfAbsent(keyExtractor.apply(element), __ -> new ArrayList<>()).add(element);
                 return true;
@@ -501,6 +536,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             private AtomicLong count = new AtomicLong();
 
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, T element, Consumer<? super T> next) {
                 count.incrementAndGet();
                 next.accept(element);
@@ -523,6 +563,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
             @Override
             public Map<K, Long> container() {
                 return new HashMap<>();
+            }
+
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
             }
 
             @Override
@@ -560,7 +605,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public Evaluation evaluation() {
-                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER, Evaluation.GREEDY);
             }
 
             @Override
@@ -597,7 +642,7 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
             @Override
             public Evaluation evaluation() {
-                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER);
+                return Evaluation.get(Evaluation.ORDERED, Evaluation.SEQUENTIAL, Evaluation.NO_CONTAINER, Evaluation.GREEDY);
             }
 
             @Override
@@ -742,7 +787,12 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
      * @see JavaStream#flatMap
      */
     default <R> AdvancedStream<R> flatMapMulti(BiConsumer<? super T, ? super Consumer<? super Iterable<R>>> mapper) {
-        return flatGather(new StreamableGatherer.Simple<T, Iterable<R>>() {
+        return flatGather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, T element, Consumer<? super Iterable<R>> next) {
                 mapper.accept(element, next);
@@ -773,6 +823,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
      */
     default Set<T> toSet() {
         return collect(new StreamableCollector<T, Set<T>, Set<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public Set<T> container() {
                 return new HashSet<>();
@@ -875,6 +930,11 @@ public interface AdvancedStream<T> extends Streamable<AdvancedStream<T>, T> {
 
     default AdvancedStream<List<T>> allElements() {
         return gather(new StreamableGatherer<T, List<T>, List<T>>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.GREEDY);
+            }
+
             @Override
             public List<T> container() {
                 return new ArrayList<>();

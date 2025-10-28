@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.StreamableGatherer;
 
 import java.util.Optional;
@@ -19,6 +20,11 @@ public interface OptionalPresentStream<T> extends OptionalBaseStream<OptionalPre
      */
     default JavaStream<T> get() {
         return gather(new StreamableGatherer.Simple<Optional<T>, T>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, Optional<T> input, Consumer<? super T> next) {
                 next.accept(input.get());

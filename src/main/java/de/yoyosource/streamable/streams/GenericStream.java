@@ -1,5 +1,6 @@
 package de.yoyosource.streamable.streams;
 
+import de.yoyosource.streamable.Evaluation;
 import de.yoyosource.streamable.Streamable;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.InternalStreamable;
@@ -49,6 +50,11 @@ public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable
     default <R, N extends Streamable<N, R>> GenericStream<N, R> gatherEach(Function<S, N> mapper) {
         return gather(new StreamableGatherer.Simple<>() {
             @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
             public boolean integrate(long index, S element, Consumer<? super N> next) {
                 next.accept(mapper.apply(element));
                 return true;
@@ -73,6 +79,11 @@ public interface GenericStream<S extends Streamable<S, T>, T> extends Streamable
      */
     default <R> JavaStream<R> collectEach(Function<S, R> mapper) {
         return gather(new StreamableGatherer.Simple<S, R>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
             @Override
             public boolean integrate(long index, S element, Consumer<? super R> next) {
                 next.accept(mapper.apply(element));
