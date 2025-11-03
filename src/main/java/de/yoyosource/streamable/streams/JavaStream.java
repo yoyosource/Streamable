@@ -6,22 +6,11 @@ import de.yoyosource.streamable.StreamableCollector;
 import de.yoyosource.streamable.StreamableGatherer;
 import de.yoyosource.streamable.internal.SingleData;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
 
@@ -163,6 +152,68 @@ public interface JavaStream<T> extends Streamable<JavaStream<T>, T> {
                 Iterable<R> iterable = (Iterable<R>) mapper.apply(element);
                 if (iterable == null) return true;
                 next.accept(iterable);
+                return true;
+            }
+
+            @Override
+            public void finish(Consumer<? super Iterable<R>> next) {
+            }
+        });
+    }
+
+    /**
+     * Returns a stream consisting of the results of replacing each element of
+     * this stream with the contents of a mapped stream produced by applying
+     * the provided mapping function to each element.  Each mapped stream is
+     * {@link Streamable#close() closed} after its contents
+     * have been placed into this stream.  (If a mapped stream is {@code null}
+     * an empty stream is used, instead.)
+     *
+     * <p>This is an <a href="package-summary.html#StreamOps">intermediate
+     * operation</a>.
+     *
+     * @param <R>    The element type of the new stream
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element which produces an iterable
+     *               of new values
+     * @return the new stream
+     * @apiNote The {@code flatMap()} operation has the effect of applying a one-to-many
+     * transformation to the elements of the stream, and then flattening the
+     * resulting elements into a new stream.
+     *
+     * <p><b>Examples.</b>
+     *
+     * <p>If {@code orders} is a stream of purchase orders, and each purchase
+     * order contains a collection of line items, then the following produces a
+     * stream containing all the line items in all the orders:
+     * <pre>{@code
+     *     orders.flatMap(order -> order.getLineItems().stream())...
+     * }</pre>
+     *
+     * <p>If {@code path} is the path to a file, then the following produces a
+     * stream of the {@code words} contained in that file:
+     * <pre>{@code
+     *     Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8);
+     *     Stream<String> words = lines.flatMap(line -> Stream.of(line.split(" +")));
+     * }</pre>
+     * The {@code mapper} function passed to {@code flatMap} splits a line,
+     * using a simple regular expression, into an array of words, and then
+     * creates a stream of words from that array.
+     * @see #mapMulti
+     */
+    default <R> JavaStream<R> flatMapStream(Function<? super T, Stream<? extends R>> mapper) {
+        return flatGather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                return Evaluation.get(Evaluation.NO_CONTAINER, Evaluation.GREEDY);
+            }
+
+            @Override
+            public boolean integrate(long index, T element, Consumer<? super Iterable<R>> next) {
+                Stream<R> stream = (Stream<R>) mapper.apply(element);
+                if (stream == null) return true;
+                next.accept((Iterable<R>) stream::iterator);
                 return true;
             }
 
