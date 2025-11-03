@@ -1,10 +1,6 @@
 package de.yoyosource.streamable.streams;
 
-import de.yoyosource.streamable.Evaluation;
-import de.yoyosource.streamable.FunctionWithException;
-import de.yoyosource.streamable.Streamable;
-import de.yoyosource.streamable.StreamableGatherer;
-import de.yoyosource.streamable.Try;
+import de.yoyosource.streamable.*;
 
 import java.util.function.Consumer;
 
@@ -148,7 +144,11 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
         return gather(new StreamableGatherer.Simple<>() {
             @Override
             public Evaluation evaluation() {
-                return Evaluation.get(Evaluation.GREEDY);
+                if (endOnException) {
+                    return Evaluation.UNORDERED;
+                } else {
+                    return Evaluation.get(Evaluation.GREEDY);
+                }
             }
 
             @Override
@@ -174,6 +174,43 @@ public interface TryedStream<T, E extends Throwable> extends Streamable<TryedStr
 
             @Override
             public void finish(Consumer<? super Try<R, E>> next) {
+            }
+        });
+    }
+
+    default <R, RE extends Throwable> TryedStream<R, RE> tryItIgnorePrevious(FunctionWithException<T, R, RE> functionWithException) {
+        return tryItIgnorePrevious(functionWithException, false);
+    }
+
+    default <R, RE extends Throwable> TryedStream<R, RE> tryItIgnorePrevious(FunctionWithException<T, R, RE> functionWithException, boolean endOnException) {
+        return gather(new StreamableGatherer.Simple<>() {
+            @Override
+            public Evaluation evaluation() {
+                if (endOnException) {
+                    return Evaluation.UNORDERED;
+                } else {
+                    return Evaluation.get(Evaluation.GREEDY);
+                }
+            }
+
+            @Override
+            public boolean integrate(long index, Try<T, E> element, Consumer<? super Try<R, RE>> next) {
+                if (element.successful()) {
+                    try {
+                        next.accept(Try.Success(functionWithException.apply(element.getSuccess())));
+                    } catch (Throwable e) {
+                        if (endOnException) {
+                            return false;
+                        } else {
+                            next.accept(Try.Failure((RE) e));
+                        }
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public void finish(Consumer<? super Try<R, RE>> next) {
             }
         });
     }
